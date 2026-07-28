@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { GamePhase, Role } from '../types/game';
 import type { PlayerId } from '../types/game';
@@ -20,6 +20,10 @@ export const GameBoard: React.FC = () => {
   const myVote = gameState.teamVotes[myId];
   const myRaidAction = gameState.raidActions[myId];
   const isInProposedTeam = gameState.currentProposedTeam.includes(myId);
+
+  useEffect(() => {
+    setSelectedTeam([]);
+  }, [gameState.proposerIndex, gameState.currentRound]);
 
   const togglePlayerSelection = (id: string) => {
     if (selectedTeam.includes(id)) {
