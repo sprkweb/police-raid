@@ -43,7 +43,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
   const handleStateChange = (newState: GameState) => {
     setGameState({ ...newState });
-    if (isHost && networkRef.current) {
+    if (networkRef.current?.isHost) {
       networkRef.current.broadcast({ type: 'GAME_STATE_UPDATE', payload: newState });
     }
   };
@@ -104,7 +104,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
   };
 
   const sendAction = (payload: PlayerActionPayload) => {
-    if (isHost && engineRef.current && myId) {
+    if (networkRef.current?.isHost && engineRef.current && myId) {
        switch (payload.type) {
         case 'START_GAME': engineRef.current.startGame(); break;
         case 'PROPOSE_TEAM': engineRef.current.proposeTeam(myId, payload.team); break;
@@ -122,7 +122,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       gameState, myId, myName, isHost,
       joinRoom, createRoom,
       startGame: () => sendAction({ type: 'START_GAME' }),
-      endDiscussion: () => { if (isHost) engineRef.current?.endDiscussion() },
+      endDiscussion: () => { if (networkRef.current?.isHost) engineRef.current?.endDiscussion() },
       proposeTeam: (team) => sendAction({ type: 'PROPOSE_TEAM', team }),
       skipProposal: () => sendAction({ type: 'SKIP_PROPOSAL' }),
       voteTeam: (vote) => sendAction({ type: 'VOTE_TEAM', vote }),
