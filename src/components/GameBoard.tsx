@@ -3,10 +3,12 @@ import { useGame } from '../context/GameContext';
 import { GamePhase, Role } from '../types/game';
 import type { PlayerId } from '../types/game';
 import { BALANCE } from '../engine/constants';
+import { useTranslation } from 'react-i18next';
 
 export const GameBoard: React.FC = () => {
   const { gameState, myId, proposeTeam, skipProposal, voteTeam, submitRaidAction, isHost, endDiscussion } = useGame();
   const [selectedTeam, setSelectedTeam] = useState<PlayerId[]>([]);
+  const { t } = useTranslation();
 
   if (!gameState || !myId) return null;
 
@@ -49,17 +51,17 @@ export const GameBoard: React.FC = () => {
 
       <div className="bg-white p-4 rounded shadow flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold">Round {gameState.currentRound} / 5</h2>
-          <p className="text-sm text-gray-600">Police Wins: {gameState.scores.police} | Moles Wins: {gameState.scores.moles}</p>
+          <h2 className="text-xl font-bold">{t('game.round', { round: gameState.currentRound })}</h2>
+          <p className="text-sm text-gray-600">{t('game.score', { police: gameState.scores.police, moles: gameState.scores.moles })}</p>
         </div>
         <div className="text-right">
-          <p className="text-sm">You are:</p>
+          <p className="text-sm">{t('game.youAre')}</p>
           <p className={`text-xl font-bold ${isMole ? 'text-red-600' : 'text-blue-600'}`}>
-            {me.role === Role.Police ? 'Police Officer' : 'Mole'}
+            {me.role === Role.Police ? t('game.policeOfficer') : t('game.mole')}
           </p>
           {isMole && (
             <p className="text-xs text-red-500 mt-1">
-              Other Moles: {otherMoles.map(m => m.name).join(', ') || 'None'}
+              {t('game.otherMoles', { moles: otherMoles.map(m => m.name).join(', ') || t('game.none') })}
             </p>
           )}
         </div>
@@ -69,28 +71,28 @@ export const GameBoard: React.FC = () => {
 
         {gameState.phase === GamePhase.Discussion && (
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">Discussion Phase</h3>
-            <p className="mb-4">Discuss who you trust before the proposal begins.</p>
+            <h3 className="text-2xl font-bold mb-4">{t('game.discussionPhase')}</h3>
+            <p className="mb-4">{t('game.discussText')}</p>
             {isHost && (
               <button
                 onClick={endDiscussion}
                 className="bg-blue-600 text-white px-6 py-2 rounded font-bold cursor-pointer"
               >
-                End Discussion & Start Proposal
+                {t('game.endDiscussion')}
               </button>
             )}
-            {!isHost && <p className="text-gray-500 italic">Waiting for host to end discussion...</p>}
+            {!isHost && <p className="text-gray-500 italic">{t('game.waitingForHostEndDiscussion')}</p>}
           </div>
         )}
 
         {gameState.phase === GamePhase.ProposingTeam && (
           <div>
-            <h3 className="text-2xl font-bold mb-4">Team Proposal</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('game.teamProposal')}</h3>
             <p className="mb-4">
-              Current Proposer: <span className="font-bold">{gameState.players[gameState.proposerIndex].name}</span>
+              {t('game.currentProposer')} <span className="font-bold">{gameState.players[gameState.proposerIndex].name}</span>
             </p>
             <p className="mb-4 text-sm text-gray-600">
-              Needs {requiredSize} players for the raid. Rejection count: {gameState.consecutiveRejections} / {gameState.players.length}
+              {t('game.needsPlayersText', { size: requiredSize, rejections: gameState.consecutiveRejections, total: gameState.players.length })}
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
@@ -116,26 +118,26 @@ export const GameBoard: React.FC = () => {
                   onClick={skipProposal}
                   className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
                 >
-                  Skip Proposal
+                  {t('game.skipProposal')}
                 </button>
                 <button
                   onClick={handlePropose}
                   disabled={selectedTeam.length !== requiredSize}
                   className="px-6 py-2 bg-blue-600 text-white rounded font-bold disabled:opacity-50 cursor-pointer"
                 >
-                  Propose Team ({selectedTeam.length}/{requiredSize})
+                  {t('game.proposeTeam', { selected: selectedTeam.length, required: requiredSize })}
                 </button>
               </div>
             )}
             {!isMyTurnToPropose && (
-              <p className="text-gray-500 italic text-center">Waiting for them to propose a team...</p>
+              <p className="text-gray-500 italic text-center">{t('game.waitingForProposal')}</p>
             )}
           </div>
         )}
 
         {gameState.phase === GamePhase.VotingOnTeam && (
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">Vote on Team</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('game.voteOnTeam')}</h3>
             <div className="flex flex-wrap justify-center gap-2 mb-6">
               {gameState.currentProposedTeam.map(id => {
                 const player = gameState.players.find(p => p.id === id);
@@ -149,71 +151,71 @@ export const GameBoard: React.FC = () => {
                   onClick={() => voteTeam('Approve')}
                   className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
                 >
-                  Approve
+                  {t('game.approve')}
                 </button>
                 <button
                   onClick={() => voteTeam('Reject')}
                   className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
                 >
-                  Reject
+                  {t('game.reject')}
                 </button>
               </div>
             ) : (
-              <p className="text-lg text-blue-600 font-bold">You voted to {myVote}</p>
+              <p className="text-lg text-blue-600 font-bold">{t('game.youVotedTo', { vote: myVote === 'Approve' ? t('game.approve') : t('game.reject') })}</p>
             )}
 
             <div className="mt-6 text-sm text-gray-500">
-              Votes received: {Object.keys(gameState.teamVotes).length} / {gameState.players.length}
+              {t('game.votesReceived', { votes: Object.keys(gameState.teamVotes).length, total: gameState.players.length })}
             </div>
           </div>
         )}
 
         {gameState.phase === GamePhase.Raid && (
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">Raid in Progress</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('game.raidInProgress')}</h3>
 
             {isInProposedTeam ? (
               <div className="mb-6">
-                <p className="mb-4">You are on the raid team! Choose your action:</p>
+                <p className="mb-4">{t('game.onRaidTeamText')}</p>
                 {!myRaidAction ? (
                   <div className="flex justify-center gap-4">
                     <button
                       onClick={() => submitRaidAction('Support')}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
                     >
-                      Support Raid (Police)
+                      {t('game.supportRaid')}
                     </button>
                     {isMole && (
                       <button
                         onClick={() => submitRaidAction('Sabotage')}
                         className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
                       >
-                        Sabotage Raid (Mole)
+                        {t('game.sabotageRaid')}
                       </button>
                     )}
                   </div>
                 ) : (
-                  <p className="text-lg text-blue-600 font-bold">Action submitted.</p>
+                  <p className="text-lg text-blue-600 font-bold">{t('game.actionSubmitted')}</p>
                 )}
               </div>
             ) : (
-              <p className="text-lg text-gray-600 mb-6 italic">You are not on the raid team. Waiting for them to return...</p>
+              <p className="text-lg text-gray-600 mb-6 italic">{t('game.notOnRaidTeam')}</p>
             )}
 
             <div className="mt-6 text-sm text-gray-500">
-              Actions received: {Object.keys(gameState.raidActions).length} / {gameState.currentProposedTeam.length}
+              {t('game.actionsReceived', { actions: Object.keys(gameState.raidActions).length, total: gameState.currentProposedTeam.length })}
             </div>
           </div>
         )}
 
         {gameState.phase === GamePhase.GameOver && (
           <div className="text-center py-8">
-            <h2 className="text-4xl font-bold mb-4">Game Over!</h2>
+            <h2 className="text-4xl font-bold mb-4">{t('game.gameOver')}</h2>
             <p className={`text-2xl font-bold ${gameState.winner === 'Police' ? 'text-blue-600' : 'text-red-600'}`}>
-              {gameState.winner} Win!
+              {t('game.wins', { winner: gameState.winner === 'Police' ? t('game.policeOfficer') : t('game.mole') })}
             </p>
             {gameState.winner === 'Moles' && gameState.consecutiveRejections >= gameState.players.length && (
-              <p className="mt-2 text-red-500">Won by reaching maximum consecutive rejected proposals.</p>
+              <p className="mt-2 text-red-500">{t('game.wonByRejections')}</p>
             )}
           </div>
         )}
@@ -222,13 +224,13 @@ export const GameBoard: React.FC = () => {
 
       {gameState.raidResults.length > 0 && (
         <div className="bg-white p-4 rounded shadow">
-          <h3 className="text-lg font-bold mb-2">Raid History</h3>
+          <h3 className="text-lg font-bold mb-2">{t('game.raidHistory')}</h3>
           <ul className="space-y-2">
             {gameState.raidResults.map((r, i) => (
               <li key={i} className={`p-2 rounded border-l-4 ${r.success ? 'border-blue-500 bg-blue-50' : 'border-red-500 bg-red-50'}`}>
-                Round {r.round}: {r.success ? 'Success' : 'Failed'} ({r.sabotageCount} sabotages)
+                {t('game.roundHistory', { round: r.round, status: r.success ? t('game.success') : t('game.failed'), sabotages: r.sabotageCount })}
                 <div className="text-sm text-gray-600 mt-1">
-                  Team: {r.team.map(id => gameState.players.find(p => p.id === id)?.name).join(', ')}
+                  {t('game.team', { team: r.team.map(id => gameState.players.find(p => p.id === id)?.name).join(', ') })}
                 </div>
               </li>
             ))}
