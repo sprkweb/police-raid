@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > src/components/Lobby.tsx
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useTranslation } from 'react-i18next';
@@ -147,3 +148,4 @@ export const Lobby: React.FC = () => {
     </div>
   );
 };
+INNER_EOF

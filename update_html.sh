@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > index.html
 <!doctype html>
 <html lang="en">
   <head>
@@ -18,3 +19,4 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+INNER_EOF

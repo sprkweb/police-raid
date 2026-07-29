@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > src/App.tsx
 import { useGame } from './context/GameContext';
 import { Lobby } from './components/Lobby';
 import { GameBoard } from './components/GameBoard';
@@ -32,3 +33,4 @@ function App() {
 }
 
 export default App;
+INNER_EOF
