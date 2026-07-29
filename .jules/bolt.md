@@ -1,0 +1,3 @@
+## 2026-07-29 - Context Optimization: Move State Down
+**Learning:** Frequent context updates (like `gameState` in a multiplayer game) trigger re-renders in all components that consume the context. Placing the context consumer at the very top level (e.g., in `App`) unnecessarily re-renders static layout components like headers and language switchers on every game tick/state change.
+**Action:** Always isolate high-frequency context consumption to the lowest possible level in the component tree. Create wrapper/router components (like `GameRouter`) to consume state and return the appropriate child components, shielding the layout from re-rendering.
