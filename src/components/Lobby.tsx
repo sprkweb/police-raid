@@ -66,8 +66,9 @@ export const Lobby: React.FC = () => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('lobby.yourNameLabel')}</label>
+          <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-1">{t('lobby.yourNameLabel')}</label>
           <input
+            id="playerName"
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -91,6 +92,7 @@ export const Lobby: React.FC = () => {
               onChange={e => setRoomCode(e.target.value.toUpperCase())}
               className="flex-1 border rounded p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
               placeholder={t('lobby.roomCodePlaceholder')}
+              aria-label={t('lobby.roomCodePlaceholder')}
             />
             <button
               onClick={handleJoin}
