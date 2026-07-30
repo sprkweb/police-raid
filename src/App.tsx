@@ -5,8 +5,17 @@ import { GamePhase } from './types/game';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
-function App() {
+const GameRouter = () => {
   const { gameState } = useGame();
+
+  return !gameState || gameState.phase === GamePhase.Lobby ? (
+    <Lobby />
+  ) : (
+    <GameBoard />
+  );
+};
+
+function App() {
   const { t } = useTranslation();
 
   return (
@@ -17,11 +26,7 @@ function App() {
       </header>
 
       <main className="flex-1 p-4 flex items-start justify-center pt-8">
-        {!gameState || gameState.phase === GamePhase.Lobby ? (
-          <Lobby />
-        ) : (
-          <GameBoard />
-        )}
+        <GameRouter />
       </main>
     </div>
   );
