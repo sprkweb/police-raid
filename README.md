@@ -1,4 +1,6 @@
-# Police Raid - Game Rules
+# Police Raid
+
+A web-based multiplayer social deduction game.
 
 ## Story
 The police are conducting raids on the mafia, but the raids must be a surprise. There are "moles" (working for the mafia) in the police ranks.
@@ -21,8 +23,8 @@ The goal of the moles is to ruin 3 out of 5 raids.
    - If the team is rejected, the right to propose a team passes to the next player.
    - **Rejection limit:** If a number of proposals equal to the total number of players in the match are rejected in a row, the **Moles immediately win the entire game**.
 4. **Raid:** If the team is approved, the selected players go on the raid.
-   - Moles on the team secretly choose: "Sabotage" (betray the raid) or "Support" (support the raid).
-   - Police Officers on the team must "Support".
+   - Moles on the team secretly choose: "Sabotage" (betray the raid) or "Raid" (support the raid).
+   - Police Officers on the team must "Raid".
    - If at least one player chooses "Sabotage", the raid is considered failed (a point for the Moles).
    - *Exception:* In some rounds with a large number of players (7-8), 2 "Sabotage" votes are required to fail the raid.
    - After the raid, everyone is told the total number of "Sabotage" votes, but not exactly who cast them.
