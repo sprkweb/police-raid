@@ -5,7 +5,6 @@ import { GamePhase } from './types/game';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
-// ⚡ Bolt: Moving game state consumption down to prevent App layout re-renders
 const GameRouter = () => {
   const { gameState } = useGame();
 
