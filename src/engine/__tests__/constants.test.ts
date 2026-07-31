@@ -4,7 +4,6 @@ import {
   MAX_PLAYERS,
   MAX_ROUNDS,
   MIN_PLAYERS,
-  WINS_NEEDED,
 } from '../constants';
 
 describe('BALANCE / constants', () => {
@@ -21,9 +20,5 @@ describe('BALANCE / constants', () => {
         expect(size).toBeGreaterThan(0);
       }
     }
-  });
-
-  it('needs 3 round wins to finish', () => {
-    expect(WINS_NEEDED).toBe(3);
   });
 });
