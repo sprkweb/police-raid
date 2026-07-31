@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { useTranslation } from 'react-i18next';
 
 const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
@@ -12,8 +13,9 @@ export const Lobby: React.FC = () => {
   const [error, setError] = useState('');
 
   if (gameState) {
-    const canStart = gameState.players.length >= 5 && gameState.players.length <= 8;
-    const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < 5;
+    const canStart =
+      gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
+    const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < MIN_PLAYERS;
 
     return (
       <div className="pr-lobby">

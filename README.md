@@ -36,3 +36,13 @@ The goal of the moles is to ruin 3 out of 5 raids.
 - 8 players (3 moles): team sizes 3-4-4-5*-5
 
 \* - the raid can only be won by the mafia (failed) if at least 2 moles choose "Sabotage".
+
+## Development
+
+```bash
+npm install
+npm run dev      # http://localhost:5173/
+npm test         # Vitest unit tests (game engine / rules)
+npm run lint
+npm run build
+```

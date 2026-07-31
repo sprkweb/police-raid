@@ -1,34 +1,51 @@
 import type { GameState, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
-import { BALANCE, WINS_NEEDED } from './constants';
-
-const BOT_ID_PREFIX = 'bot-';
-const MIN_PLAYERS = 5;
+import {
+  BOT_ID_PREFIX,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  type PlayerCount,
+} from './constants';
+import { shuffle, type RandomFn } from './rng';
+import {
+  assignRoles,
+  countApproves,
+  countSabotages,
+  createInitialState,
+  isRaidActionAllowed,
+  isRaidSuccessful,
+  isSupportedPlayerCount,
+  isTeamApproved,
+  molesWinByRejectionLimit,
+  pickProposerIndex,
+  requiredSabotagesForRound,
+  requiredTeamSize,
+  winnerFromScores,
+} from './rules';
 
 const isBot = (id: PlayerId) => id.startsWith(BOT_ID_PREFIX);
+
+export interface GameEngineOptions {
+  /** Injected RNG in [0, 1). Defaults to Math.random. */
+  random?: RandomFn;
+}
 
 export class GameEngine {
   private state: GameState;
   private onStateChange: (state: GameState) => void;
+  private random: RandomFn;
   /** DEV: bots auto-play so a solo host can walk through phases. */
   private botsEnabled = false;
 
-  constructor(hostId: string, hostName: string, onStateChange: (state: GameState) => void) {
+  constructor(
+    hostId: string,
+    hostName: string,
+    onStateChange: (state: GameState) => void,
+    options: GameEngineOptions = {},
+  ) {
     this.onStateChange = onStateChange;
-    this.state = {
-      phase: GamePhase.Lobby,
-      players: [{ id: hostId, name: hostName, role: null }],
-      hostId,
-      currentRound: 1,
-      scores: { police: 0, moles: 0 },
-      raidResults: [],
-      proposerIndex: 0,
-      consecutiveRejections: 0,
-      currentProposedTeam: [],
-      teamVotes: {},
-      raidActions: {},
-      winner: null,
-    };
+    this.random = options.random ?? Math.random;
+    this.state = createInitialState(hostId, hostName);
     this.notify();
   }
 
@@ -42,21 +59,20 @@ export class GameEngine {
 
   public addPlayer(id: string, name: string) {
     if (this.state.phase !== GamePhase.Lobby) return;
-    if (this.state.players.length >= 8) return;
-    if (!this.state.players.find(p => p.id === id)) {
+    if (this.state.players.length >= MAX_PLAYERS) return;
+    if (!this.state.players.find((p) => p.id === id)) {
       this.state.players.push({ id, name, role: null });
       this.notify();
     }
   }
 
   public removePlayer(id: string) {
-    if (this.state.phase === GamePhase.Lobby) {
-      this.state.players = this.state.players.filter(p => p.id !== id);
-      this.notify();
-    }
+    if (this.state.phase !== GamePhase.Lobby) return;
+    this.state.players = this.state.players.filter((p) => p.id !== id);
+    this.notify();
   }
 
-  /** DEV-only: pad lobby to 5 with bots and start so UI can be walked solo. */
+  /** DEV-only: pad lobby to MIN_PLAYERS with bots and start so UI can be walked solo. */
   public startGameWithBots() {
     if (this.state.phase !== GamePhase.Lobby) return;
     if (this.state.players.length >= MIN_PLAYERS) {
@@ -67,7 +83,7 @@ export class GameEngine {
     let n = 1;
     while (this.state.players.length < MIN_PLAYERS) {
       const id = `${BOT_ID_PREFIX}${n}`;
-      if (!this.state.players.find(p => p.id === id)) {
+      if (!this.state.players.find((p) => p.id === id)) {
         this.state.players.push({ id, name: `Bot ${n}`, role: null });
       }
       n++;
@@ -76,29 +92,22 @@ export class GameEngine {
     this.botsEnabled = true;
     this.startGame();
     // Prefer a human proposer so the first propose/vote screens are interactive.
-    const humanIdx = this.state.players.findIndex(p => !isBot(p.id));
+    const humanIdx = this.state.players.findIndex((p) => !isBot(p.id));
     if (humanIdx >= 0) this.state.proposerIndex = humanIdx;
     this.notify();
     this.playBots();
   }
 
   public startGame() {
-    const numPlayers = this.state.players.length as keyof typeof BALANCE;
-    if (numPlayers < MIN_PLAYERS || numPlayers > 8) return;
+    const numPlayers = this.state.players.length;
+    if (!isSupportedPlayerCount(numPlayers)) return;
 
-    const balance = BALANCE[numPlayers];
-
-    const roles: Role[] = Array(numPlayers).fill(Role.Police);
-    for (let i = 0; i < balance.moles; i++) {
-      roles[i] = Role.Mole;
-    }
-    roles.sort(() => Math.random() - 0.5);
-
+    const roles = assignRoles(numPlayers, this.random);
     this.state.players.forEach((p, i) => {
-      p.role = roles[i];
+      p.role = roles[i]!;
     });
 
-    this.state.proposerIndex = Math.floor(Math.random() * numPlayers);
+    this.state.proposerIndex = pickProposerIndex(numPlayers, this.random);
     this.state.phase = GamePhase.Discussion;
     this.notify();
   }
@@ -109,12 +118,13 @@ export class GameEngine {
     if (this.state.phase === GamePhase.ProposingTeam) {
       const proposer = this.state.players[this.state.proposerIndex];
       if (proposer && isBot(proposer.id)) {
-        const size = BALANCE[this.state.players.length as keyof typeof BALANCE]
-          .teamSizes[this.state.currentRound - 1];
-        const team = [...this.state.players]
-          .sort(() => Math.random() - 0.5)
+        const size = requiredTeamSize(
+          this.state.players.length as PlayerCount,
+          this.state.currentRound,
+        );
+        const team = shuffle(this.state.players, this.random)
           .slice(0, size)
-          .map(p => p.id);
+          .map((p) => p.id);
         this.proposeTeam(proposer.id, team);
         return;
       }
@@ -157,21 +167,19 @@ export class GameEngine {
   }
 
   public endDiscussion() {
-    if (this.state.phase === GamePhase.Discussion) {
-        this.state.phase = GamePhase.ProposingTeam;
-        this.notify();
-        this.playBots();
-    }
+    if (this.state.phase !== GamePhase.Discussion) return;
+    this.state.phase = GamePhase.ProposingTeam;
+    this.notify();
+    this.playBots();
   }
 
   public proposeTeam(playerId: string, team: PlayerId[]) {
     if (this.state.phase !== GamePhase.ProposingTeam) return;
-    if (this.state.players[this.state.proposerIndex].id !== playerId) return;
+    if (this.state.players[this.state.proposerIndex]?.id !== playerId) return;
 
-    const numPlayers = this.state.players.length as keyof typeof BALANCE;
-    const requiredSize = BALANCE[numPlayers].teamSizes[this.state.currentRound - 1];
-
-    if (team.length !== requiredSize) return;
+    const numPlayers = this.state.players.length;
+    if (!isSupportedPlayerCount(numPlayers)) return;
+    if (team.length !== requiredTeamSize(numPlayers, this.state.currentRound)) return;
 
     this.state.currentProposedTeam = team;
     this.state.teamVotes = {};
@@ -182,7 +190,7 @@ export class GameEngine {
 
   public skipProposal(playerId: string) {
     if (this.state.phase !== GamePhase.ProposingTeam) return;
-    if (this.state.players[this.state.proposerIndex].id !== playerId) return;
+    if (this.state.players[this.state.proposerIndex]?.id !== playerId) return;
 
     this.nextProposer();
     this.notify();
@@ -204,16 +212,15 @@ export class GameEngine {
   }
 
   private resolveVoting() {
-    const votes = Object.values(this.state.teamVotes);
-    const approves = votes.filter(v => v === 'Approve').length;
+    const approves = countApproves(this.state.teamVotes);
 
-    if (approves > this.state.players.length / 2) {
+    if (isTeamApproved(approves, this.state.players.length)) {
       this.state.consecutiveRejections = 0;
       this.state.phase = GamePhase.Raid;
       this.state.raidActions = {};
     } else {
       this.state.consecutiveRejections++;
-      if (this.state.consecutiveRejections >= this.state.players.length) {
+      if (molesWinByRejectionLimit(this.state.consecutiveRejections, this.state.players.length)) {
         this.endGame(Role.Mole);
       } else {
         this.nextProposer();
@@ -235,8 +242,8 @@ export class GameEngine {
     if (!this.state.currentProposedTeam.includes(playerId)) return;
     if (this.state.raidActions[playerId]) return;
 
-    const player = this.state.players.find(p => p.id === playerId);
-    if (player?.role === Role.Police && action === 'Sabotage') return;
+    const player = this.state.players.find((p) => p.id === playerId);
+    if (!isRaidActionAllowed(player?.role, action)) return;
 
     this.state.raidActions[playerId] = action;
 
@@ -249,21 +256,16 @@ export class GameEngine {
   }
 
   private resolveRaid() {
-    const actions = Object.values(this.state.raidActions);
-    const sabotages = actions.filter(a => a === 'Sabotage').length;
-
-    const numPlayers = this.state.players.length as keyof typeof BALANCE;
-    const balance = BALANCE[numPlayers];
-    const requiresTwoSabotages = balance.twoSabotagesRequiredOnRound.includes(this.state.currentRound);
-
-    const requiredSabotages = requiresTwoSabotages ? 2 : 1;
-    const success = sabotages < requiredSabotages;
+    const sabotages = countSabotages(this.state.raidActions);
+    const numPlayers = this.state.players.length as PlayerCount;
+    const requiredSabotages = requiredSabotagesForRound(numPlayers, this.state.currentRound);
+    const success = isRaidSuccessful(sabotages, requiredSabotages);
 
     this.state.raidResults.push({
       round: this.state.currentRound,
       team: [...this.state.currentProposedTeam],
       sabotageCount: sabotages,
-      success
+      success,
     });
 
     if (success) {
@@ -272,9 +274,10 @@ export class GameEngine {
       this.state.scores.moles++;
     }
 
-    if (this.state.scores.police >= WINS_NEEDED) {
+    const winner = winnerFromScores(this.state.scores);
+    if (winner === 'Police') {
       this.endGame(Role.Police);
-    } else if (this.state.scores.moles >= WINS_NEEDED) {
+    } else if (winner === 'Moles') {
       this.endGame(Role.Mole);
     } else {
       this.state.currentRound++;
