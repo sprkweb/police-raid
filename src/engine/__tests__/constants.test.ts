@@ -22,4 +22,8 @@ describe('BALANCE / constants', () => {
       }
     }
   });
+
+  it('needs 3 round wins to finish', () => {
+    expect(WINS_NEEDED).toBe(3);
+  });
 });
