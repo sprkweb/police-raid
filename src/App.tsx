@@ -3,31 +3,31 @@ import { Lobby } from './components/Lobby';
 import { GameBoard } from './components/GameBoard';
 import { GamePhase } from './types/game';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { OperationStats } from './components/OperationStats';
 import { useTranslation } from 'react-i18next';
 
-const GameRouter = () => {
-  const { gameState } = useGame();
-
-  return !gameState || gameState.phase === GamePhase.Lobby ? (
-    <Lobby />
-  ) : (
-    <GameBoard />
-  );
-};
-
 function App() {
+  const { gameState } = useGame();
   const { t } = useTranslation();
+  const inGame = Boolean(gameState) && gameState?.phase !== GamePhase.Lobby;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <header className="bg-slate-800 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t('app.title')}</h1>
-        <LanguageSwitcher />
-      </header>
+    <div className="pr-app">
+      <div className="pr-shell">
+        <header className="pr-topbar">
+          <div className="pr-op">
+            <h1>{t('app.title')}</h1>
+            {gameState && <div className="pr-case">{t('game.caseNo', { code: gameState.hostId })}</div>}
+          </div>
 
-      <main className="flex-1 p-4 flex items-start justify-center pt-8">
-        <GameRouter />
-      </main>
+          <div className="pr-spacer" />
+
+          {inGame && <OperationStats />}
+          <LanguageSwitcher />
+        </header>
+
+        {inGame ? <GameBoard /> : <Lobby />}
+      </div>
     </div>
   );
 }

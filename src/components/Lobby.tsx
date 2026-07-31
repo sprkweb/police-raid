@@ -2,40 +2,57 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useTranslation } from 'react-i18next';
 
+const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
+
 export const Lobby: React.FC = () => {
-  const { createRoom, joinRoom, gameState, startGame, isHost, myId } = useGame();
+  const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
 
   if (gameState) {
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <h2 className="text-2xl font-bold">{t('lobby.room', { hostId: gameState.hostId })}</h2>
-        <div className="bg-white p-4 rounded shadow min-w-[300px]">
-          <h3 className="text-xl mb-2 border-b pb-2">{t('lobby.players', { current: gameState.players.length })}</h3>
-          <ul className="space-y-2">
-            {gameState.players.map(p => (
-              <li key={p.id} className="flex justify-between">
-                <span>{p.name} {p.id === myId ? t('lobby.you') : ''}</span>
-                {p.id === gameState.hostId && <span className="text-sm bg-blue-100 text-blue-800 px-2 rounded">{t('lobby.host')}</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
+    const canStart = gameState.players.length >= 5 && gameState.players.length <= 8;
+    const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < 5;
 
-        {isHost ? (
-          <button
-            onClick={startGame}
-            disabled={gameState.players.length < 5 || gameState.players.length > 8}
-            className="bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50 mt-4"
-          >
-            {t('lobby.startGame')}
-          </button>
-        ) : (
-          <p className="text-gray-600 mt-4">{t('lobby.waitingForHostStart')}</p>
-        )}
+    return (
+      <div className="pr-lobby">
+        <section className="pr-panel">
+          <div className="pr-panel-head">
+            <h2>{t('lobby.players', { current: gameState.players.length })}</h2>
+            <span className="pr-panel-aux">{t('game.caseNo', { code: gameState.hostId })}</span>
+          </div>
+
+          <div className="pr-roster">
+            {gameState.players.map(p => (
+              <div key={p.id} className="pr-roster-item">
+                <span className="pr-avatar">{initialsOf(p.name)}</span>
+                <span className="pr-roster-name">{p.name}</span>
+                {p.id === myId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
+                {p.id === gameState.hostId && p.id !== myId && (
+                  <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="pr-lobby-body">
+            {isHost ? (
+              <>
+                <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
+                  {t('lobby.startGame')}
+                </button>
+                {showDevBots && (
+                  <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
+                    {t('lobby.devStartWithBots')}
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="pr-hint">{t('lobby.waitingForHostStart')}</div>
+            )}
+          </div>
+        </section>
       </div>
     );
   }
@@ -60,49 +77,48 @@ export const Lobby: React.FC = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">{t('lobby.title')}</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-1">{t('lobby.yourNameLabel')}</label>
-          <input
-            id="playerName"
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            placeholder={t('lobby.namePlaceholder')}
-          />
+    <div className="pr-lobby">
+      <section className="pr-panel">
+        <div className="pr-panel-head">
+          <h2>{t('lobby.title')}</h2>
         </div>
 
-        <div className="pt-4 border-t">
-          <button
-            onClick={handleCreate}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
-          >
+        <div className="pr-lobby-body">
+          {error && <p className="pr-error">{error}</p>}
+
+          <div className="pr-field">
+            <label className="pr-label" htmlFor="playerName">{t('lobby.yourNameLabel')}</label>
+            <input
+              id="playerName"
+              type="text"
+              className="pr-input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={t('lobby.namePlaceholder')}
+            />
+          </div>
+
+          <button type="button" className="pr-btn pr-blue" onClick={handleCreate}>
             {t('lobby.createNewGame')}
           </button>
 
-          <div className="flex gap-2">
+          <div className="pr-divider" />
+
+          <div className="pr-row">
             <input
               type="text"
+              className="pr-input"
               value={roomCode}
               onChange={e => setRoomCode(e.target.value.toUpperCase())}
-              className="flex-1 border rounded p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
               placeholder={t('lobby.roomCodePlaceholder')}
               aria-label={t('lobby.roomCodePlaceholder')}
             />
-            <button
-              onClick={handleJoin}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded cursor-pointer"
-            >
+            <button type="button" className="pr-btn pr-green" onClick={handleJoin}>
               {t('lobby.join')}
             </button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

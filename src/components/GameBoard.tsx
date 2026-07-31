@@ -1,243 +1,300 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGame } from '../context/GameContext';
 import { GamePhase, Role } from '../types/game';
 import type { PlayerId } from '../types/game';
-import { BALANCE } from '../engine/constants';
-import { useTranslation } from 'react-i18next';
+import { MAX_ROUNDS, WINS_NEEDED } from '../engine/constants';
+import { getTeamSize, needsTwoSabotages } from '../engine/selectors';
+import { OperativeRing } from './OperativeRing';
+import type { SeatView } from './OperativeRing';
+import { ActionButtons, PhaseConsole } from './PhaseConsole';
+import type { ActionView, ConsoleView } from './PhaseConsole';
 
-export const GameBoard: React.FC = () => {
-  const { gameState, myId, proposeTeam, skipProposal, voteTeam, submitRaidAction, isHost, endDiscussion } = useGame();
-  const [selectedTeam, setSelectedTeam] = useState<PlayerId[]>([]);
-  const { t } = useTranslation();
+const COMPACT_QUERY = '(max-width: 720px)';
 
-  if (!gameState || !myId) return null;
-
-  const me = gameState.players.find(p => p.id === myId);
-  if (!me) return null;
-
-  const numPlayers = gameState.players.length as keyof typeof BALANCE;
-  const balance = BALANCE[numPlayers];
-  const requiredSize = balance?.teamSizes[gameState.currentRound - 1] || 0;
-  const isMyTurnToPropose = gameState.players[gameState.proposerIndex]?.id === myId;
-  const myVote = gameState.teamVotes[myId];
-  const myRaidAction = gameState.raidActions[myId];
-  const isInProposedTeam = gameState.currentProposedTeam.includes(myId);
+/** На узком экране кнопки действий переезжают из круга в нижнюю панель. */
+const useCompactLayout = () => {
+  const [compact, setCompact] = useState(() => window.matchMedia(COMPACT_QUERY).matches);
 
   useEffect(() => {
-    setSelectedTeam([]);
-  }, [gameState.proposerIndex, gameState.currentRound]);
+    const query = window.matchMedia(COMPACT_QUERY);
+    const update = () => setCompact(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
-  const togglePlayerSelection = (id: string) => {
-    if (selectedTeam.includes(id)) {
-      setSelectedTeam(selectedTeam.filter(p => p !== id));
+  return compact;
+};
+
+const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
+
+export const GameBoard: React.FC = () => {
+  const { gameState, myId, isHost, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
+  const { t } = useTranslation();
+  const [selected, setSelected] = useState<PlayerId[]>([]);
+  const compact = useCompactLayout();
+
+  const round = gameState?.currentRound;
+  const proposerIndex = gameState?.proposerIndex;
+  useEffect(() => {
+    setSelected([]);
+  }, [round, proposerIndex]);
+
+  const me = gameState?.players.find(p => p.id === myId);
+  if (!gameState || !myId || !me) return null;
+
+  const { phase, players, currentProposedTeam, teamVotes, raidActions } = gameState;
+  const isMole = me.role === Role.Mole;
+  const teamSize = getTeamSize(gameState);
+  const lead = players[gameState.proposerIndex];
+  const iAmLead = lead?.id === myId;
+  const iAmOnTeam = currentProposedTeam.includes(myId);
+  const isProposing = phase === GamePhase.ProposingTeam;
+  const isVoting = phase === GamePhase.VotingOnTeam;
+  const isRaid = phase === GamePhase.Raid;
+  const isOver = phase === GamePhase.GameOver;
+
+  // Пока идёт формирование, круг подсвечивает выбор инициатора, дальше — утверждённый наряд.
+  const highlighted = isProposing ? selected : currentProposedTeam;
+
+  const toggleSelection = (id: PlayerId) => {
+    setSelected(current => {
+      if (current.includes(id)) return current.filter(p => p !== id);
+      if (current.length >= teamSize) return current;
+      return [...current, id];
+    });
+  };
+
+  const seats: SeatView[] = players.map(player => {
+    const onTeam = !isOver && phase !== GamePhase.Discussion && highlighted.includes(player.id);
+    const isAlly = isMole && !isOver && player.id !== myId && player.role === Role.Mole;
+    const isLead = !isOver && (isProposing || isVoting) && player.id === lead?.id;
+    const reveal = isOver ? (player.role === Role.Mole ? 'mole' : 'police') : undefined;
+
+    let flag: string | undefined;
+    if (isOver) flag = player.role === Role.Mole ? t('game.mole') : t('game.policeOfficer');
+    else if (player.id === myId) flag = t('game.flagYou');
+    else if (isAlly) flag = t('game.flagAlly');
+    else if (isLead) flag = t('game.flagLead');
+    else if (onTeam) flag = t('game.flagOnTeam');
+
+    let mark: SeatView['mark'];
+    if (isVoting) mark = teamVotes[player.id] ? 'done' : 'waiting';
+    else if (isRaid && onTeam) mark = raidActions[player.id] ? 'done' : 'waiting';
+
+    return {
+      id: player.id,
+      name: player.name,
+      initials: initialsOf(player.name),
+      flag,
+      isMe: player.id === myId,
+      onTeam,
+      isLead,
+      isAlly,
+      dimmed: isRaid && !onTeam,
+      reveal,
+      mark,
+    };
+  });
+
+  const stage = { kicker: '', title: '', text: '' };
+  const consoleView: ConsoleView = { title: '' };
+  const actions: ActionView[] = [];
+
+  if (phase === GamePhase.Discussion) {
+    stage.kicker = t('game.kickerBriefing');
+    stage.title = t('game.titleBriefing');
+    stage.text = t('game.textBriefing');
+    consoleView.title = t('game.consoleBriefing');
+    consoleView.note = t('game.briefingNote');
+    if (isHost) actions.push({ key: 'end', label: t('game.endBriefing'), tone: 'blue', onClick: endDiscussion });
+    else consoleView.stat = t('game.waitingHost');
+  }
+
+  if (isProposing) {
+    stage.kicker = t('game.kickerDetail');
+    stage.title = t('game.titleDetail');
+    stage.text = iAmLead
+      ? t('game.textDetailLead', { size: teamSize })
+      : t('game.textDetailWait', { lead: lead?.name ?? '', size: teamSize });
+
+    if (iAmLead) {
+      consoleView.title = t('game.consoleDetail');
+      consoleView.big = `${selected.length} / ${teamSize}`;
+      actions.push(
+        {
+          key: 'send',
+          label: t('game.sendDetail'),
+          tone: 'blue',
+          disabled: selected.length !== teamSize,
+          onClick: () => proposeTeam(selected),
+        },
+        { key: 'pass', label: t('game.passLead'), onClick: skipProposal },
+      );
     } else {
-      if (selectedTeam.length < requiredSize) {
-        setSelectedTeam([...selectedTeam, id]);
+      consoleView.title = t('game.consoleDetailLead');
+      consoleView.verdict = lead?.name;
+      consoleView.stat = t('game.waitingDetail');
+    }
+  }
+
+  if (isVoting) {
+    stage.kicker = t('game.kickerVote');
+    stage.title = t('game.titleVote');
+    stage.text = t('game.textVote');
+    consoleView.title = t('game.consoleVote');
+    consoleView.stat = t('game.signatures', { votes: Object.keys(teamVotes).length, total: players.length });
+
+    const myVote = teamVotes[myId];
+    if (myVote) {
+      consoleView.note = myVote === 'Approve' ? t('game.youApproved') : t('game.youRejected');
+    } else {
+      consoleView.note = t('game.voteQuestion', { size: currentProposedTeam.length });
+      actions.push(
+        { key: 'approve', label: t('game.approve'), tone: 'green', onClick: () => voteTeam('Approve') },
+        { key: 'reject', label: t('game.reject'), tone: 'red', onClick: () => voteTeam('Reject') },
+      );
+    }
+  }
+
+  if (isRaid) {
+    stage.kicker = t('game.kickerBreach');
+    stage.title = t('game.titleBreach');
+    stage.text = t('game.textBreach');
+    consoleView.stat = t('game.reports', {
+      reports: Object.keys(raidActions).length,
+      total: currentProposedTeam.length,
+    });
+
+    if (!iAmOnTeam) {
+      consoleView.title = t('game.notOnDetail');
+      consoleView.note = t('game.awaitReturn');
+    } else if (raidActions[myId]) {
+      consoleView.title = t('game.consoleBreach');
+      consoleView.note = t('game.reportSent');
+    } else {
+      consoleView.title = t('game.consoleBreach');
+      actions.push({ key: 'support', label: t('game.runRaid'), tone: 'blue', onClick: () => submitRaidAction('Support') });
+      if (isMole) {
+        actions.push({ key: 'sabotage', label: t('game.leakInfo'), tone: 'red', onClick: () => submitRaidAction('Sabotage') });
       }
     }
-  };
+  }
 
-  const handlePropose = () => {
-    if (selectedTeam.length === requiredSize) {
-      proposeTeam(selectedTeam);
-    }
-  };
+  if (isOver) {
+    const policeWon = gameState.winner === 'Police';
+    stage.kicker = t('game.kickerClosed');
+    stage.title = t('game.titleClosed');
+    stage.text = t('game.textClosed');
+    consoleView.title = t('game.caseClosed');
+    consoleView.verdict = policeWon ? t('game.policeWon') : t('game.molesWon');
+    consoleView.verdictTone = policeWon ? 'police' : 'moles';
+    consoleView.stat = !policeWon && gameState.consecutiveRejections >= players.length
+      ? t('game.wonByRejections')
+      : t('game.wonByRaids', { raids: policeWon ? gameState.scores.police : gameState.scores.moles });
+  }
 
-  const isMole = me.role === Role.Mole;
-  const otherMoles = gameState.players.filter(p => p.role === Role.Mole && p.id !== myId);
+  const allies = players.filter(p => p.role === Role.Mole && p.id !== myId).map(p => p.name);
 
   return (
-    <div className="max-w-4xl w-full mx-auto p-4 flex flex-col gap-6">
-
-      <div className="bg-white p-4 rounded shadow flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold">{t('game.round', { round: gameState.currentRound })}</h2>
-          <p className="text-sm text-gray-600">{t('game.score', { police: gameState.scores.police, moles: gameState.scores.moles })}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm">{t('game.youAre')}</p>
-          <p className={`text-xl font-bold ${isMole ? 'text-red-600' : 'text-blue-600'}`}>
-            {me.role === Role.Police ? t('game.policeOfficer') : t('game.mole')}
-          </p>
-          {isMole && (
-            <p className="text-xs text-red-500 mt-1">
-              {t('game.otherMoles', { moles: otherMoles.map(m => m.name).join(', ') || t('game.none') })}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded shadow">
-
-        {gameState.phase === GamePhase.Discussion && (
-          <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">{t('game.discussionPhase')}</h3>
-            <p className="mb-4">{t('game.discussText')}</p>
-            {isHost && (
-              <button
-                onClick={endDiscussion}
-                className="bg-blue-600 text-white px-6 py-2 rounded font-bold cursor-pointer"
-              >
-                {t('game.endDiscussion')}
-              </button>
-            )}
-            {!isHost && <p className="text-gray-500 italic">{t('game.waitingForHostEndDiscussion')}</p>}
+    <>
+      <div className="pr-layout">
+        <section className={`pr-panel pr-dossier pr-area-dossier${isMole ? ' pr-is-mole' : ''}`}>
+          <div className="pr-panel-head">
+            <h2>{t('game.dossierTitle')}</h2>
+            <span className="pr-panel-aux">{t('game.classified')}</span>
           </div>
-        )}
-
-        {gameState.phase === GamePhase.ProposingTeam && (
-          <div>
-            <h3 className="text-2xl font-bold mb-4">{t('game.teamProposal')}</h3>
-            <p className="mb-4">
-              {t('game.currentProposer')} <span className="font-bold">{gameState.players[gameState.proposerIndex].name}</span>
-            </p>
-            <p className="mb-4 text-sm text-gray-600">
-              {t('game.needsPlayersText', { size: requiredSize, rejections: gameState.consecutiveRejections, total: gameState.players.length })}
-            </p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-              {gameState.players.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => isMyTurnToPropose && togglePlayerSelection(p.id)}
-                  disabled={!isMyTurnToPropose}
-                  className={`p-3 rounded border-2 transition-colors ${
-                    selectedTeam.includes(p.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  } ${!isMyTurnToPropose ? 'cursor-default' : 'cursor-pointer'}`}
-                >
-                  {p.name}
-                </button>
-              ))}
+          <div className="pr-dossier-body">
+            <div className="pr-mugshot">
+              {initialsOf(me.name)}
+              <small>#{myId.slice(-4).toUpperCase()}</small>
             </div>
-
-            {isMyTurnToPropose && (
-              <div className="flex gap-4 justify-end">
-                <button
-                  onClick={skipProposal}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
-                >
-                  {t('game.skipProposal')}
-                </button>
-                <button
-                  onClick={handlePropose}
-                  disabled={selectedTeam.length !== requiredSize}
-                  className="px-6 py-2 bg-blue-600 text-white rounded font-bold disabled:opacity-50 cursor-pointer"
-                >
-                  {t('game.proposeTeam', { selected: selectedTeam.length, required: requiredSize })}
-                </button>
-              </div>
-            )}
-            {!isMyTurnToPropose && (
-              <p className="text-gray-500 italic text-center">{t('game.waitingForProposal')}</p>
-            )}
-          </div>
-        )}
-
-        {gameState.phase === GamePhase.VotingOnTeam && (
-          <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">{t('game.voteOnTeam')}</h3>
-            <div className="flex flex-wrap justify-center gap-2 mb-6">
-              {gameState.currentProposedTeam.map(id => {
-                const player = gameState.players.find(p => p.id === id);
-                return <span key={id} className="px-3 py-1 bg-gray-100 rounded-full">{player?.name}</span>;
-              })}
-            </div>
-
-            {!myVote ? (
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => voteTeam('Approve')}
-                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
-                >
-                  {t('game.approve')}
-                </button>
-                <button
-                  onClick={() => voteTeam('Reject')}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
-                >
-                  {t('game.reject')}
-                </button>
-              </div>
-            ) : (
-              <p className="text-lg text-blue-600 font-bold">{t('game.youVotedTo', { vote: myVote === 'Approve' ? t('game.approve') : t('game.reject') })}</p>
-            )}
-
-            <div className="mt-6 text-sm text-gray-500">
-              {t('game.votesReceived', { votes: Object.keys(gameState.teamVotes).length, total: gameState.players.length })}
-            </div>
-          </div>
-        )}
-
-        {gameState.phase === GamePhase.Raid && (
-          <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">{t('game.raidInProgress')}</h3>
-
-            {isInProposedTeam ? (
-              <div className="mb-6">
-                <p className="mb-4">{t('game.onRaidTeamText')}</p>
-                {!myRaidAction ? (
-                  <div className="flex justify-center gap-4">
-                    <button
-                      onClick={() => submitRaidAction('Support')}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
-                    >
-                      {t('game.supportRaid')}
-                    </button>
-                    {isMole && (
-                      <button
-                        onClick={() => submitRaidAction('Sabotage')}
-                        className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded font-bold cursor-pointer"
-                      >
-                        {t('game.sabotageRaid')}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-lg text-blue-600 font-bold">{t('game.actionSubmitted')}</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-lg text-gray-600 mb-6 italic">{t('game.notOnRaidTeam')}</p>
-            )}
-
-            <div className="mt-6 text-sm text-gray-500">
-              {t('game.actionsReceived', { actions: Object.keys(gameState.raidActions).length, total: gameState.currentProposedTeam.length })}
-            </div>
-          </div>
-        )}
-
-        {gameState.phase === GamePhase.GameOver && (
-          <div className="text-center py-8">
-            <h2 className="text-4xl font-bold mb-4">{t('game.gameOver')}</h2>
-            <p className={`text-2xl font-bold ${gameState.winner === 'Police' ? 'text-blue-600' : 'text-red-600'}`}>
-              {t('game.wins', { winner: gameState.winner === 'Police' ? t('game.policeOfficer') : t('game.mole') })}
-            </p>
-            {gameState.winner === 'Moles' && gameState.consecutiveRejections >= gameState.players.length && (
-              <p className="mt-2 text-red-500">{t('game.wonByRejections')}</p>
-            )}
-          </div>
-        )}
-
-      </div>
-
-      {gameState.raidResults.length > 0 && (
-        <div className="bg-white p-4 rounded shadow">
-          <h3 className="text-lg font-bold mb-2">{t('game.raidHistory')}</h3>
-          <ul className="space-y-2">
-            {gameState.raidResults.map((r, i) => (
-              <li key={i} className={`p-2 rounded border-l-4 ${r.success ? 'border-blue-500 bg-blue-50' : 'border-red-500 bg-red-50'}`}>
-                {t('game.roundHistory', { round: r.round, status: r.success ? t('game.success') : t('game.failed'), sabotages: r.sabotageCount })}
-                <div className="text-sm text-gray-600 mt-1">
-                  {t('game.team', { team: r.team.map(id => gameState.players.find(p => p.id === id)?.name).join(', ') })}
+            <div>
+              <div className="pr-label">{t('game.yourStatus')}</div>
+              <div className="pr-role">{isMole ? t('game.mole') : t('game.policeOfficer')}</div>
+              <div className="pr-task">{isMole ? t('game.taskMole') : t('game.taskPolice')}</div>
+              {isMole && (
+                <div className="pr-allies">
+                  {allies.length > 0
+                    ? <>{t('game.allies')} <b>{allies.join(', ')}</b></>
+                    : t('game.alliesAlone')}
                 </div>
-              </li>
-            ))}
-          </ul>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="pr-panel pr-area-case">
+          <div className="pr-panel-head">
+            <h2>{t('game.caseProgress')}</h2>
+            <span className="pr-panel-aux">{t('game.winsNeeded', { wins: WINS_NEEDED })}</span>
+          </div>
+
+          <div className="pr-score">
+            <div className="pr-score-side pr-police">
+              <div className="pr-label">{t('game.police')}</div>
+              <div className="pr-score-v">{gameState.scores.police}</div>
+            </div>
+            <div className="pr-score-side pr-moles">
+              <div className="pr-label">{t('game.moles')}</div>
+              <div className="pr-score-v">{gameState.scores.moles}</div>
+            </div>
+          </div>
+
+          <div className="pr-raids">
+            {Array.from({ length: MAX_ROUNDS }, (_, i) => i + 1).map(number => {
+              const result = gameState.raidResults.find(r => r.round === number);
+              const current = !result && number === gameState.currentRound && !isOver;
+              const state = result ? (result.success ? 'pr-clean' : 'pr-failed') : current ? 'pr-current' : 'pr-pending';
+              const names = result
+                ? result.team.map(id => players.find(p => p.id === id)?.name).filter(Boolean).join(', ')
+                : '';
+
+              return (
+                <div key={number} className={`pr-raid ${state}`}>
+                  <div className="pr-raid-mark">{result ? (result.success ? '✓' : '✕') : number}</div>
+                  <div>
+                    <div className="pr-raid-t">
+                      {result
+                        ? t(result.success ? 'game.raidClean' : 'game.raidFailed', { num: number })
+                        : t(current ? 'game.raidCurrent' : 'game.raidUpcoming', { num: number })}
+                    </div>
+                    <div className="pr-raid-d">
+                      {result
+                        ? t('game.raidDone', { team: names, sabotage: result.sabotageCount })
+                        : t('game.raidPlanned', { size: getTeamSize(gameState, number) })}
+                    </div>
+                  </div>
+                  {!result && needsTwoSabotages(gameState, number) && (
+                    <div className="pr-raid-req">{t('game.twoSabotages')}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="pr-panel pr-area-stage">
+          <div className="pr-stage-head">
+            <div className="pr-stage-kicker">{stage.kicker}</div>
+            <h2>{stage.title}</h2>
+            <p>{stage.text}</p>
+          </div>
+
+          <div className="pr-board">
+            <OperativeRing seats={seats} onSelect={isProposing && iAmLead ? toggleSelection : undefined}>
+              <PhaseConsole view={consoleView} />
+              {!compact && <ActionButtons actions={actions} />}
+            </OperativeRing>
+          </div>
+        </section>
+      </div>
+
+      {compact && actions.length > 0 && (
+        <div className="pr-actionbar">
+          <ActionButtons actions={actions} />
         </div>
       )}
-
-    </div>
+    </>
   );
 };

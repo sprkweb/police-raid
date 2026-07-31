@@ -13,6 +13,8 @@ interface GameContextType {
   createRoom: (name: string) => Promise<string>;
 
   startGame: () => void;
+  /** DEV-only: pad with bots and start solo. */
+  startGameWithBots: () => void;
   endDiscussion: () => void;
   proposeTeam: (team: PlayerId[]) => void;
   skipProposal: () => void;
@@ -122,6 +124,11 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       gameState, myId, myName, isHost,
       joinRoom, createRoom,
       startGame: () => sendAction({ type: 'START_GAME' }),
+      startGameWithBots: () => {
+        if (import.meta.env.DEV && networkRef.current?.isHost) {
+          engineRef.current?.startGameWithBots();
+        }
+      },
       endDiscussion: () => { if (networkRef.current?.isHost) engineRef.current?.endDiscussion() },
       proposeTeam: (team) => sendAction({ type: 'PROPOSE_TEAM', team }),
       skipProposal: () => sendAction({ type: 'SKIP_PROPOSAL' }),
