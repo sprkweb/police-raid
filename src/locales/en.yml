@@ -29,7 +29,7 @@ game:
   policeOfficer: "Police officer"
   mole: "Mole"
   taskPolice: "The raid must stay clean. Find the moles before they wreck three operations."
-  taskMole: "Wreck three raids without getting caught. Vote as if you were on the force."
+  taskMole: "Wreck three raids without getting caught."
   allies: "Your people inside:"
   alliesAlone: "You are working alone."
 

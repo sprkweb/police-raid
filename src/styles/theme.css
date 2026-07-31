@@ -18,8 +18,8 @@
   --pr-red:   #ff5247;
   --pr-green: #3ddb8a;
 
-  --pr-ui:   'Inter', system-ui, -apple-system, sans-serif;
-  --pr-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+  --pr-ui:   'Noto Sans', system-ui, -apple-system, sans-serif;
+  --pr-mono: var(--pr-ui);
 }
 
 body {
@@ -62,8 +62,6 @@ body {
   padding: 16px 0 14px;
   border-bottom: 1px solid var(--pr-line);
 }
-
-.pr-emblem { width: 36px; height: 40px; flex: none; }
 
 .pr-op h1 {
   margin: 0;
@@ -327,8 +325,6 @@ body {
     linear-gradient(to right, transparent calc(50% - .5px), rgba(59, 71, 84, .3) calc(50% - .5px), rgba(59, 71, 84, .3) calc(50% + .5px), transparent calc(50% + .5px)),
     linear-gradient(to bottom, transparent calc(50% - .5px), rgba(59, 71, 84, .3) calc(50% - .5px), rgba(59, 71, 84, .3) calc(50% + .5px), transparent calc(50% + .5px));
 }
-
-.pr-links { position: absolute; inset: 0; pointer-events: none; }
 
 /* ---------- Место оперативника ---------- */
 

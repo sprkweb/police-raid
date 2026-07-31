@@ -22,8 +22,6 @@ interface Props {
 }
 
 const SEAT_RADIUS = 38;
-const LINK_FROM = 25;
-const LINK_TO = 31;
 
 const angleOf = (index: number, total: number) => (-90 + (360 / total) * index) * Math.PI / 180;
 
@@ -45,24 +43,6 @@ export const OperativeRing: React.FC<Props> = ({ seats, onSelect, children }) =>
     <div className="pr-ring-outer" />
     <div className="pr-ring-inner" />
     <div className="pr-ring-cross" />
-
-    <svg className="pr-links" viewBox="0 0 100 100">
-      {seats.map((seat, i) => {
-        if (!seat.onTeam) return null;
-        const a = angleOf(i, seats.length);
-        return (
-          <line
-            key={seat.id}
-            x1={50 + LINK_FROM * Math.cos(a)}
-            y1={50 + LINK_FROM * Math.sin(a)}
-            x2={50 + LINK_TO * Math.cos(a)}
-            y2={50 + LINK_TO * Math.sin(a)}
-            stroke="#ffbe3d"
-            strokeWidth="0.4"
-          />
-        );
-      })}
-    </svg>
 
     {seats.map((seat, i) => {
       const a = angleOf(i, seats.length);
