@@ -2,9 +2,16 @@ import type { GameState, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
 import { BALANCE, WINS_NEEDED } from './constants';
 
+const BOT_ID_PREFIX = 'bot-';
+const MIN_PLAYERS = 5;
+
+const isBot = (id: PlayerId) => id.startsWith(BOT_ID_PREFIX);
+
 export class GameEngine {
   private state: GameState;
   private onStateChange: (state: GameState) => void;
+  /** DEV: bots auto-play so a solo host can walk through phases. */
+  private botsEnabled = false;
 
   constructor(hostId: string, hostName: string, onStateChange: (state: GameState) => void) {
     this.onStateChange = onStateChange;
@@ -49,9 +56,35 @@ export class GameEngine {
     }
   }
 
+  /** DEV-only: pad lobby to 5 with bots and start so UI can be walked solo. */
+  public startGameWithBots() {
+    if (this.state.phase !== GamePhase.Lobby) return;
+    if (this.state.players.length >= MIN_PLAYERS) {
+      this.startGame();
+      return;
+    }
+
+    let n = 1;
+    while (this.state.players.length < MIN_PLAYERS) {
+      const id = `${BOT_ID_PREFIX}${n}`;
+      if (!this.state.players.find(p => p.id === id)) {
+        this.state.players.push({ id, name: `Bot ${n}`, role: null });
+      }
+      n++;
+    }
+
+    this.botsEnabled = true;
+    this.startGame();
+    // Prefer a human proposer so the first propose/vote screens are interactive.
+    const humanIdx = this.state.players.findIndex(p => !isBot(p.id));
+    if (humanIdx >= 0) this.state.proposerIndex = humanIdx;
+    this.notify();
+    this.playBots();
+  }
+
   public startGame() {
     const numPlayers = this.state.players.length as keyof typeof BALANCE;
-    if (numPlayers < 5 || numPlayers > 8) return;
+    if (numPlayers < MIN_PLAYERS || numPlayers > 8) return;
 
     const balance = BALANCE[numPlayers];
 
@@ -70,10 +103,64 @@ export class GameEngine {
     this.notify();
   }
 
+  private playBots() {
+    if (!this.botsEnabled) return;
+
+    if (this.state.phase === GamePhase.ProposingTeam) {
+      const proposer = this.state.players[this.state.proposerIndex];
+      if (proposer && isBot(proposer.id)) {
+        const size = BALANCE[this.state.players.length as keyof typeof BALANCE]
+          .teamSizes[this.state.currentRound - 1];
+        const team = [...this.state.players]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, size)
+          .map(p => p.id);
+        this.proposeTeam(proposer.id, team);
+        return;
+      }
+    }
+
+    if (this.state.phase === GamePhase.VotingOnTeam) {
+      let filled = false;
+      for (const p of this.state.players) {
+        if (isBot(p.id) && !this.state.teamVotes[p.id]) {
+          this.state.teamVotes[p.id] = 'Approve';
+          filled = true;
+        }
+      }
+      if (filled) {
+        if (Object.keys(this.state.teamVotes).length === this.state.players.length) {
+          this.resolveVoting();
+        } else {
+          this.notify();
+        }
+      }
+      return;
+    }
+
+    if (this.state.phase === GamePhase.Raid) {
+      let filled = false;
+      for (const id of this.state.currentProposedTeam) {
+        if (isBot(id) && !this.state.raidActions[id]) {
+          this.state.raidActions[id] = 'Support';
+          filled = true;
+        }
+      }
+      if (filled) {
+        if (Object.keys(this.state.raidActions).length === this.state.currentProposedTeam.length) {
+          this.resolveRaid();
+        } else {
+          this.notify();
+        }
+      }
+    }
+  }
+
   public endDiscussion() {
     if (this.state.phase === GamePhase.Discussion) {
         this.state.phase = GamePhase.ProposingTeam;
         this.notify();
+        this.playBots();
     }
   }
 
@@ -90,6 +177,7 @@ export class GameEngine {
     this.state.teamVotes = {};
     this.state.phase = GamePhase.VotingOnTeam;
     this.notify();
+    this.playBots();
   }
 
   public skipProposal(playerId: string) {
@@ -98,6 +186,7 @@ export class GameEngine {
 
     this.nextProposer();
     this.notify();
+    this.playBots();
   }
 
   public voteTeam(playerId: string, vote: Vote) {
@@ -110,6 +199,7 @@ export class GameEngine {
       this.resolveVoting();
     } else {
       this.notify();
+      this.playBots();
     }
   }
 
@@ -130,6 +220,7 @@ export class GameEngine {
       }
     }
     this.notify();
+    this.playBots();
   }
 
   private nextProposer() {
@@ -153,6 +244,7 @@ export class GameEngine {
       this.resolveRaid();
     } else {
       this.notify();
+      this.playBots();
     }
   }
 
@@ -190,6 +282,7 @@ export class GameEngine {
       this.state.phase = GamePhase.Discussion;
     }
     this.notify();
+    this.playBots();
   }
 
   private endGame(winnerRole: Role) {

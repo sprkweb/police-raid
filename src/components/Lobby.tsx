@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
 
 export const Lobby: React.FC = () => {
-  const { createRoom, joinRoom, gameState, startGame, isHost, myId } = useGame();
+  const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
@@ -13,6 +13,7 @@ export const Lobby: React.FC = () => {
 
   if (gameState) {
     const canStart = gameState.players.length >= 5 && gameState.players.length <= 8;
+    const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < 5;
 
     return (
       <div className="pr-lobby">
@@ -37,9 +38,16 @@ export const Lobby: React.FC = () => {
 
           <div className="pr-lobby-body">
             {isHost ? (
-              <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
-                {t('lobby.startGame')}
-              </button>
+              <>
+                <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
+                  {t('lobby.startGame')}
+                </button>
+                {showDevBots && (
+                  <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
+                    {t('lobby.devStartWithBots')}
+                  </button>
+                )}
+              </>
             ) : (
               <div className="pr-hint">{t('lobby.waitingForHostStart')}</div>
             )}

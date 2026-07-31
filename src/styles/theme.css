@@ -107,15 +107,26 @@ body {
 }
 
 .pr-lang {
-  background: var(--pr-panel);
-  color: var(--pr-txt-2);
-  border: 1px solid var(--pr-line-2);
-  padding: 7px 8px;
-  font-family: var(--pr-ui);
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   cursor: pointer;
 }
-.pr-lang:focus { outline: 1px solid var(--pr-blue); }
+.pr-lang-select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font-family: var(--pr-ui);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--pr-txt);
+  line-height: 1.2;
+  cursor: pointer;
+}
+.pr-lang-select:focus { outline: 1px solid var(--pr-blue); }
 
 /* ---------- Раскладка ---------- */
 
@@ -412,7 +423,7 @@ body {
 .pr-seat.pr-me { border-color: var(--pr-blue); box-shadow: inset 0 0 0 1px rgba(74, 168, 255, .25); }
 .pr-seat.pr-me .pr-seat-flag { background: var(--pr-blue); color: #06121f; }
 
-.pr-seat.pr-on-team { border-color: var(--pr-amber); background: rgba(255, 190, 61, .09); }
+.pr-seat.pr-on-team { border-color: var(--pr-amber); }
 .pr-seat.pr-on-team .pr-seat-ava { border-color: rgba(255, 190, 61, .6); color: var(--pr-amber); }
 .pr-seat.pr-on-team .pr-seat-flag { background: var(--pr-amber); color: #14100a; }
 

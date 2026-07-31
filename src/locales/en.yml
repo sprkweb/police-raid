@@ -1,5 +1,6 @@
 app:
   title: "Police Raid"
+  language: "Lang"
 
 lobby:
   players: "Personnel ({{current}}/8)"
@@ -7,6 +8,7 @@ lobby:
   host: "Host"
   startGame: "Start operation (5-8 officers required)"
   waitingForHostStart: "Waiting for the host to start..."
+  devStartWithBots: "[DEV] Start with bots"
   errorEnterName: "Enter your name"
   errorEnterRoomCode: "Enter room code"
   title: "Open a case or join one"
