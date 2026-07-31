@@ -24,3 +24,15 @@ The game uses a serverless P2P architecture utilizing WebRTC for gameplay commun
   - Lobby (join/create)
   - Game Board (players, scores, current phase)
   - Action Modals/Areas (Team selection, Voting, Raid action)
+
+## Cursor Cloud specific instructions
+
+Single-package Vite + React + TypeScript app. Standard commands live in `package.json` scripts.
+
+- Package manager: both `package-lock.json` and `pnpm-lock.yaml` are committed. The environment is set up with npm (`npm install`); prefer `npm` for consistency unless intentionally switching.
+- Run (dev): `npm run dev` serves at `http://localhost:5173/` (Vite). Use dev mode, not `npm run build`/`preview`.
+- Lint: `npm run lint` (oxlint). Build: `npm run build` (`tsc -b && vite build`).
+- There is no test framework or automated test suite; there is no `test` script. Validate changes via lint, build, and manual browser testing.
+- Networking gotcha: multiplayer uses PeerJS/WebRTC against the default public PeerJS cloud broker, so signaling requires outbound internet access. There is no local signaling server to start.
+- Manual E2E testing needs multiple browser tabs (each tab is a separate peer). One tab clicks "Create New Game" to host and generates a `PR-XXXX` room code; other tabs join with that exact code. Starting an actual game requires 5–8 players in the lobby (the "Start Game" button stays disabled otherwise), so a full game run needs 5+ tabs.
+- Host is authoritative: if the host tab closes/refreshes, the game ends for everyone (no host migration).
