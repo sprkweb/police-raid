@@ -60,97 +60,48 @@ export const Lobby: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
-      <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">{t('lobby.title')}</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+    <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">{t('lobby.title')}</h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-1">{t('lobby.yourNameLabel')}</label>
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-1">{t('lobby.yourNameLabel')}</label>
+          <input
+            id="playerName"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder={t('lobby.namePlaceholder')}
+          />
+        </div>
+
+        <div className="pt-4 border-t">
+          <button
+            onClick={handleCreate}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+          >
+            {t('lobby.createNewGame')}
+          </button>
+
+          <div className="flex gap-2">
             <input
-              id="playerName"
               type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder={t('lobby.namePlaceholder')}
+              value={roomCode}
+              onChange={e => setRoomCode(e.target.value.toUpperCase())}
+              className="flex-1 border rounded p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+              placeholder={t('lobby.roomCodePlaceholder')}
+              aria-label={t('lobby.roomCodePlaceholder')}
             />
-          </div>
-
-          <div className="pt-4 border-t">
             <button
-              onClick={handleCreate}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+              onClick={handleJoin}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded cursor-pointer"
             >
-              {t('lobby.createNewGame')}
+              {t('lobby.join')}
             </button>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={roomCode}
-                onChange={e => setRoomCode(e.target.value.toUpperCase())}
-                className="flex-1 border rounded p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                placeholder={t('lobby.roomCodePlaceholder')}
-                aria-label={t('lobby.roomCodePlaceholder')}
-              />
-              <button
-                onClick={handleJoin}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded cursor-pointer"
-              >
-                {t('lobby.join')}
-              </button>
-            </div>
           </div>
         </div>
-      </div>
-
-      <div className="bg-white p-6 rounded shadow-lg w-full text-gray-800">
-        <h2 className="text-2xl font-bold mb-4">{t('rules.title')}</h2>
-
-        <h3 className="text-xl font-semibold mt-4 mb-2">{t('rules.storyTitle')}</h3>
-        <p className="mb-2">{t('rules.storyText1')}</p>
-        <p className="mb-2">{t('rules.storyText2')}</p>
-        <p className="mb-2 font-medium">{t('rules.storyText3')}</p>
-        <p className="mb-2 font-medium">{t('rules.storyText4')}</p>
-
-        <h3 className="text-xl font-semibold mt-6 mb-2">{t('rules.mechanicsTitle')}</h3>
-        <ul className="list-disc pl-5 mb-4">
-          <li>{t('rules.mechanics1')}</li>
-          <li>{t('rules.mechanics2')}</li>
-          <li>{t('rules.mechanics3')}</li>
-          <li>{t('rules.mechanics4')}</li>
-        </ul>
-
-        <h3 className="text-xl font-semibold mt-6 mb-2">{t('rules.phasesTitle')}</h3>
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-bold">{t('rules.phase1Title')}</h4>
-            <p>{t('rules.phase1Text')}</p>
-          </div>
-          <div>
-            <h4 className="font-bold">{t('rules.phase2Title')}</h4>
-            <p>{t('rules.phase2Text')}</p>
-          </div>
-          <div>
-            <h4 className="font-bold">{t('rules.phase3Title')}</h4>
-            <p>{t('rules.phase3Text')}</p>
-          </div>
-          <div>
-            <h4 className="font-bold">{t('rules.phase4Title')}</h4>
-            <p>{t('rules.phase4Text')}</p>
-          </div>
-        </div>
-
-        <h3 className="text-xl font-semibold mt-6 mb-2">{t('rules.balanceTitle')}</h3>
-        <ul className="list-disc pl-5 mb-4">
-          <li>{t('rules.balance1')}</li>
-          <li>{t('rules.balance2')}</li>
-          <li>{t('rules.balance3')}</li>
-          <li>{t('rules.balance4')}</li>
-        </ul>
-        <p className="text-sm italic">{t('rules.balanceAsterisk')}</p>
       </div>
     </div>
   );
