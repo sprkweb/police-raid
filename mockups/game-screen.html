@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Police Raid — экран игры (черновик v3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:      #0a0c0f;
+  --panel:   #12161c;
+  --panel-2: #171d25;
+  --raise:   #1d242e;
+  --line:    #2a333d;
+  --line-2:  #3b4754;
+
+  --txt:   #f2f6fa;
+  --txt-2: #b6c3d1;
+  --txt-3: #8593a3;
+
+  --blue:  #4aa8ff;
+  --amber: #ffbe3d;
+  --red:   #ff5247;
+  --green: #3ddb8a;
+
+  --ui:   'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74,168,255,.10), transparent 70%),
+    radial-gradient(ellipse 80% 50% at 85% -10%, rgba(255,82,71,.07), transparent 70%);
+  z-index: -1;
+}
+
+.shell { max-width: 1560px; margin: 0 auto; padding: 0 20px 110px; }
+
+/* ============ Верхняя панель ============ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.emblem { width: 36px; height: 40px; flex: none; }
+
+.op h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.op .case {
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--txt-3);
+  text-transform: uppercase;
+}
+
+.spacer { flex: 1; }
+
+.stats { display: flex; gap: 8px; }
+
+.stat {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.stat .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--txt-3);
+  text-transform: uppercase;
+}
+.stat .v {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.stat .v.amber { color: var(--amber); }
+
+/* ============ Раскладка ============ */
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-areas:
+    "dossier stage"
+    "case    stage";
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  margin-top: 18px;
+  align-items: start;
+}
+.a-dossier { grid-area: dossier; }
+.a-case    { grid-area: case; }
+.a-stage   { grid-area: stage; }
+
+/* ============ Панель ============ */
+
+.panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--txt-2);
+}
+.panel-head .aux {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--txt-3);
+  letter-spacing: .08em;
+}
+
+/* ============ Личное дело ============ */
+
+.dossier { border-left: 3px solid var(--blue); }
+.dossier.mole { border-left-color: var(--red); }
+
+.dossier-body { display: flex; gap: 14px; padding: 14px; }
+
+.mugshot {
+  width: 62px; height: 76px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--raise);
+  border: 1px solid var(--line-2);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--txt-2);
+  position: relative;
+}
+.mugshot small {
+  position: absolute;
+  bottom: 4px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .08em;
+  color: var(--txt-3);
+}
+
+.dossier .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--txt-3);
+  text-transform: uppercase;
+}
+.dossier .role {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: 2px 0 7px;
+}
+.dossier.mole .role { color: var(--red); }
+.dossier .task { font-size: 13px; line-height: 1.5; color: var(--txt-2); }
+.dossier .task b { color: var(--txt); font-weight: 600; }
+
+.own {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,82,71,.45);
+  background: rgba(255,82,71,.08);
+  font-size: 12px;
+  color: var(--txt-2);
+}
+.own b { color: var(--red); font-weight: 600; }
+
+/* ============ Ход дела ============ */
+
+.score { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.score .s { flex: 1; padding: 12px 14px; }
+.score .s .k {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--txt-3); text-transform: uppercase;
+}
+.score .s .v { font-size: 26px; font-weight: 700; line-height: 1.15; }
+.score .police .v { color: var(--blue); }
+.score .moles { text-align: right; border-left: 1px solid var(--line); }
+.score .moles .v { color: var(--red); }
+
+.raids { display: flex; flex-direction: column; }
+
+.raid {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid transparent;
+}
+.raid:last-child { border-bottom: 0; }
+
+.raid .mark {
+  width: 34px; height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-2);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt-3);
+}
+.raid .t { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.raid .d { font-family: var(--mono); font-size: 11px; color: var(--txt-3); margin-top: 2px; }
+
+.raid.done-ok   { border-left-color: var(--blue); }
+.raid.done-ok   .mark { color: var(--blue); border-color: rgba(74,168,255,.5); }
+.raid.done-fail { border-left-color: var(--red); }
+.raid.done-fail .mark { color: var(--red); border-color: rgba(255,82,71,.5); }
+.raid.current   { border-left-color: var(--amber); background: rgba(255,190,61,.06); }
+.raid.current   .mark { color: var(--amber); border-color: var(--amber); }
+.raid.current   .t { color: var(--amber); }
+.raid.pending   .t { color: var(--txt-3); }
+
+.raid .req {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--amber);
+  border: 1px solid rgba(255,190,61,.5);
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+
+/* ============ Сцена ============ */
+
+.stage-head { padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.stage-head .ph {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  color: var(--amber);
+  text-transform: uppercase;
+}
+.stage-head h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.stage-head p {
+  margin: 6px 0 0;
+  color: var(--txt-2);
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 78ch;
+}
+
+.board { padding: 28px 20px 34px; display: grid; place-items: center; }
+
+/* всё внутри круга масштабируется от его ширины (cqw), поэтому
+   карточки никогда не наезжают на центральную консоль */
+.ring {
+  container-type: inline-size;
+  position: relative;
+  width: min(100%, 820px, calc(100vh - 290px));
+  aspect-ratio: 1;
+}
+
+.ring .r1, .ring .r2 { position: absolute; border-radius: 50%; pointer-events: none; }
+.ring .r1 { inset: 3%;  border: 1px solid var(--line); }
+.ring .r2 { inset: 12%; border: 1px dashed rgba(59,71,84,.7); }
+
+.ring .cross {
+  position: absolute;
+  inset: 3%;
+  pointer-events: none;
+  border-radius: 50%;
+  background:
+    linear-gradient(to right, transparent calc(50% - .5px), rgba(59,71,84,.3) calc(50% - .5px), rgba(59,71,84,.3) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), rgba(59,71,84,.3) calc(50% - .5px), rgba(59,71,84,.3) calc(50% + .5px), transparent calc(50% + .5px));
+}
+
+.links { position: absolute; inset: 0; pointer-events: none; }
+
+/* --- места оперативников --- */
+
+.seat {
+  position: absolute;
+  width: clamp(74px, 19cqw, 152px);
+  margin: 0;
+  padding: 1.1cqw 1cqw .9cqw;
+  transform: translate(-50%, -50%);
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  color: var(--txt);
+  font: inherit;
+  text-align: center;
+  cursor: default;
+  transition: border-color .12s, background .12s;
+}
+.seat.pickable { cursor: pointer; }
+.seat.pickable:hover { border-color: var(--txt-3); background: var(--raise); }
+
+.seat .ava {
+  display: grid;
+  place-items: center;
+  width: clamp(22px, 4.6cqw, 38px);
+  height: clamp(22px, 4.6cqw, 38px);
+  margin: 0 auto .8cqw;
+  background: var(--raise);
+  border: 1px solid var(--line-2);
+  font-size: clamp(9px, 1.8cqw, 15px);
+  font-weight: 600;
+  color: var(--txt-2);
+}
+.seat .nm {
+  display: block;
+  font-size: clamp(10px, 1.75cqw, 14px);
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.seat .bd {
+  display: block;
+  font-family: var(--mono);
+  font-size: clamp(8px, 1.3cqw, 11px);
+  color: var(--txt-3);
+  letter-spacing: .06em;
+}
+
+.seat .flag {
+  position: absolute;
+  top: -1px; left: -1px; right: -1px;
+  font-family: var(--mono);
+  font-size: clamp(7.5px, 1.2cqw, 10px);
+  letter-spacing: .08em;
+  padding: .3cqw 0;
+  text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.seat.has-flag { padding-top: clamp(14px, 2.7cqw, 22px); }
+
+.seat .mark {
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: clamp(14px, 2.6cqw, 21px);
+  height: clamp(14px, 2.6cqw, 21px);
+  display: grid;
+  place-items: center;
+  font-size: clamp(9px, 1.4cqw, 12px);
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.seat.me       { border-color: var(--blue); box-shadow: inset 0 0 0 1px rgba(74,168,255,.25); }
+.seat.me .flag { background: var(--blue); color: #06121f; }
+
+.seat.team      { border-color: var(--amber); background: rgba(255,190,61,.09); }
+.seat.team .ava { border-color: rgba(255,190,61,.6); color: var(--amber); }
+.seat.team .flag{ background: var(--amber); color: #14100a; }
+
+.seat.proposer .flag { background: var(--raise); color: var(--amber); border-bottom: 1px solid var(--line-2); }
+
+.seat.moleally { border-color: var(--red); }
+.seat.moleally .flag { background: var(--red); color: #1a0605; }
+
+.seat.dim { opacity: .45; }
+
+.seat .mark.ok   { color: var(--green); border-color: rgba(61,219,138,.6); background: rgba(61,219,138,.12); }
+.seat .mark.wait { color: var(--txt-3); border-color: var(--line-2); background: var(--panel); }
+
+.seat.rev-police { border-color: rgba(74,168,255,.7); }
+.seat.rev-police .flag { background: rgba(74,168,255,.18); color: var(--blue); }
+.seat.rev-mole { border-color: rgba(255,82,71,.8); background: rgba(255,82,71,.10); }
+.seat.rev-mole .flag { background: var(--red); color: #1a0605; }
+
+/* --- центральная консоль --- */
+
+.console {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: radial-gradient(circle at 50% 35%, var(--panel-2), #0d1116 75%);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 9%;
+}
+
+.ctitle {
+  font-family: var(--mono);
+  font-size: clamp(8px, 1.35cqw, 11px);
+  letter-spacing: .18em;
+  color: var(--txt-3);
+  text-transform: uppercase;
+}
+.cbig {
+  font-family: var(--mono);
+  font-size: clamp(22px, 6cqw, 48px);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--amber);
+  margin: .8cqw 0;
+}
+.cnote {
+  font-size: clamp(10px, 1.7cqw, 14px);
+  color: var(--txt-2);
+  line-height: 1.45;
+  margin-top: .5cqw;
+}
+.cstat {
+  font-family: var(--mono);
+  font-size: clamp(9px, 1.45cqw, 12px);
+  letter-spacing: .1em;
+  color: var(--txt-3);
+  text-transform: uppercase;
+  margin-top: 1cqw;
+}
+.verdict {
+  font-size: clamp(14px, 3.2cqw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: .8cqw 0;
+}
+
+.cstack { display: flex; flex-direction: column; gap: 1cqw; width: 100%; margin-top: 1.6cqw; }
+.console .btn { font-size: clamp(10px, 1.65cqw, 13px); padding: clamp(8px, 1.5cqw, 12px) 10px; }
+
+/* --- кнопки --- */
+
+.btn {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 11px 16px;
+  border: 1px solid var(--line-2);
+  background: var(--raise);
+  color: var(--txt-2);
+  cursor: pointer;
+  transition: .12s;
+  white-space: nowrap;
+}
+.btn:hover { color: var(--txt); border-color: var(--txt-3); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.blue  { border-color: var(--blue);  color: #eaf5ff; background: rgba(74,168,255,.16); }
+.btn.blue:hover  { background: rgba(74,168,255,.3); }
+.btn.green { border-color: var(--green); color: #e9fff5; background: rgba(61,219,138,.14); }
+.btn.green:hover { background: rgba(61,219,138,.26); }
+.btn.red   { border-color: var(--red);   color: #ffece9; background: rgba(255,82,71,.16); }
+.btn.red:hover   { background: rgba(255,82,71,.3); }
+.btn.wide  { width: 100%; }
+
+.phase { display: none; width: 100%; }
+.phase.on { display: block; }
+
+/* ============ Мобильная панель действий ============ */
+
+.actionbar {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(10,12,15,.97);
+  border-top: 1px solid var(--line-2);
+}
+.actionbar .cstack { flex-direction: row; gap: 8px; margin-top: 0; }
+.actionbar .btn {
+  flex: 1;
+  padding: 15px 8px;
+  font-size: 12px;
+  letter-spacing: .03em;
+  white-space: normal;
+}
+.actionbar .btn.wide { width: auto; }
+
+/* ============ Мобильная раскладка ============ */
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "dossier" "stage" "case";
+    grid-template-rows: none;
+  }
+  .ring { width: min(100%, 660px); }
+}
+
+@media (max-width: 720px) {
+  .shell { padding: 0 12px 96px; }
+
+  .topbar { flex-wrap: wrap; gap: 12px 14px; padding: 12px 0; }
+  .op h1 { font-size: 16px; }
+  .spacer { display: none; }
+  .stats { width: 100%; }
+  .stat { flex: 1; padding: 6px 10px; }
+  .stat .v { font-size: 15px; }
+
+  .op .case { display: none; }
+
+  .stage-head { padding: 10px 12px; }
+  .stage-head h2 { font-size: 17px; }
+  .stage-head p { font-size: 12px; margin-top: 4px; }
+
+  .board { padding: 10px 6px 12px; }
+
+  .ring { width: min(100%, 520px); }
+  .seat .bd { display: none; }
+
+  .console { width: 44%; padding: 6%; }
+  .cnote { display: none; }
+  .console .cstack { display: none; }
+
+  .actionbar { display: block; }
+
+  /* досье сжимается в узкую полосу, чтобы круг начинался выше */
+  .panel-head { padding: 9px 12px; }
+  .dossier .panel-head { display: none; }
+  .dossier-body { padding: 10px 12px; gap: 10px; align-items: center; }
+  .mugshot { width: 42px; height: 50px; font-size: 14px; }
+  .mugshot small { display: none; }
+  .dossier .lbl { display: none; }
+  .dossier .role { font-size: 16px; margin: 0 0 2px; }
+  .dossier .task { font-size: 12px; line-height: 1.35; }
+  .own { margin-top: 6px; padding: 5px 8px; font-size: 11px; }
+
+  .raids { flex-direction: row; overflow-x: auto; }
+  .raid {
+    flex: none;
+    width: 210px;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+    border-left: 0;
+    border-top: 3px solid transparent;
+  }
+  .raid.done-ok   { border-top-color: var(--blue); }
+  .raid.done-fail { border-top-color: var(--red); }
+  .raid.current   { border-top-color: var(--amber); }
+  .raid .req { display: none; }
+}
+
+@media (max-width: 420px) {
+  .console { width: 46%; }
+}
+
+/* ============ Панель черновика ============ */
+
+.devbar {
+  position: fixed;
+  left: 50%; bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(10,12,15,.95);
+  border: 1px solid var(--line-2);
+}
+.devbar .cap {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--txt-3);
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+.devbar button {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 7px 11px;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--txt-2);
+  cursor: pointer;
+}
+.devbar button.on { border-color: var(--amber); color: var(--amber); background: rgba(255,190,61,.12); }
+.devbar .sep { width: 1px; height: 22px; background: var(--line-2); margin: 0 4px; }
+
+/* на телефоне панель черновика уезжает в конец страницы, чтобы не спорить
+   с нижней панелью действий */
+@media (max-width: 720px) {
+  .devbar {
+    position: static;
+    transform: none;
+    margin: 16px auto 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <header class="topbar">
+    <svg class="emblem" viewBox="0 0 36 40" fill="none">
+      <path d="M18 2 33 7v15c0 9.5-6.5 15.5-15 17.5C9.5 37.5 3 31.5 3 22V7L18 2Z" stroke="#4aa8ff" stroke-width="1.5" fill="rgba(74,168,255,.10)"/>
+      <path d="M18 13v14M11 20h14" stroke="#ffbe3d" stroke-width="1.8"/>
+    </svg>
+
+    <div class="op">
+      <h1>Операция «Чёрный коридор»</h1>
+      <div class="case">Отдел спецопераций · дело № 4471-К</div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">Рейд</div><div class="v">3 / 5</div></div>
+      <div class="stat"><div class="k">Отказов подряд</div><div class="v">2 / 6</div></div>
+      <div class="stat"><div class="k">До конца фазы</div><div class="v amber">01:42</div></div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- Личное дело -->
+    <section class="panel dossier a-dossier" id="dossier">
+      <div class="panel-head">
+        <h2>Личное дело</h2>
+        <span class="aux">секретно</span>
+      </div>
+      <div class="dossier-body">
+        <div class="mugshot">ВЛ<small>#2213</small></div>
+        <div>
+          <div class="lbl">Ваш статус</div>
+          <div class="role" id="roleName">Полицейский</div>
+          <div class="task" id="roleTask"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ход дела -->
+    <section class="panel a-case">
+      <div class="panel-head">
+        <h2>Ход дела</h2>
+        <span class="aux">до 3 побед</span>
+      </div>
+
+      <div class="score">
+        <div class="s police"><div class="k">Полиция</div><div class="v">1</div></div>
+        <div class="s moles"><div class="k">Кроты</div><div class="v">1</div></div>
+      </div>
+
+      <div class="raids">
+        <div class="raid done-ok">
+          <div class="mark">✓</div>
+          <div>
+            <div class="t">Рейд 01 · чисто</div>
+            <div class="d">Волков, Седова · саботаж 0</div>
+          </div>
+        </div>
+        <div class="raid done-fail">
+          <div class="mark">✕</div>
+          <div>
+            <div class="t">Рейд 02 · провал</div>
+            <div class="d">Гром, Ким, Рыжий · саботаж 1</div>
+          </div>
+        </div>
+        <div class="raid current">
+          <div class="mark">3</div>
+          <div>
+            <div class="t">Рейд 03 · идёт</div>
+            <div class="d">Наряд 4 человека</div>
+          </div>
+        </div>
+        <div class="raid pending">
+          <div class="mark">4</div>
+          <div>
+            <div class="t">Рейд 04</div>
+            <div class="d">Наряд 3 человека</div>
+          </div>
+          <div class="req">2 саботажа</div>
+        </div>
+        <div class="raid pending">
+          <div class="mark">5</div>
+          <div>
+            <div class="t">Рейд 05</div>
+            <div class="d">Наряд 4 человека</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Оперативная обстановка -->
+    <section class="panel a-stage">
+      <div class="stage-head">
+        <div class="ph" id="phaseKicker"></div>
+        <h2 id="phaseTitle"></h2>
+        <p id="phaseText"></p>
+      </div>
+
+      <div class="board">
+        <div class="ring" id="ring">
+          <div class="r1"></div>
+          <div class="r2"></div>
+          <div class="cross"></div>
+          <svg class="links" id="links" viewBox="0 0 100 100"></svg>
+
+          <div class="console">
+            <div>
+              <div class="phase" data-phase="discussion">
+                <div class="ctitle">Инструктаж</div>
+                <div class="cbig">01:42</div>
+                <div class="cnote">Кто вёл себя странно в прошлом рейде?</div>
+              </div>
+
+              <div class="phase" data-phase="proposing">
+                <div class="ctitle">Состав наряда</div>
+                <div class="cbig" id="pickCount">3 / 4</div>
+                <div class="cnote">Нажимайте на оперативников в круге</div>
+              </div>
+
+              <div class="phase" data-phase="voting">
+                <div class="ctitle">Ваша подпись</div>
+                <div class="cnote">Утвердить наряд из 4 человек на выезд?</div>
+                <div class="cstat">Подписей 3 из 6</div>
+              </div>
+
+              <div class="phase" data-phase="raid">
+                <div class="ctitle">Захват объекта</div>
+                <div class="cbig">2 / 4</div>
+                <div class="cstat">Рапортов получено</div>
+              </div>
+
+              <div class="phase" data-phase="gameover">
+                <div class="ctitle">Дело закрыто</div>
+                <div class="verdict">Полиция<br>победила</div>
+                <div class="cstat">3 чистых рейда</div>
+              </div>
+
+              <!-- на десктопе сюда встают кнопки действий -->
+              <div id="actionsHome"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Кнопки действий: в круге на десктопе, в нижней панели на телефоне -->
+<div id="actions">
+  <div class="phase" data-phase="discussion">
+    <div class="cstack"><button class="btn blue wide">Завершить</button></div>
+  </div>
+  <div class="phase" data-phase="proposing">
+    <div class="cstack">
+      <button class="btn blue wide" id="sendBtn">Отправить наряд</button>
+      <button class="btn wide">Передать право</button>
+    </div>
+  </div>
+  <div class="phase" data-phase="voting">
+    <div class="cstack">
+      <button class="btn green wide">Утвердить</button>
+      <button class="btn red wide">Отклонить</button>
+    </div>
+  </div>
+  <div class="phase" data-phase="raid">
+    <div class="cstack">
+      <button class="btn blue wide">Провести рейд</button>
+      <button class="btn red wide" id="betrayBtn">Слить информацию</button>
+    </div>
+  </div>
+  <div class="phase" data-phase="gameover">
+    <div class="cstack"><button class="btn blue wide">Новое дело</button></div>
+  </div>
+</div>
+
+<div class="actionbar" id="actionBar"><div id="actionsDock"></div></div>
+
+<div class="devbar">
+  <span class="cap">Фаза</span>
+  <button data-phase="discussion">Брифинг</button>
+  <button data-phase="proposing" class="on">Наряд</button>
+  <button data-phase="voting">Голосование</button>
+  <button data-phase="raid">Штурм</button>
+  <button data-phase="gameover">Финал</button>
+  <div class="sep"></div>
+  <span class="cap">Роль</span>
+  <button id="roleBtn">Крот</button>
+  <div class="sep"></div>
+  <span class="cap">Игроков</span>
+  <button data-count="5">5</button>
+  <button data-count="6" class="on">6</button>
+  <button data-count="7">7</button>
+  <button data-count="8">8</button>
+</div>
+
+<script>
+const ROSTER = [
+  { id: 'vl', name: 'Волков', badge: '2213', ini: 'ВЛ', role: 'police', me: true },
+  { id: 'sd', name: 'Седова', badge: '4098', ini: 'СД', role: 'mole' },
+  { id: 'gr', name: 'Гром',   badge: '1177', ini: 'ГР', role: 'police' },
+  { id: 'km', name: 'Ким',    badge: '3390', ini: 'КМ', role: 'police' },
+  { id: 'rz', name: 'Рыжий',  badge: '5021', ini: 'РЖ', role: 'mole' },
+  { id: 'ml', name: 'Малой',  badge: '6644', ini: 'МЛ', role: 'police' },
+  { id: 'sv', name: 'Савин',  badge: '7302', ini: 'СВ', role: 'police' },
+  { id: 'nc', name: 'Нечаев', badge: '8815', ini: 'НЧ', role: 'mole' },
+];
+
+const state = {
+  phase: 'proposing',
+  count: 6,
+  moleView: false,
+  proposer: 'sd',
+  team: ['vl', 'sd', 'gr', 'km'],
+  teamSize: 4,
+  voted: ['vl', 'sd', 'gr'],
+  acted: ['vl', 'sd'],
+};
+
+const PHASE_TEXT = {
+  discussion: {
+    kicker: 'Фаза 01 · инструктаж',
+    title: 'Инструктаж перед выездом',
+    text: 'Обсудите, кому вы доверяете. Каналы связи открыты — но помните, что кроты слышат всё.',
+  },
+  proposing: {
+    kicker: 'Фаза 02 · формирование наряда',
+    title: 'Наряд на рейд',
+    text: 'Инициатор <b>Седова</b> назначает 4 оперативников на объект. Нажимайте на людей в круге, чтобы собрать наряд.',
+  },
+  voting: {
+    kicker: 'Фаза 03 · утверждение наряда',
+    title: 'Голосование по составу',
+    text: 'Наряд подсвечен в круге. Утвердить его на выезд — или завернуть и передать право следующему?',
+  },
+  raid: {
+    kicker: 'Фаза 04 · выезд',
+    title: 'Штурм объекта',
+    text: 'Группа на позиции. Каждый в наряде решает сам, и никто не увидит, что именно вы выбрали.',
+  },
+  gameover: {
+    kicker: 'Дело закрыто',
+    title: 'Итог операции',
+    text: 'Роли раскрыты. Сеть накрыта, кроты установлены.',
+  },
+};
+
+const ring = document.getElementById('ring');
+const links = document.getElementById('links');
+const mobile = window.matchMedia('(max-width: 720px)');
+
+function players() { return ROSTER.slice(0, state.count); }
+
+function seatFlag(p) {
+  if (state.phase === 'gameover') return p.role === 'mole' ? 'Крот' : 'Полиция';
+  if (p.me) return 'Вы';
+  if (state.moleView && p.role === 'mole') return 'Свой';
+  if (p.id === state.proposer && (state.phase === 'proposing' || state.phase === 'voting')) {
+    return mobile.matches ? 'Инициат.' : 'Инициатор';
+  }
+  if (state.team.includes(p.id) && state.phase !== 'discussion') return 'В наряде';
+  return '';
+}
+
+function seatClasses(p) {
+  const c = ['seat'];
+  const inTeam = state.team.includes(p.id);
+
+  if (state.phase === 'gameover') {
+    c.push(p.role === 'mole' ? 'rev-mole' : 'rev-police');
+  } else {
+    if (inTeam && state.phase !== 'discussion') c.push('team');
+    if (state.moleView && p.role === 'mole' && !p.me) c.push('moleally');
+    if (p.me) c.push('me');
+    if (p.id === state.proposer && state.phase === 'proposing') c.push('proposer');
+    if (state.phase === 'raid' && !inTeam) c.push('dim');
+    if (state.phase === 'proposing') c.push('pickable');
+  }
+  if (seatFlag(p)) c.push('has-flag');
+  return c.join(' ');
+}
+
+function seatMark(p) {
+  if (state.phase === 'voting') {
+    return state.voted.includes(p.id) ? '<span class="mark ok">✓</span>' : '<span class="mark wait">·</span>';
+  }
+  if (state.phase === 'raid' && state.team.includes(p.id)) {
+    return state.acted.includes(p.id) ? '<span class="mark ok">✓</span>' : '<span class="mark wait">·</span>';
+  }
+  return '';
+}
+
+function placeActions() {
+  const dock = document.getElementById(mobile.matches ? 'actionsDock' : 'actionsHome');
+  const actions = document.getElementById('actions');
+  if (actions.parentElement !== dock) dock.appendChild(actions);
+}
+
+function render() {
+  const list = players();
+  const R = 38;
+
+  ring.querySelectorAll('.seat').forEach(function (s) { s.remove(); });
+  links.innerHTML = '';
+
+  list.forEach(function (p, i) {
+    const a = (-90 + (360 / list.length) * i) * Math.PI / 180;
+
+    const el = document.createElement('button');
+    el.className = seatClasses(p);
+    el.style.left = (50 + R * Math.cos(a)) + '%';
+    el.style.top = (50 + R * Math.sin(a)) + '%';
+    const flag = seatFlag(p);
+    el.innerHTML =
+      (flag ? '<span class="flag">' + flag + '</span>' : '') +
+      '<span class="ava">' + p.ini + '</span>' +
+      '<span class="nm">' + p.name + '</span>' +
+      '<span class="bd">#' + p.badge + '</span>' +
+      seatMark(p);
+    el.addEventListener('click', function () {
+      if (state.phase !== 'proposing') return;
+      const at = state.team.indexOf(p.id);
+      if (at >= 0) state.team.splice(at, 1);
+      else if (state.team.length < state.teamSize) state.team.push(p.id);
+      render();
+    });
+    ring.appendChild(el);
+
+    if (state.team.includes(p.id) && state.phase !== 'discussion' && state.phase !== 'gameover') {
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('x1', (50 + 25 * Math.cos(a)).toFixed(2));
+      ln.setAttribute('y1', (50 + 25 * Math.sin(a)).toFixed(2));
+      ln.setAttribute('x2', (50 + 31 * Math.cos(a)).toFixed(2));
+      ln.setAttribute('y2', (50 + 31 * Math.sin(a)).toFixed(2));
+      ln.setAttribute('stroke', '#ffbe3d');
+      ln.setAttribute('stroke-width', '0.4');
+      links.appendChild(ln);
+    }
+  });
+
+  placeActions();
+  document.querySelectorAll('.phase').forEach(function (el) {
+    el.classList.toggle('on', el.dataset.phase === state.phase);
+  });
+
+  const txt = PHASE_TEXT[state.phase];
+  document.getElementById('phaseKicker').textContent = txt.kicker;
+  document.getElementById('phaseTitle').textContent = txt.title;
+  document.getElementById('phaseText').innerHTML = txt.text;
+
+  document.getElementById('pickCount').textContent = state.team.length + ' / ' + state.teamSize;
+  document.getElementById('sendBtn').disabled = state.team.length !== state.teamSize;
+
+  const dossier = document.getElementById('dossier');
+  dossier.classList.toggle('mole', state.moleView);
+  document.getElementById('roleName').textContent = state.moleView ? 'Крот' : 'Полицейский';
+  const allies = players().filter(function (p) { return p.role === 'mole' && !p.me; })
+    .map(function (p) { return p.name; }).join(', ');
+  document.getElementById('roleTask').innerHTML = state.moleView
+    ? 'Сорвите три рейда и не попадитесь. Голосуйте так, будто вы за полицию.' +
+      '<div class="own">Свои в отделе: <b>' + allies + '</b></div>'
+    : 'Рейд должен пройти чисто. Вычислите <b>кротов</b> раньше, чем они сорвут третью операцию.';
+
+  document.getElementById('betrayBtn').style.display = state.moleView ? '' : 'none';
+}
+
+function bindGroup(selector, apply) {
+  document.querySelectorAll(selector).forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll(selector).forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      apply(b);
+      render();
+    });
+  });
+}
+
+bindGroup('.devbar [data-phase]', function (b) { state.phase = b.dataset.phase; });
+bindGroup('.devbar [data-count]', function (b) {
+  state.count = Number(b.dataset.count);
+  state.team = state.team.filter(function (id) {
+    return players().some(function (p) { return p.id === id; });
+  });
+});
+
+document.getElementById('roleBtn').addEventListener('click', function () {
+  state.moleView = !state.moleView;
+  this.classList.toggle('on', state.moleView);
+  this.textContent = state.moleView ? 'Полицейский' : 'Крот';
+  render();
+});
+
+mobile.addEventListener('change', render);
+window.addEventListener('resize', placeActions);
+
+render();
+</script>
+</body>
+</html>
