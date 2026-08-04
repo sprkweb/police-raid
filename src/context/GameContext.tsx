@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import type { GameState, Vote, RaidAction, PlayerId } from '../types/game';
 import type { PlayerActionPayload } from '../types/network';
 import { PeerNetworkService } from '../network/PeerNetworkService';
+import { applyPlayerAction } from '../engine/applyAction';
 import { GameEngine } from '../engine/GameEngine';
 
 interface GameContextType {
@@ -65,24 +66,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       if (msg.type === 'JOIN_REQUEST') {
         engineRef.current.addPlayer(from, msg.payload.name);
       } else if (msg.type === 'PLAYER_ACTION') {
-        const payload = msg.payload as PlayerActionPayload;
-        switch (payload.type) {
-          case 'START_GAME':
-            engineRef.current.startGame();
-            break;
-          case 'PROPOSE_TEAM':
-            engineRef.current.proposeTeam(from, payload.team);
-            break;
-          case 'SKIP_PROPOSAL':
-            engineRef.current.skipProposal(from);
-            break;
-          case 'VOTE_TEAM':
-            engineRef.current.voteTeam(from, payload.vote);
-            break;
-          case 'RAID_ACTION':
-            engineRef.current.submitRaidAction(from, payload.action);
-            break;
-        }
+        applyPlayerAction(engineRef.current, from, msg.payload as PlayerActionPayload);
       }
     });
 
@@ -107,13 +91,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
   const sendAction = (payload: PlayerActionPayload) => {
     if (networkRef.current?.isHost && engineRef.current && myId) {
-       switch (payload.type) {
-        case 'START_GAME': engineRef.current.startGame(); break;
-        case 'PROPOSE_TEAM': engineRef.current.proposeTeam(myId, payload.team); break;
-        case 'SKIP_PROPOSAL': engineRef.current.skipProposal(myId); break;
-        case 'VOTE_TEAM': engineRef.current.voteTeam(myId, payload.vote); break;
-        case 'RAID_ACTION': engineRef.current.submitRaidAction(myId, payload.action); break;
-      }
+      applyPlayerAction(engineRef.current, myId, payload);
     } else if (networkRef.current && gameState) {
       networkRef.current.sendMessage(gameState.hostId, { type: 'PLAYER_ACTION', payload });
     }
