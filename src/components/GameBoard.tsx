@@ -26,8 +26,6 @@ const useCompactLayout = () => {
   return compact;
 };
 
-const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
-
 export const GameBoard: React.FC = () => {
   const { gameState, myId, isHost, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
   const { t } = useTranslation();
@@ -211,8 +209,8 @@ export const GameBoard: React.FC = () => {
             <span className="pr-panel-aux">{t('game.classified')}</span>
           </div>
           <div className="pr-dossier-body">
-            <div className="pr-mugshot">
-              {initialsOf(me.name)}
+            <div className="pr-mugshot" aria-hidden="true">
+              <span className="pr-mugshot-ico" />
               <small>#{myId.slice(-4).toUpperCase()}</small>
             </div>
             <div>

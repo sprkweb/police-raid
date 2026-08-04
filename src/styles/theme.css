@@ -205,10 +205,17 @@ body {
   place-items: center;
   background: var(--pr-raise);
   border: 1px solid var(--pr-line-2);
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--pr-txt-2);
 }
+.pr-mugshot-ico {
+  display: block;
+  width: 70%;
+  height: 58%;
+  margin-bottom: 8px;
+  background-color: var(--pr-blue);
+  -webkit-mask: url(/policeman.svg) center / contain no-repeat;
+  mask: url(/policeman.svg) center / contain no-repeat;
+}
+.pr-is-mole .pr-mugshot-ico { background-color: var(--pr-red); }
 .pr-mugshot small {
   position: absolute;
   bottom: 4px;
@@ -618,9 +625,14 @@ body {
   place-items: center;
   background: var(--pr-raise);
   border: 1px solid var(--pr-line-2);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--pr-txt-2);
+}
+.pr-avatar-ico {
+  display: block;
+  width: 72%;
+  height: 72%;
+  background-color: var(--pr-txt-2);
+  -webkit-mask: url(/policeman.svg) center / contain no-repeat;
+  mask: url(/policeman.svg) center / contain no-repeat;
 }
 
 .pr-roster { display: flex; flex-direction: column; }
@@ -683,7 +695,8 @@ body {
   .pr-panel-head { padding: 9px 12px; }
   .pr-dossier .pr-panel-head { display: none; }
   .pr-dossier-body { padding: 10px 12px; gap: 10px; align-items: center; }
-  .pr-mugshot { width: 42px; height: 50px; font-size: 14px; }
+  .pr-mugshot { width: 42px; height: 50px; }
+  .pr-mugshot-ico { width: 72%; height: 72%; margin-bottom: 0; }
   .pr-mugshot small { display: none; }
   .pr-dossier .pr-label { display: none; }
   .pr-role { font-size: 16px; margin: 0 0 2px; }
