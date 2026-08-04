@@ -4,7 +4,6 @@ import type { PlayerId } from '../types/game';
 export interface SeatView {
   id: PlayerId;
   name: string;
-  initials: string;
   flag?: string;
   isMe: boolean;
   onTeam: boolean;
@@ -12,6 +11,8 @@ export interface SeatView {
   isAlly: boolean;
   dimmed: boolean;
   reveal?: 'police' | 'mole';
+  /** Цвет иконки по роли, если зрителю она известна (своя / кроту / конец игры). */
+  iconTone?: 'police' | 'mole';
   mark?: 'done' | 'waiting';
 }
 
@@ -28,6 +29,7 @@ const angleOf = (index: number, total: number) => (-90 + (360 / total) * index) 
 const seatClassName = (seat: SeatView, selectable: boolean) => {
   const classes = ['pr-seat'];
   if (seat.reveal) classes.push(seat.reveal === 'mole' ? 'pr-reveal-mole' : 'pr-reveal-police');
+  if (seat.iconTone) classes.push(seat.iconTone === 'mole' ? 'pr-icon-mole' : 'pr-icon-police');
   if (seat.onTeam) classes.push('pr-on-team');
   if (seat.isAlly) classes.push('pr-ally');
   if (seat.isMe) classes.push('pr-me');
@@ -59,7 +61,9 @@ export const OperativeRing: React.FC<Props> = ({ seats, onSelect, children }) =>
           disabled={!onSelect}
         >
           {seat.flag && <span className="pr-seat-flag">{seat.flag}</span>}
-          <span className="pr-seat-ava">{seat.initials}</span>
+          <span className="pr-seat-ava" aria-hidden="true">
+            <span className="pr-seat-ico" />
+          </span>
           <span className="pr-seat-nm">{seat.name}</span>
           <span className="pr-seat-bd">#{seat.id.slice(-4).toUpperCase()}</span>
           {seat.mark && (

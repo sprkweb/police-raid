@@ -67,6 +67,19 @@ body {
   border-bottom: 1px solid var(--pr-line);
 }
 
+.pr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pr-logo {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  background-color: var(--pr-blue);
+  -webkit-mask: url(/policeman.svg) center / contain no-repeat;
+  mask: url(/policeman.svg) center / contain no-repeat;
+}
 .pr-op h1 {
   margin: 0;
   font-size: 19px;
@@ -76,6 +89,7 @@ body {
 }
 .pr-case {
   margin-top: 2px;
+  padding-left: 38px; /* выравнивание под заголовок справа от логотипа */
   font-family: var(--pr-ui);
   font-size: 11px;
   letter-spacing: .1em;
@@ -191,10 +205,17 @@ body {
   place-items: center;
   background: var(--pr-raise);
   border: 1px solid var(--pr-line-2);
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--pr-txt-2);
 }
+.pr-mugshot-ico {
+  display: block;
+  width: 70%;
+  height: 58%;
+  margin-bottom: 8px;
+  background-color: var(--pr-blue);
+  -webkit-mask: url(/policeman.svg) center / contain no-repeat;
+  mask: url(/policeman.svg) center / contain no-repeat;
+}
+.pr-is-mole .pr-mugshot-ico { background-color: var(--pr-red); }
 .pr-mugshot small {
   position: absolute;
   bottom: 4px;
@@ -368,10 +389,19 @@ body {
   margin: 0 auto .8cqw;
   background: var(--pr-raise);
   border: 1px solid var(--pr-line-2);
-  font-size: clamp(9px, 1.8cqw, 15px);
-  font-weight: 600;
-  color: var(--pr-txt-2);
+  transition: border-color .12s, box-shadow .12s;
 }
+.pr-seat-ico {
+  display: block;
+  width: 78%;
+  height: 78%;
+  background-color: var(--pr-txt-2);
+  -webkit-mask: url(/policeman.svg) center / contain no-repeat;
+  mask: url(/policeman.svg) center / contain no-repeat;
+  transition: background-color .12s;
+}
+.pr-seat.pr-icon-police .pr-seat-ico { background-color: var(--pr-blue); }
+.pr-seat.pr-icon-mole .pr-seat-ico { background-color: var(--pr-red); }
 .pr-seat-nm {
   display: block;
   font-size: clamp(10px, 1.75cqw, 14px);
@@ -422,9 +452,23 @@ body {
 
 .pr-seat.pr-me { border-color: var(--pr-blue); box-shadow: inset 0 0 0 1px rgba(74, 168, 255, .25); }
 .pr-seat.pr-me .pr-seat-flag { background: var(--pr-blue); color: #06121f; }
+.pr-seat.pr-me .pr-seat-ava {
+  border-color: rgba(74, 168, 255, .7);
+  box-shadow: 0 0 0 1px rgba(74, 168, 255, .35);
+}
+.pr-seat.pr-me.pr-icon-mole {
+  border-color: var(--pr-red);
+  box-shadow: inset 0 0 0 1px rgba(255, 82, 71, .25);
+}
+.pr-seat.pr-me.pr-icon-mole .pr-seat-flag { background: var(--pr-red); color: #1a0605; }
+.pr-seat.pr-me.pr-icon-mole .pr-seat-ava {
+  border-color: rgba(255, 82, 71, .75);
+  box-shadow: 0 0 0 1px rgba(255, 82, 71, .4);
+}
 
 .pr-seat.pr-on-team { border-color: var(--pr-amber); }
-.pr-seat.pr-on-team .pr-seat-ava { border-color: rgba(255, 190, 61, .6); color: var(--pr-amber); }
+.pr-seat.pr-on-team .pr-seat-ava { border-color: rgba(255, 190, 61, .6); }
+.pr-seat.pr-on-team .pr-seat-ico { background-color: var(--pr-amber); }
 .pr-seat.pr-on-team .pr-seat-flag { background: var(--pr-amber); color: #14100a; }
 
 .pr-seat.pr-lead .pr-seat-flag {
@@ -581,9 +625,14 @@ body {
   place-items: center;
   background: var(--pr-raise);
   border: 1px solid var(--pr-line-2);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--pr-txt-2);
+}
+.pr-avatar-ico {
+  display: block;
+  width: 72%;
+  height: 72%;
+  background-color: var(--pr-txt-2);
+  -webkit-mask: url(/policeman.svg) center / contain no-repeat;
+  mask: url(/policeman.svg) center / contain no-repeat;
 }
 
 .pr-roster { display: flex; flex-direction: column; }
@@ -646,7 +695,8 @@ body {
   .pr-panel-head { padding: 9px 12px; }
   .pr-dossier .pr-panel-head { display: none; }
   .pr-dossier-body { padding: 10px 12px; gap: 10px; align-items: center; }
-  .pr-mugshot { width: 42px; height: 50px; font-size: 14px; }
+  .pr-mugshot { width: 42px; height: 50px; }
+  .pr-mugshot-ico { width: 72%; height: 72%; margin-bottom: 0; }
   .pr-mugshot small { display: none; }
   .pr-dossier .pr-label { display: none; }
   .pr-role { font-size: 16px; margin: 0 0 2px; }

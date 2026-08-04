@@ -26,8 +26,6 @@ const useCompactLayout = () => {
   return compact;
 };
 
-const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
-
 export const GameBoard: React.FC = () => {
   const { gameState, myId, isHost, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
   const { t } = useTranslation();
@@ -82,10 +80,15 @@ export const GameBoard: React.FC = () => {
     if (isVoting) mark = teamVotes[player.id] ? 'done' : 'waiting';
     else if (isRaid && onTeam) mark = raidActions[player.id] ? 'done' : 'waiting';
 
+    // Свою роль знает каждый; крот видит всех; в конце партии роли открыты всем.
+    const canSeeRole = isOver || isMole || player.id === myId;
+    const iconTone = canSeeRole
+      ? (player.role === Role.Mole ? 'mole' : 'police')
+      : undefined;
+
     return {
       id: player.id,
       name: player.name,
-      initials: initialsOf(player.name),
       flag,
       isMe: player.id === myId,
       onTeam,
@@ -93,6 +96,7 @@ export const GameBoard: React.FC = () => {
       isAlly,
       dimmed: isRaid && !onTeam,
       reveal,
+      iconTone,
       mark,
     };
   });
@@ -205,8 +209,8 @@ export const GameBoard: React.FC = () => {
             <span className="pr-panel-aux">{t('game.classified')}</span>
           </div>
           <div className="pr-dossier-body">
-            <div className="pr-mugshot">
-              {initialsOf(me.name)}
+            <div className="pr-mugshot" aria-hidden="true">
+              <span className="pr-mugshot-ico" />
               <small>#{myId.slice(-4).toUpperCase()}</small>
             </div>
             <div>

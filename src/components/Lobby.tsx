@@ -3,8 +3,6 @@ import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { useTranslation } from 'react-i18next';
 
-const initialsOf = (name: string) => name.trim().slice(0, 2).toUpperCase();
-
 export const Lobby: React.FC = () => {
   const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId } = useGame();
   const { t } = useTranslation();
@@ -28,7 +26,7 @@ export const Lobby: React.FC = () => {
           <div className="pr-roster">
             {gameState.players.map(p => (
               <div key={p.id} className="pr-roster-item">
-                <span className="pr-avatar">{initialsOf(p.name)}</span>
+                <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
                 <span className="pr-roster-name">{p.name}</span>
                 {p.id === myId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
                 {p.id === gameState.hostId && p.id !== myId && (
