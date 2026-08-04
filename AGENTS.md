@@ -6,6 +6,7 @@ Single-package Vite + React + TypeScript app. Standard commands live in `package
 - Run (dev): `npm run dev` serves at `http://localhost:5173/` (Vite). Use dev mode, not `npm run build`/`preview`.
 - Lint: `npm run lint` (oxlint). Build: `npm run build` (`tsc -b && vite build`).
 - Unit tests: `npm test` (Vitest, single run) or `npm run test:watch`. Tests live under `src/engine/__tests__/` and cover pure rules, selectors, action routing, and the host `GameEngine` state machine. Prefer extending these when changing game rules; there is no UI/E2E automated suite yet.
+- CI: GitHub Actions workflow `.github/workflows/ci.yml` runs on every pull request (and pushes to `main`): `npm run lint`, `npm test`, and `npm run build`. Enable **Require status checks** on that workflow in the repo branch protection settings if merges should wait on green CI.
 - Networking gotcha: multiplayer uses PeerJS/WebRTC against the default public PeerJS cloud broker, so signaling requires outbound internet access. There is no local signaling server to start.
 - Manual E2E testing needs multiple browser tabs (each tab is a separate peer). One tab clicks "Create New Game" to host and generates a `PR-XXXX` room code; other tabs join with that exact code. Starting an actual game requires 5–8 players in the lobby (the "Start Game" button stays disabled otherwise), so a full game run needs 5+ tabs.
 
