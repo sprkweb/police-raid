@@ -82,10 +82,15 @@ export const GameBoard: React.FC = () => {
     if (isVoting) mark = teamVotes[player.id] ? 'done' : 'waiting';
     else if (isRaid && onTeam) mark = raidActions[player.id] ? 'done' : 'waiting';
 
+    // Свою роль знает каждый; крот видит всех; в конце партии роли открыты всем.
+    const canSeeRole = isOver || isMole || player.id === myId;
+    const iconTone = canSeeRole
+      ? (player.role === Role.Mole ? 'mole' : 'police')
+      : undefined;
+
     return {
       id: player.id,
       name: player.name,
-      initials: initialsOf(player.name),
       flag,
       isMe: player.id === myId,
       onTeam,
@@ -93,6 +98,7 @@ export const GameBoard: React.FC = () => {
       isAlly,
       dimmed: isRaid && !onTeam,
       reveal,
+      iconTone,
       mark,
     };
   });

@@ -16,7 +16,10 @@ function App() {
       <div className="pr-shell">
         <header className="pr-topbar">
           <div className="pr-op">
-            <h1>{t('app.title')}</h1>
+            <div className="pr-brand">
+              <span className="pr-logo" aria-hidden="true" />
+              <h1>{t('app.title')}</h1>
+            </div>
             {gameState && <div className="pr-case">{t('game.caseNo', { code: gameState.hostId })}</div>}
           </div>
 
