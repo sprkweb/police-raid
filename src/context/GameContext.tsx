@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import type { GameState, Vote, RaidAction, PlayerId } from '../types/game';
 import type { NetworkService, PlayerActionPayload } from '../types/network';
 import { createNetworkService } from '../network/createNetworkService';
+import { joinLobby } from '../network/joinLobby';
 import { applyPlayerAction } from '../engine/applyAction';
 import { GameEngine } from '../engine/GameEngine';
 
@@ -87,23 +88,17 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
   };
 
   const joinRoom = async (roomCode: string, myPlayerName: string): Promise<void> => {
-    if (!networkRef.current) throw new Error('Network not initialized');
+    const network = networkRef.current;
+    if (!network) throw new Error('Network not initialized');
     if (!roomCode) throw new Error('Room code is empty');
 
-    networkRef.current.onMessage((_from, msg) => {
-      if (msg.type === 'GAME_STATE_UPDATE') {
-        setGameState(msg.payload);
-      }
-    });
-
-    const myPlayerId = await networkRef.current.initializeAsClient(roomCode);
+    const joined = await joinLobby(network, roomCode, myPlayerName, (state) => setGameState(state));
 
     setMyName(myPlayerName);
     setIsHost(false);
-    setMyPlayerId(myPlayerId);
-    setRoomCode(networkRef.current.roomCode);
-
-    networkRef.current.sendMessage(myPlayerId, { type: 'JOIN_REQUEST', payload: { name: myPlayerName } });
+    setMyPlayerId(joined.playerId);
+    setRoomCode(joined.roomCode);
+    setGameState(joined.state);
   };
 
   const sendAction = (payload: PlayerActionPayload) => {

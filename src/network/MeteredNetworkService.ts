@@ -124,6 +124,17 @@ export class MeteredNetworkService implements NetworkService {
     return this.connectToRoom(normalizeRoomCode(roomCode), false);
   }
 
+  public async disconnect(): Promise<void> {
+    const client = this.client;
+    this.client = null;
+    this.channel = null;
+    this.playerId = null;
+    this.roomCode = null;
+    this.isHost = false;
+    this.knownPlayers.clear();
+    await client?.close();
+  }
+
   public sendMessage(to: PlayerId, message: NetworkMessage): void {
     if (!this.client || !this.channel || !this.playerId) return;
     const enriched = { ...message, senderId: this.playerId };

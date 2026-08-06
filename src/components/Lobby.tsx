@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { normalizeRoomCode } from '../network/roomCode';
+import { JoinLobbyError } from '../network/joinLobby';
 import { useTranslation } from 'react-i18next';
 
 export const Lobby: React.FC = () => {
@@ -17,6 +18,7 @@ export const Lobby: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [pending, setPending] = useState<'create' | 'join' | null>(null);
 
   if (gameState) {
     const canStart =
@@ -88,20 +90,32 @@ export const Lobby: React.FC = () => {
 
   const handleCreate = async () => {
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
+    setError('');
+    setPending('create');
     try {
       await createRoom(name);
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      setPending(null);
     }
   };
 
   const handleJoin = async () => {
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
     if (!roomCodeInput.trim()) return setError(t('lobby.errorEnterRoomCode'));
+    setError('');
+    setPending('join');
     try {
       await joinRoom(roomCodeInput, name);
     } catch (e: any) {
-      setError(e.message);
+      setError(
+        e instanceof JoinLobbyError
+          ? t('lobby.errorNoHostResponse', { code: normalizeRoomCode(roomCodeInput) })
+          : e.message,
+      );
+    } finally {
+      setPending(null);
     }
   };
 
@@ -127,8 +141,13 @@ export const Lobby: React.FC = () => {
             />
           </div>
 
-          <button type="button" className="pr-btn pr-blue" onClick={handleCreate}>
-            {t('lobby.createNewGame')}
+          <button
+            type="button"
+            className="pr-btn pr-blue"
+            onClick={handleCreate}
+            disabled={pending !== null}
+          >
+            {pending === 'create' ? t('lobby.opening') : t('lobby.createNewGame')}
           </button>
 
           <div className="pr-divider" />
@@ -142,8 +161,13 @@ export const Lobby: React.FC = () => {
               placeholder={t('lobby.roomCodePlaceholder')}
               aria-label={t('lobby.roomCodePlaceholder')}
             />
-            <button type="button" className="pr-btn pr-green" onClick={handleJoin}>
-              {t('lobby.join')}
+            <button
+              type="button"
+              className="pr-btn pr-green"
+              onClick={handleJoin}
+              disabled={pending !== null}
+            >
+              {pending === 'join' ? t('lobby.joining') : t('lobby.join')}
             </button>
           </div>
         </div>

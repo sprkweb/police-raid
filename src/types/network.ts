@@ -37,6 +37,8 @@ export interface NetworkService {
   initializeAsHost(): Promise<string>;
   /** Join a lobby by `roomCode`; resolves to this player's `playerId`. */
   initializeAsClient(roomCode: string): Promise<PlayerId>;
+  /** Leave the room and drop the connection. Safe to call when not connected. */
+  disconnect(): Promise<void>;
 
   sendMessage(to: PlayerId, message: NetworkMessage): void;
   broadcast(message: NetworkMessage): void;
