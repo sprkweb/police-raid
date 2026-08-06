@@ -27,7 +27,7 @@ const useCompactLayout = () => {
 };
 
 export const GameBoard: React.FC = () => {
-  const { gameState, myId, isHost, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
+  const { gameState, playerId, isHost, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
   const { t } = useTranslation();
   const [selected, setSelected] = useState<PlayerId[]>([]);
   const compact = useCompactLayout();
@@ -38,15 +38,15 @@ export const GameBoard: React.FC = () => {
     setSelected([]);
   }, [round, proposerIndex]);
 
-  const me = gameState?.players.find(p => p.id === myId);
-  if (!gameState || !myId || !me) return null;
+  const me = gameState?.players.find(p => p.id === playerId);
+  if (!gameState || !playerId || !me) return null;
 
   const { phase, players, currentProposedTeam, teamVotes, raidActions } = gameState;
   const isMole = me.role === Role.Mole;
   const teamSize = getTeamSize(gameState);
   const lead = players[gameState.proposerIndex];
-  const iAmLead = lead?.id === myId;
-  const iAmOnTeam = currentProposedTeam.includes(myId);
+  const iAmLead = lead?.id === playerId;
+  const iAmOnTeam = currentProposedTeam.includes(playerId);
   const isProposing = phase === GamePhase.ProposingTeam;
   const isVoting = phase === GamePhase.VotingOnTeam;
   const isRaid = phase === GamePhase.Raid;
@@ -65,13 +65,13 @@ export const GameBoard: React.FC = () => {
 
   const seats: SeatView[] = players.map(player => {
     const onTeam = !isOver && phase !== GamePhase.Discussion && highlighted.includes(player.id);
-    const isAlly = isMole && !isOver && player.id !== myId && player.role === Role.Mole;
+    const isAlly = isMole && !isOver && player.id !== playerId && player.role === Role.Mole;
     const isLead = !isOver && (isProposing || isVoting) && player.id === lead?.id;
     const reveal = isOver ? (player.role === Role.Mole ? 'mole' : 'police') : undefined;
 
     let flag: string | undefined;
     if (isOver) flag = player.role === Role.Mole ? t('game.mole') : t('game.policeOfficer');
-    else if (player.id === myId) flag = t('game.flagYou');
+    else if (player.id === playerId) flag = t('game.flagYou');
     else if (isAlly) flag = t('game.flagAlly');
     else if (isLead) flag = t('game.flagLead');
     else if (onTeam) flag = t('game.flagOnTeam');
@@ -81,7 +81,7 @@ export const GameBoard: React.FC = () => {
     else if (isRaid && onTeam) mark = raidActions[player.id] ? 'done' : 'waiting';
 
     // Свою роль знает каждый; крот видит всех; в конце партии роли открыты всем.
-    const canSeeRole = isOver || isMole || player.id === myId;
+    const canSeeRole = isOver || isMole || player.id === playerId;
     const iconTone = canSeeRole
       ? (player.role === Role.Mole ? 'mole' : 'police')
       : undefined;
@@ -90,7 +90,7 @@ export const GameBoard: React.FC = () => {
       id: player.id,
       name: player.name,
       flag,
-      isMe: player.id === myId,
+      isMe: player.id === playerId,
       onTeam,
       isLead,
       isAlly,
@@ -149,7 +149,7 @@ export const GameBoard: React.FC = () => {
     consoleView.title = t('game.consoleVote');
     consoleView.stat = t('game.signatures', { votes: Object.keys(teamVotes).length, total: players.length });
 
-    const myVote = teamVotes[myId];
+    const myVote = teamVotes[playerId];
     if (myVote) {
       consoleView.note = myVote === 'Approve' ? t('game.youApproved') : t('game.youRejected');
     } else {
@@ -173,7 +173,7 @@ export const GameBoard: React.FC = () => {
     if (!iAmOnTeam) {
       consoleView.title = t('game.notOnDetail');
       consoleView.note = t('game.awaitReturn');
-    } else if (raidActions[myId]) {
+    } else if (raidActions[playerId]) {
       consoleView.title = t('game.consoleBreach');
       consoleView.note = t('game.reportSent');
     } else {
@@ -198,7 +198,7 @@ export const GameBoard: React.FC = () => {
       : t('game.wonByRaids', { raids: policeWon ? gameState.scores.police : gameState.scores.moles });
   }
 
-  const allies = players.filter(p => p.role === Role.Mole && p.id !== myId).map(p => p.name);
+  const allies = players.filter(p => p.role === Role.Mole && p.id !== playerId).map(p => p.name);
 
   return (
     <>
@@ -211,7 +211,7 @@ export const GameBoard: React.FC = () => {
           <div className="pr-dossier-body">
             <div className="pr-mugshot" aria-hidden="true">
               <span className="pr-mugshot-ico" />
-              <small>#{myId.slice(-4).toUpperCase()}</small>
+              <small>#{playerId.slice(-4).toUpperCase()}</small>
             </div>
             <div>
               <div className="pr-label">{t('game.yourStatus')}</div>

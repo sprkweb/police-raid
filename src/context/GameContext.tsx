@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import type { GameState, Vote, RaidAction, PlayerId } from '../types/game';
 import type { NetworkService, PlayerActionPayload } from '../types/network';
-import { MeteredNetworkService } from '../network/MeteredNetworkService';
+import { createNetworkService } from '../network/createNetworkService';
 import { applyPlayerAction } from '../engine/applyAction';
 import { GameEngine } from '../engine/GameEngine';
 
 interface GameContextType {
   gameState: GameState | null;
-  myId: string | null;
+  /** This tab's player id in GameState. */
+  playerId: PlayerId | null;
   myName: string;
   isHost: boolean;
-  /** Short shareable lobby code (PR-XXXX). */
-  roomId: string | null;
-  joinRoom: (roomId: string, name: string) => Promise<void>;
+  /** Short shareable lobby code. */
+  roomCode: string | null;
+  joinRoom: (roomCode: string, name: string) => Promise<void>;
   createRoom: (name: string) => Promise<string>;
 
   startGame: () => void;
@@ -35,16 +36,16 @@ export const useGame = () => {
 
 export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [myId, setMyId] = useState<string | null>(null);
+  const [playerId, setPlayerId] = useState<PlayerId | null>(null);
   const [myName, setMyName] = useState<string>('');
   const [isHost, setIsHost] = useState(false);
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomCode, setRoomCode] = useState<string | null>(null);
 
   const networkRef = useRef<NetworkService | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
 
   useEffect(() => {
-    networkRef.current = new MeteredNetworkService();
+    networkRef.current = createNetworkService();
   }, []);
 
   const handleStateChange = (newState: GameState) => {
@@ -59,12 +60,12 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
     setMyName(name);
     setIsHost(true);
     const code = await networkRef.current.initializeAsHost();
-    const peerId = networkRef.current.myId;
-    if (!peerId) throw new Error('Missing peer id after host init');
-    setRoomId(code);
-    setMyId(peerId);
+    const id = networkRef.current.playerId;
+    if (!id) throw new Error('Missing player id after host init');
+    setRoomCode(code);
+    setPlayerId(id);
 
-    engineRef.current = new GameEngine(peerId, name, handleStateChange);
+    engineRef.current = new GameEngine(id, name, handleStateChange);
     setGameState(engineRef.current.getState());
 
     networkRef.current.onMessage((from, msg) => {
@@ -76,20 +77,20 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       }
     });
 
-    networkRef.current.onDisconnect((id) => {
-      engineRef.current?.removePlayer(id);
+    networkRef.current.onDisconnect((disconnectedId) => {
+      engineRef.current?.removePlayer(disconnectedId);
     });
 
     return code;
   };
 
-  const joinRoom = async (roomCode: string, name: string) => {
+  const joinRoom = async (code: string, name: string) => {
     if (!networkRef.current) throw new Error('Network not initialized');
     setMyName(name);
     setIsHost(false);
-    const id = await networkRef.current.initializeAsClient(roomCode);
-    setMyId(id);
-    setRoomId(networkRef.current.roomId);
+    const id = await networkRef.current.initializeAsClient(code);
+    setPlayerId(id);
+    setRoomCode(networkRef.current.roomCode);
 
     networkRef.current.onMessage((_from, msg) => {
       if (msg.type === 'GAME_STATE_UPDATE') {
@@ -97,12 +98,12 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       }
     });
 
-    networkRef.current.sendMessage('host', { type: 'JOIN_REQUEST', payload: { name } });
+    networkRef.current.sendMessage(id, { type: 'JOIN_REQUEST', payload: { name } });
   };
 
   const sendAction = (payload: PlayerActionPayload) => {
-    if (networkRef.current?.isHost && engineRef.current && myId) {
-      applyPlayerAction(engineRef.current, myId, payload);
+    if (networkRef.current?.isHost && engineRef.current && playerId) {
+      applyPlayerAction(engineRef.current, playerId, payload);
     } else if (networkRef.current && gameState) {
       networkRef.current.sendMessage(gameState.hostId, { type: 'PLAYER_ACTION', payload });
     }
@@ -110,7 +111,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
   return (
     <GameContext.Provider value={{
-      gameState, myId, myName, isHost, roomId,
+      gameState, playerId, myName, isHost, roomCode,
       joinRoom, createRoom,
       startGame: () => sendAction({ type: 'START_GAME' }),
       startGameWithBots: () => {

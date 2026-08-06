@@ -40,7 +40,7 @@ The goal of the moles is to ruin 3 out of 5 raids.
 ## Development
 
 ```bash
-cp .env.example .env   # set VITE_METERED_API_KEY (Metered Realtime pk_live_…)
+cp .env.example .env   # fill in any credentials required by the active NetworkService
 npm install
 npm run dev      # http://localhost:5173/
 npm test         # Vitest unit tests (game engine / rules)
@@ -48,4 +48,4 @@ npm run lint
 npm run build
 ```
 
-Multiplayer rooms use [Metered Realtime Messaging](https://www.metered.ca/docs/realtime-messaging/). Create a publishable key with `publish`, `subscribe`, `presence`, and `send` enabled and channel pattern `*` or `police-raid/*`.
+Multiplayer is host-authoritative and goes through `NetworkService` (see `AGENTS.md`). Swap the transport in `src/network/createNetworkService.ts` without changing game logic.

@@ -1,13 +1,16 @@
 import { SignallingClient } from '@metered-ca/realtime';
+import type { PlayerId } from '../types/game';
 import type { NetworkService, NetworkMessage } from '../types/network';
+import { normalizeRoomCode } from './roomCode';
 
+/** Provider-specific channel namespace; not part of the public NetworkService API. */
 const CHANNEL_PREFIX = 'police-raid/';
 
 function getApiKey(): string {
   const key = import.meta.env.VITE_METERED_API_KEY;
   if (!key || typeof key !== 'string') {
     throw new Error(
-      'Missing VITE_METERED_API_KEY. Create a Metered Realtime publishable key (pk_live_…) and put it in .env',
+      'Missing VITE_METERED_API_KEY. Set it in .env (see .env.example).',
     );
   }
   return key;
@@ -22,19 +25,22 @@ function isNetworkMessage(data: unknown): data is NetworkMessage {
   );
 }
 
+/**
+ * One NetworkService implementation (Metered Realtime).
+ * Swap via createNetworkService() — keep game/UI on the interface only.
+ */
 export class MeteredNetworkService implements NetworkService {
   public isHost = false;
-  public myId: string | null = null;
-  /** Short lobby code (e.g. PR-ABCD), distinct from Metered peer id. */
-  public roomId: string | null = null;
+  public playerId: PlayerId | null = null;
+  public roomCode: string | null = null;
 
   private client: SignallingClient | null = null;
   private channel: string | null = null;
-  private knownPeers = new Set<string>();
+  private knownPlayers = new Set<PlayerId>();
 
-  private messageHandler: ((from: string, message: NetworkMessage) => void) | null = null;
-  private connectionHandler: ((id: string) => void) | null = null;
-  private disconnectHandler: ((id: string) => void) | null = null;
+  private messageHandler: ((from: PlayerId, message: NetworkMessage) => void) | null = null;
+  private connectionHandler: ((playerId: PlayerId) => void) | null = null;
+  private disconnectHandler: ((playerId: PlayerId) => void) | null = null;
 
   private generateRoomCode(): string {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -44,11 +50,11 @@ export class MeteredNetworkService implements NetworkService {
     return `${CHANNEL_PREFIX}${roomCode}`;
   }
 
-  private async connectToRoom(roomCode: string, asHost: boolean): Promise<string> {
+  private async connectToRoom(roomCode: string, asHost: boolean): Promise<PlayerId> {
     this.isHost = asHost;
-    this.roomId = roomCode;
+    this.roomCode = roomCode;
     this.channel = this.channelFor(roomCode);
-    this.knownPeers.clear();
+    this.knownPlayers.clear();
 
     const client = new SignallingClient({ apiKey: getApiKey() });
     this.client = client;
@@ -65,55 +71,58 @@ export class MeteredNetworkService implements NetworkService {
       if (channel !== this.channel) return;
 
       for (const peer of joined) {
-        if (peer.peerId === this.myId) continue;
-        if (this.knownPeers.has(peer.peerId)) continue;
-        this.knownPeers.add(peer.peerId);
-        this.connectionHandler?.(peer.peerId);
+        const id = peer.peerId as PlayerId;
+        if (id === this.playerId) continue;
+        if (this.knownPlayers.has(id)) continue;
+        this.knownPlayers.add(id);
+        this.connectionHandler?.(id);
       }
 
       for (const peer of left) {
-        if (!this.knownPeers.delete(peer.peerId)) continue;
-        this.disconnectHandler?.(peer.peerId);
+        const id = peer.peerId as PlayerId;
+        if (!this.knownPlayers.delete(id)) continue;
+        this.disconnectHandler?.(id);
       }
     });
 
-    const peerIdPromise = new Promise<string>((resolve, reject) => {
+    const playerIdPromise = new Promise<PlayerId>((resolve, reject) => {
       const timeout = setTimeout(
-        () => reject(new Error('Timed out waiting for Metered peerId')),
+        () => reject(new Error('Timed out waiting for network player id')),
         15_000,
       );
+      // Metered names this `peerId`; we treat it as our `playerId`.
       client.once('connected', ({ peerId }) => {
         clearTimeout(timeout);
-        resolve(peerId);
+        resolve(peerId as PlayerId);
       });
     });
 
     await client.connect();
-    this.myId = await peerIdPromise;
+    this.playerId = await playerIdPromise;
     await client.subscribe(this.channel);
-    return this.myId;
+    return this.playerId;
   }
 
   private dispatchMessage(from: string, data: unknown) {
     if (!this.messageHandler) return;
-    if (from === this.myId) return;
+    if (from === this.playerId) return;
     if (!isNetworkMessage(data)) return;
-    this.messageHandler(from, { ...data, senderId: data.senderId ?? from });
+    const fromPlayerId = from as PlayerId;
+    this.messageHandler(fromPlayerId, { ...data, senderId: data.senderId ?? fromPlayerId });
   }
 
   public initializeAsHost(): Promise<string> {
-    const roomCode = `PR-${this.generateRoomCode()}`;
+    const roomCode = this.generateRoomCode();
     return this.connectToRoom(roomCode, true).then(() => roomCode);
   }
 
-  public initializeAsClient(roomId: string): Promise<string> {
-    const normalized = roomId.trim().toUpperCase();
-    return this.connectToRoom(normalized, false);
+  public initializeAsClient(roomCode: string): Promise<PlayerId> {
+    return this.connectToRoom(normalizeRoomCode(roomCode), false);
   }
 
-  public sendMessage(to: string, message: NetworkMessage): void {
-    if (!this.client || !this.channel || !this.myId) return;
-    const enriched = { ...message, senderId: this.myId };
+  public sendMessage(to: PlayerId, message: NetworkMessage): void {
+    if (!this.client || !this.channel || !this.playerId) return;
+    const enriched = { ...message, senderId: this.playerId };
 
     if (this.isHost) {
       void this.client.send(to, enriched);
@@ -121,25 +130,25 @@ export class MeteredNetworkService implements NetworkService {
     }
 
     // Clients publish on the room channel; the host handles game actions.
-    // `to` is ignored (same as the previous PeerJS client path).
+    // `to` is ignored for clients (star topology toward the host).
     void this.client.publish(this.channel, enriched);
   }
 
   public broadcast(message: NetworkMessage): void {
-    if (!this.isHost || !this.client || !this.channel || !this.myId) return;
-    const enriched = { ...message, senderId: this.myId };
+    if (!this.isHost || !this.client || !this.channel || !this.playerId) return;
+    const enriched = { ...message, senderId: this.playerId };
     void this.client.publish(this.channel, enriched);
   }
 
-  public onMessage(handler: (from: string, message: NetworkMessage) => void): void {
+  public onMessage(handler: (from: PlayerId, message: NetworkMessage) => void): void {
     this.messageHandler = handler;
   }
 
-  public onConnection(handler: (id: string) => void): void {
+  public onConnection(handler: (playerId: PlayerId) => void): void {
     this.connectionHandler = handler;
   }
 
-  public onDisconnect(handler: (id: string) => void): void {
+  public onDisconnect(handler: (playerId: PlayerId) => void): void {
     this.disconnectHandler = handler;
   }
 }

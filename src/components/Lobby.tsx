@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
+import { normalizeRoomCode } from '../network/roomCode';
 import { useTranslation } from 'react-i18next';
 
 export const Lobby: React.FC = () => {
-  const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId, roomId } = useGame();
+  const {
+    createRoom, joinRoom, gameState, startGame, startGameWithBots,
+    isHost, playerId, roomCode: activeRoomCode,
+  } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState(() => {
+  const [roomCodeInput, setRoomCodeInput] = useState(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('room');
-    return fromUrl ? fromUrl.trim().toUpperCase() : '';
+    return fromUrl ? normalizeRoomCode(fromUrl) : '';
   });
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -18,12 +22,11 @@ export const Lobby: React.FC = () => {
     const canStart =
       gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
     const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < MIN_PLAYERS;
-    const caseCode = roomId ?? gameState.hostId;
 
     const copyInviteLink = async () => {
-      if (!roomId) return;
+      if (!activeRoomCode) return;
       const url = new URL(window.location.href);
-      url.searchParams.set('room', roomId);
+      url.searchParams.set('room', activeRoomCode);
       try {
         await navigator.clipboard.writeText(url.toString());
         setCopied(true);
@@ -38,7 +41,9 @@ export const Lobby: React.FC = () => {
         <section className="pr-panel">
           <div className="pr-panel-head">
             <h2>{t('lobby.players', { current: gameState.players.length })}</h2>
-            <span className="pr-panel-aux">{t('game.caseNo', { code: caseCode })}</span>
+            {activeRoomCode && (
+              <span className="pr-panel-aux">{t('game.caseNo', { code: activeRoomCode })}</span>
+            )}
           </div>
 
           <div className="pr-roster">
@@ -46,8 +51,8 @@ export const Lobby: React.FC = () => {
               <div key={p.id} className="pr-roster-item">
                 <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
                 <span className="pr-roster-name">{p.name}</span>
-                {p.id === myId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
-                {p.id === gameState.hostId && p.id !== myId && (
+                {p.id === playerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
+                {p.id === gameState.hostId && p.id !== playerId && (
                   <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
                 )}
               </div>
@@ -56,7 +61,7 @@ export const Lobby: React.FC = () => {
 
           <div className="pr-lobby-body">
             {error && <p className="pr-error">{error}</p>}
-            {roomId && (
+            {activeRoomCode && (
               <button type="button" className="pr-btn pr-green" onClick={copyInviteLink}>
                 {copied ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
               </button>
@@ -92,9 +97,9 @@ export const Lobby: React.FC = () => {
 
   const handleJoin = async () => {
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
-    if (!roomCode.trim()) return setError(t('lobby.errorEnterRoomCode'));
+    if (!roomCodeInput.trim()) return setError(t('lobby.errorEnterRoomCode'));
     try {
-      await joinRoom(roomCode, name);
+      await joinRoom(roomCodeInput, name);
     } catch (e: any) {
       setError(e.message);
     }
@@ -132,8 +137,8 @@ export const Lobby: React.FC = () => {
             <input
               type="text"
               className="pr-input"
-              value={roomCode}
-              onChange={e => setRoomCode(e.target.value.toUpperCase())}
+              value={roomCodeInput}
+              onChange={e => setRoomCodeInput(normalizeRoomCode(e.target.value))}
               placeholder={t('lobby.roomCodePlaceholder')}
               aria-label={t('lobby.roomCodePlaceholder')}
             />
