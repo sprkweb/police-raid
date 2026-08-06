@@ -26,8 +26,12 @@ function isNetworkMessage(data: unknown): data is NetworkMessage {
 }
 
 /**
- * One NetworkService implementation (Metered Realtime).
- * Swap via createNetworkService() — keep game/UI on the interface only.
+ * NetworkService implementation using Metered Realtime Messaging over `wss://rms.metered.ca`. 
+ * Requires outbound internet and a publishable key (`pk_live_…`) 
+ * with `publish`, `subscribe`, `presence`, and `send`, plus channel pattern `*` or `police-raid/*`. 
+ * Game traffic is server-routed pub/sub (fine for this turn-based game).
+ * Room = Metered channel `police-raid/{PR-XXXX}`.
+ * Metered assigns a separate peer id used as `PlayerId` / `hostId`.
  */
 export class MeteredNetworkService implements NetworkService {
   public isHost = false;

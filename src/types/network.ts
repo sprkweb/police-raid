@@ -25,7 +25,7 @@ export interface NetworkMessage {
  * Implementations may use WebRTC, a managed realtime service, etc.
  *
  * Terminology:
- * - `playerId` — this tab's identity in the game (same as GameState player ids)
+ * - `playerId` — this players's identity in the game (same as GameState player ids)
  * - `roomCode` — short shareable lobby code users copy / type
  */
 export interface NetworkService {
@@ -35,7 +35,7 @@ export interface NetworkService {
 
   /** Host a lobby; resolves to the new `roomCode`. */
   initializeAsHost(): Promise<string>;
-  /** Join a lobby by `roomCode`; resolves to this tab's `playerId`. */
+  /** Join a lobby by `roomCode`; resolves to this player's `playerId`. */
   initializeAsClient(roomCode: string): Promise<PlayerId>;
 
   sendMessage(to: PlayerId, message: NetworkMessage): void;

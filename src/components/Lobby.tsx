@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 export const Lobby: React.FC = () => {
   const {
     createRoom, joinRoom, gameState, startGame, startGameWithBots,
-    isHost, playerId, roomCode: activeRoomCode,
+    isHost, playerId: myPlayerId, roomCode: activeRoomCode,
   } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState('');
@@ -51,8 +51,8 @@ export const Lobby: React.FC = () => {
               <div key={p.id} className="pr-roster-item">
                 <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
                 <span className="pr-roster-name">{p.name}</span>
-                {p.id === playerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
-                {p.id === gameState.hostId && p.id !== playerId && (
+                {p.id === myPlayerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
+                {p.id === gameState.hostId && p.id !== myPlayerId && (
                   <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
                 )}
               </div>
