@@ -40,12 +40,10 @@ The goal of the moles is to ruin 3 out of 5 raids.
 ## Development
 
 ```bash
-cp .env.example .env   # fill in any credentials required by the active NetworkService
+cp .env.example .env   # fill environment variables
 npm install
 npm run dev      # http://localhost:5173/
 npm test         # Vitest unit tests (game engine / rules)
 npm run lint
 npm run build
 ```
-
-Multiplayer is host-authoritative and goes through `NetworkService` (see `AGENTS.md`). Swap the transport in `src/network/createNetworkService.ts` without changing game logic.
