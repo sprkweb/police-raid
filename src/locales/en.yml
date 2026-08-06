@@ -17,6 +17,12 @@ lobby:
   createNewGame: "New case"
   roomCodePlaceholder: "Room code"
   join: "Join"
+  joining: "Joining..."
+  opening: "Opening..."
+  errorNoHostResponse: "Nobody answered from case {{code}}. Check the code, or ask the host to open the case again."
+  copyInviteLink: "Copy invite link"
+  linkCopied: "Link copied"
+  errorCopyLink: "Could not copy link"
 
 game:
   caseNo: "Case no. {{code}}"

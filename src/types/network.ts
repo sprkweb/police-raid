@@ -17,20 +17,33 @@ export interface NetworkMessage {
   type: MessageType;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
-  senderId?: string;
+  senderId?: PlayerId;
 }
 
+/**
+ * Transport for host-authoritative multiplayer.
+ * Implementations may use WebRTC, a managed realtime service, etc.
+ *
+ * Terminology:
+ * - `playerId` — this players's identity in the game (same as GameState player ids)
+ * - `roomCode` — short shareable lobby code users copy / type
+ */
 export interface NetworkService {
   isHost: boolean;
-  myId: string | null;
+  playerId: PlayerId | null;
+  roomCode: string | null;
 
+  /** Host a lobby; resolves to the new `roomCode`. */
   initializeAsHost(): Promise<string>;
-  initializeAsClient(roomId: string): Promise<string>;
+  /** Join a lobby by `roomCode`; resolves to this player's `playerId`. */
+  initializeAsClient(roomCode: string): Promise<PlayerId>;
+  /** Leave the room and drop the connection. Safe to call when not connected. */
+  disconnect(): Promise<void>;
 
-  sendMessage(to: string, message: NetworkMessage): void;
+  sendMessage(to: PlayerId, message: NetworkMessage): void;
   broadcast(message: NetworkMessage): void;
 
-  onMessage(handler: (from: string, message: NetworkMessage) => void): void;
-  onConnection(handler: (id: string) => void): void;
-  onDisconnect(handler: (id: string) => void): void;
+  onMessage(handler: (from: PlayerId, message: NetworkMessage) => void): void;
+  onConnection(handler: (playerId: PlayerId) => void): void;
+  onDisconnect(handler: (playerId: PlayerId) => void): void;
 }

@@ -17,6 +17,12 @@ lobby:
   createNewGame: "Новое дело"
   roomCodePlaceholder: "Код комнаты"
   join: "Присоединиться"
+  joining: "Подключаемся..."
+  opening: "Открываем..."
+  errorNoHostResponse: "Из дела {{code}} никто не ответил. Проверьте код или попросите хоста открыть дело заново."
+  copyInviteLink: "Скопировать ссылку"
+  linkCopied: "Ссылка скопирована"
+  errorCopyLink: "Не удалось скопировать ссылку"
 
 game:
   caseNo: "Дело № {{code}}"

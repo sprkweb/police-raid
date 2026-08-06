@@ -1,26 +1,51 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
+import { normalizeRoomCode } from '../network/roomCode';
+import { JoinLobbyError } from '../network/joinLobby';
 import { useTranslation } from 'react-i18next';
 
 export const Lobby: React.FC = () => {
-  const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId } = useGame();
+  const {
+    createRoom, joinRoom, gameState, startGame, startGameWithBots,
+    isHost, playerId: myPlayerId, roomCode: activeRoomCode,
+  } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCodeInput, setRoomCodeInput] = useState(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('room');
+    return fromUrl ? normalizeRoomCode(fromUrl) : '';
+  });
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [pending, setPending] = useState<'create' | 'join' | null>(null);
 
   if (gameState) {
     const canStart =
       gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
     const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < MIN_PLAYERS;
 
+    const copyInviteLink = async () => {
+      if (!activeRoomCode) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', activeRoomCode);
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
+      } catch {
+        setError(t('lobby.errorCopyLink'));
+      }
+    };
+
     return (
       <div className="pr-lobby">
         <section className="pr-panel">
           <div className="pr-panel-head">
             <h2>{t('lobby.players', { current: gameState.players.length })}</h2>
-            <span className="pr-panel-aux">{t('game.caseNo', { code: gameState.hostId })}</span>
+            {activeRoomCode && (
+              <span className="pr-panel-aux">{t('game.caseNo', { code: activeRoomCode })}</span>
+            )}
           </div>
 
           <div className="pr-roster">
@@ -28,8 +53,8 @@ export const Lobby: React.FC = () => {
               <div key={p.id} className="pr-roster-item">
                 <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
                 <span className="pr-roster-name">{p.name}</span>
-                {p.id === myId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
-                {p.id === gameState.hostId && p.id !== myId && (
+                {p.id === myPlayerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
+                {p.id === gameState.hostId && p.id !== myPlayerId && (
                   <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
                 )}
               </div>
@@ -37,6 +62,12 @@ export const Lobby: React.FC = () => {
           </div>
 
           <div className="pr-lobby-body">
+            {error && <p className="pr-error">{error}</p>}
+            {activeRoomCode && (
+              <button type="button" className="pr-btn pr-green" onClick={copyInviteLink}>
+                {copied ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
+              </button>
+            )}
             {isHost ? (
               <>
                 <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
@@ -59,20 +90,32 @@ export const Lobby: React.FC = () => {
 
   const handleCreate = async () => {
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
+    setError('');
+    setPending('create');
     try {
       await createRoom(name);
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      setPending(null);
     }
   };
 
   const handleJoin = async () => {
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
-    if (!roomCode.trim()) return setError(t('lobby.errorEnterRoomCode'));
+    if (!roomCodeInput.trim()) return setError(t('lobby.errorEnterRoomCode'));
+    setError('');
+    setPending('join');
     try {
-      await joinRoom(roomCode, name);
+      await joinRoom(roomCodeInput, name);
     } catch (e: any) {
-      setError(e.message);
+      setError(
+        e instanceof JoinLobbyError
+          ? t('lobby.errorNoHostResponse', { code: normalizeRoomCode(roomCodeInput) })
+          : e.message,
+      );
+    } finally {
+      setPending(null);
     }
   };
 
@@ -98,8 +141,13 @@ export const Lobby: React.FC = () => {
             />
           </div>
 
-          <button type="button" className="pr-btn pr-blue" onClick={handleCreate}>
-            {t('lobby.createNewGame')}
+          <button
+            type="button"
+            className="pr-btn pr-blue"
+            onClick={handleCreate}
+            disabled={pending !== null}
+          >
+            {pending === 'create' ? t('lobby.opening') : t('lobby.createNewGame')}
           </button>
 
           <div className="pr-divider" />
@@ -108,13 +156,18 @@ export const Lobby: React.FC = () => {
             <input
               type="text"
               className="pr-input"
-              value={roomCode}
-              onChange={e => setRoomCode(e.target.value.toUpperCase())}
+              value={roomCodeInput}
+              onChange={e => setRoomCodeInput(normalizeRoomCode(e.target.value))}
               placeholder={t('lobby.roomCodePlaceholder')}
               aria-label={t('lobby.roomCodePlaceholder')}
             />
-            <button type="button" className="pr-btn pr-green" onClick={handleJoin}>
-              {t('lobby.join')}
+            <button
+              type="button"
+              className="pr-btn pr-green"
+              onClick={handleJoin}
+              disabled={pending !== null}
+            >
+              {pending === 'join' ? t('lobby.joining') : t('lobby.join')}
             </button>
           </div>
         </div>

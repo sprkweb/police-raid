@@ -40,6 +40,7 @@ The goal of the moles is to ruin 3 out of 5 raids.
 ## Development
 
 ```bash
+cp .env.example .env   # fill environment variables
 npm install
 npm run dev      # http://localhost:5173/
 npm test         # Vitest unit tests (game engine / rules)
