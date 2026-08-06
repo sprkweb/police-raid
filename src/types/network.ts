@@ -22,9 +22,14 @@ export interface NetworkMessage {
 
 export interface NetworkService {
   isHost: boolean;
+  /** Stable peer id for this tab (used as PlayerId). */
   myId: string | null;
+  /** Short lobby / share code (e.g. PR-ABCD). Distinct from myId. */
+  roomId: string | null;
 
+  /** Creates a room and returns the short room code. */
   initializeAsHost(): Promise<string>;
+  /** Joins an existing room; returns this peer's myId. */
   initializeAsClient(roomId: string): Promise<string>;
 
   sendMessage(to: string, message: NetworkMessage): void;

@@ -4,23 +4,41 @@ import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { useTranslation } from 'react-i18next';
 
 export const Lobby: React.FC = () => {
-  const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId } = useGame();
+  const { createRoom, joinRoom, gameState, startGame, startGameWithBots, isHost, myId, roomId } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCode, setRoomCode] = useState(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('room');
+    return fromUrl ? fromUrl.trim().toUpperCase() : '';
+  });
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   if (gameState) {
     const canStart =
       gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
     const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < MIN_PLAYERS;
+    const caseCode = roomId ?? gameState.hostId;
+
+    const copyInviteLink = async () => {
+      if (!roomId) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', roomId);
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
+      } catch {
+        setError(t('lobby.errorCopyLink'));
+      }
+    };
 
     return (
       <div className="pr-lobby">
         <section className="pr-panel">
           <div className="pr-panel-head">
             <h2>{t('lobby.players', { current: gameState.players.length })}</h2>
-            <span className="pr-panel-aux">{t('game.caseNo', { code: gameState.hostId })}</span>
+            <span className="pr-panel-aux">{t('game.caseNo', { code: caseCode })}</span>
           </div>
 
           <div className="pr-roster">
@@ -37,6 +55,12 @@ export const Lobby: React.FC = () => {
           </div>
 
           <div className="pr-lobby-body">
+            {error && <p className="pr-error">{error}</p>}
+            {roomId && (
+              <button type="button" className="pr-btn pr-green" onClick={copyInviteLink}>
+                {copied ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
+              </button>
+            )}
             {isHost ? (
               <>
                 <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>

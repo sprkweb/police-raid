@@ -7,9 +7,10 @@ import { OperationStats } from './components/OperationStats';
 import { useTranslation } from 'react-i18next';
 
 function App() {
-  const { gameState } = useGame();
+  const { gameState, roomId } = useGame();
   const { t } = useTranslation();
   const inGame = Boolean(gameState) && gameState?.phase !== GamePhase.Lobby;
+  const caseCode = roomId ?? gameState?.hostId;
 
   return (
     <div className="pr-app">
@@ -20,7 +21,7 @@ function App() {
               <span className="pr-logo" aria-hidden="true" />
               <h1>{t('app.title')}</h1>
             </div>
-            {gameState && <div className="pr-case">{t('game.caseNo', { code: gameState.hostId })}</div>}
+            {gameState && caseCode && <div className="pr-case">{t('game.caseNo', { code: caseCode })}</div>}
           </div>
 
           <div className="pr-spacer" />
