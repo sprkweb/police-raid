@@ -601,7 +601,9 @@ body {
 
 /* ---------- Лобби ---------- */
 
-.pr-lobby { max-width: 520px; width: 100%; margin: 36px auto 0; }
+.pr-lobby { width: 100%; margin: 36px auto 0; }
+.pr-lobby-checkin { max-width: 720px; }
+.pr-lobby-staging { max-width: 520px; }
 .pr-lobby-panel { overflow: hidden; }
 .pr-lobby-head {
   padding: 18px 18px 16px;
@@ -623,8 +625,21 @@ body {
   font-size: 13px;
   line-height: 1.55;
 }
+.pr-case-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+}
+.pr-case-line-text {
+  font-family: var(--pr-ui);
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pr-amber);
+}
 .pr-lobby-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-.pr-lobby-path { display: flex; flex-direction: column; gap: 8px; }
+.pr-lobby-path { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .pr-lobby-path-label {
   font-family: var(--pr-ui);
   font-size: 10px;
@@ -632,30 +647,32 @@ body {
   text-transform: uppercase;
   color: var(--pr-txt-3);
 }
-.pr-or {
+.pr-lobby-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 4px;
+}
+.pr-or-vert {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 10px;
   color: var(--pr-txt-3);
   font-family: var(--pr-ui);
   font-size: 11px;
   letter-spacing: .12em;
   text-transform: uppercase;
+  align-self: stretch;
 }
-.pr-or::before,
-.pr-or::after {
+.pr-or-vert::before,
+.pr-or-vert::after {
   content: '';
   flex: 1;
-  height: 1px;
+  width: 1px;
   background: var(--pr-line);
-}
-.pr-invite {
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border-bottom: 1px solid var(--pr-line);
-  background: rgba(255, 190, 61, .03);
 }
 .pr-copyfield {
   display: flex;
@@ -681,8 +698,32 @@ body {
   color: var(--pr-txt-3);
   cursor: pointer;
 }
+.pr-copy-btn-inline {
+  width: 28px;
+  height: 28px;
+  border-left: 0;
+  border-radius: 2px;
+}
 .pr-copy-btn:hover { color: var(--pr-txt); background: rgba(255, 255, 255, .03); }
 .pr-copy-btn.pr-copied { color: var(--pr-green); }
+
+@media (max-width: 640px) {
+  .pr-lobby-split {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .pr-or-vert {
+    flex-direction: row;
+    gap: 12px;
+    align-self: auto;
+  }
+  .pr-or-vert::before,
+  .pr-or-vert::after {
+    width: auto;
+    flex: 1;
+    height: 1px;
+  }
+}
 .pr-input {
   width: 100%;
   padding: 11px 12px;

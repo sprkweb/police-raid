@@ -68,39 +68,50 @@ export const Lobby: React.FC = () => {
     const inviteUrl = activeRoomCode ? inviteUrlFor(activeRoomCode) : '';
 
     return (
-      <div className="pr-lobby">
+      <div className="pr-lobby pr-lobby-staging">
         <section className="pr-panel pr-lobby-panel">
           <div className="pr-lobby-head">
             <div className="pr-stage-kicker">{t('lobby.stagingKicker')}</div>
             <h2>{t('lobby.stagingTitle')}</h2>
+            {activeRoomCode && (
+              <div className="pr-case-line">
+                <span className="pr-case-line-text">{t('game.caseNo', { code: activeRoomCode })}</span>
+                <button
+                  type="button"
+                  className={`pr-copy-btn pr-copy-btn-inline${copied === 'code' ? ' pr-copied' : ''}`}
+                  onClick={() => copyText('code', activeRoomCode)}
+                  aria-label={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
+                  title={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
+                >
+                  <CopyIcon done={copied === 'code'} />
+                </button>
+              </div>
+            )}
             <p>{t('lobby.stagingBrief')}</p>
           </div>
 
-          {activeRoomCode && (
-            <div className="pr-invite">
-              <div className="pr-field">
-                <label className="pr-label" htmlFor="caseCode">{t('lobby.caseNoLabel')}</label>
-                <div className="pr-copyfield">
-                  <input
-                    id="caseCode"
-                    type="text"
-                    className="pr-input"
-                    value={activeRoomCode}
-                    readOnly
-                    onFocus={e => e.currentTarget.select()}
-                  />
-                  <button
-                    type="button"
-                    className={`pr-copy-btn${copied === 'code' ? ' pr-copied' : ''}`}
-                    onClick={() => copyText('code', activeRoomCode)}
-                    aria-label={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
-                    title={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
-                  >
-                    <CopyIcon done={copied === 'code'} />
-                  </button>
-                </div>
-              </div>
+          <div className="pr-panel-head">
+            <h2>{t('lobby.players', { current: gameState.players.length })}</h2>
+          </div>
 
+          <div className="pr-roster">
+            {gameState.players.map(p => (
+              <div key={p.id} className="pr-roster-item">
+                <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
+                <span className="pr-roster-name">{p.name}</span>
+                <span className="pr-roster-tags">
+                  {p.id === myPlayerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
+                  {p.id === gameState.hostId && (
+                    <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="pr-lobby-body">
+            {error && <p className="pr-error">{error}</p>}
+            {activeRoomCode && (
               <div className="pr-field">
                 <label className="pr-label" htmlFor="inviteLink">{t('lobby.inviteLinkLabel')}</label>
                 <div className="pr-copyfield">
@@ -123,33 +134,7 @@ export const Lobby: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          <div className="pr-panel-head">
-            <h2>{t('lobby.players', { current: gameState.players.length })}</h2>
-            <span className="pr-panel-aux">
-              {canStart ? t('lobby.rosterReady') : t('lobby.rosterWaiting')}
-            </span>
-          </div>
-
-          <div className="pr-roster">
-            {gameState.players.map(p => (
-              <div key={p.id} className="pr-roster-item">
-                <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
-                <span className="pr-roster-name">{p.name}</span>
-                <span className="pr-roster-tags">
-                  {p.id === myPlayerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
-                  {p.id === gameState.hostId && (
-                    <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="pr-lobby-body">
-            {error && <p className="pr-error">{error}</p>}
+            )}
             {isHost ? (
               <>
                 <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
@@ -202,7 +187,7 @@ export const Lobby: React.FC = () => {
   };
 
   return (
-    <div className="pr-lobby">
+    <div className="pr-lobby pr-lobby-checkin">
       <section className="pr-panel pr-lobby-panel">
         <div className="pr-lobby-head">
           <div className="pr-stage-kicker">{t('lobby.kicker')}</div>
@@ -226,25 +211,25 @@ export const Lobby: React.FC = () => {
             />
           </div>
 
-          <div className="pr-lobby-path">
-            <div className="pr-lobby-path-label">{t('lobby.openCaseLabel')}</div>
-            <button
-              type="button"
-              className="pr-btn pr-blue"
-              onClick={handleCreate}
-              disabled={pending !== null}
-            >
-              {pending === 'create' ? t('lobby.opening') : t('lobby.openCase')}
-            </button>
-          </div>
+          <div className="pr-lobby-split">
+            <div className="pr-lobby-path">
+              <div className="pr-lobby-path-label">{t('lobby.openCaseLabel')}</div>
+              <button
+                type="button"
+                className="pr-btn pr-blue"
+                onClick={handleCreate}
+                disabled={pending !== null}
+              >
+                {pending === 'create' ? t('lobby.opening') : t('lobby.openCase')}
+              </button>
+            </div>
 
-          <div className="pr-or" role="separator">
-            <span>{t('lobby.orJoin')}</span>
-          </div>
+            <div className="pr-or-vert" role="separator" aria-label={t('lobby.orJoin')}>
+              <span>{t('lobby.or')}</span>
+            </div>
 
-          <div className="pr-lobby-path">
-            <div className="pr-lobby-path-label">{t('lobby.joinCaseLabel')}</div>
-            <div className="pr-row">
+            <div className="pr-lobby-path">
+              <div className="pr-lobby-path-label">{t('lobby.joinCaseLabel')}</div>
               <input
                 type="text"
                 className="pr-input"
