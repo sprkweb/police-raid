@@ -4,11 +4,9 @@ import type { NetworkService, PlayerActionPayload } from '../types/network';
 import { createNetworkService } from '../network/createNetworkService';
 import { joinLobby } from '../network/joinLobby';
 import { applyPlayerAction } from '../engine/applyAction';
-import { BOT_ID_PREFIX } from '../engine/constants';
 import { GameEngine } from '../engine/GameEngine';
+import { distributeProjectedState } from '../engine/distributeProjectedState';
 import { projectForPlayer } from '../engine/projectState';
-
-const isBot = (id: PlayerId) => id.startsWith(BOT_ID_PREFIX);
 
 interface GameContextType {
   gameState: GameState | null;
@@ -57,15 +55,8 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
     const network = networkRef.current;
     const viewerId = network?.playerId;
 
-    if (network?.isHost) {
-      for (const player of newState.players) {
-        if (player.id === network.playerId) continue;
-        if (isBot(player.id)) continue;
-        network.sendMessage(player.id, {
-          type: 'GAME_STATE_UPDATE',
-          payload: projectForPlayer(newState, player.id),
-        });
-      }
+    if (network) {
+      distributeProjectedState(network, newState);
     }
 
     // Host engine keeps the full state; React (including the host tab) only
