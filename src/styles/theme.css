@@ -601,8 +601,88 @@ body {
 
 /* ---------- Лобби ---------- */
 
-.pr-lobby { max-width: 460px; width: 100%; margin: 40px auto 0; }
+.pr-lobby { max-width: 520px; width: 100%; margin: 36px auto 0; }
+.pr-lobby-panel { overflow: hidden; }
+.pr-lobby-head {
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid var(--pr-line);
+  background:
+    linear-gradient(180deg, rgba(74, 168, 255, .06), transparent 70%),
+    var(--pr-panel);
+}
+.pr-lobby-head h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.pr-lobby-head p {
+  margin: 8px 0 0;
+  color: var(--pr-txt-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
 .pr-lobby-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.pr-lobby-path { display: flex; flex-direction: column; gap: 8px; }
+.pr-lobby-path-label {
+  font-family: var(--pr-ui);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--pr-txt-3);
+}
+.pr-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--pr-txt-3);
+  font-family: var(--pr-ui);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.pr-or::before,
+.pr-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--pr-line);
+}
+.pr-invite {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--pr-line);
+  background: rgba(255, 190, 61, .03);
+}
+.pr-copyfield {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--pr-line-2);
+  background: var(--pr-panel-2);
+}
+.pr-copyfield .pr-input {
+  border: 0;
+  background: transparent;
+  min-width: 0;
+}
+.pr-copyfield .pr-input:focus { outline: none; }
+.pr-copy-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--pr-line-2);
+  background: transparent;
+  color: var(--pr-txt-3);
+  cursor: pointer;
+}
+.pr-copy-btn:hover { color: var(--pr-txt); background: rgba(255, 255, 255, .03); }
+.pr-copy-btn.pr-copied { color: var(--pr-green); }
 .pr-input {
   width: 100%;
   padding: 11px 12px;
@@ -614,11 +694,10 @@ body {
 }
 .pr-input::placeholder { color: var(--pr-txt-3); }
 .pr-input:focus { outline: none; border-color: var(--pr-blue); }
-.pr-divider { height: 1px; background: var(--pr-line); }
 .pr-field { display: flex; flex-direction: column; gap: 6px; }
 .pr-row { display: flex; gap: 8px; }
-.pr-row .pr-btn { width: auto; }
-.pr-error { color: var(--pr-red); font-size: 13px; }
+.pr-row .pr-btn { width: auto; flex: none; }
+.pr-error { color: var(--pr-red); font-size: 13px; margin: 0; }
 
 .pr-avatar {
   width: 34px;
@@ -647,9 +726,21 @@ body {
   border-bottom: 1px solid var(--pr-line);
 }
 .pr-roster-item:last-child { border-bottom: 0; }
-.pr-roster-name { font-weight: 600; letter-spacing: .03em; text-transform: uppercase; font-size: 14px; }
-.pr-tag {
+.pr-roster-name {
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  font-size: 14px;
+  min-width: 0;
+}
+.pr-roster-tags {
   margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.pr-tag {
   font-family: var(--pr-ui);
   font-size: 10px;
   letter-spacing: .1em;
@@ -659,7 +750,7 @@ body {
 }
 .pr-tag.pr-tag-blue { color: var(--pr-blue); }
 .pr-tag.pr-tag-amber { color: var(--pr-amber); }
-.pr-hint { padding: 12px 14px; color: var(--pr-txt-3); font-size: 13px; text-align: center; }
+.pr-hint { padding: 4px 0; color: var(--pr-txt-3); font-size: 13px; text-align: center; }
 
 /* ---------- Адаптив ---------- */
 
