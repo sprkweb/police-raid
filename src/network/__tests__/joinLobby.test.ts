@@ -68,7 +68,7 @@ class FakeNetwork implements NetworkService {
   onConnection(): void {}
   onDisconnect(): void {}
 
-  /** Simulate the host broadcasting a state on the room channel. */
+  /** Simulate the host sending this client a (projected) game state. */
   hostBroadcast(state: GameState) {
     this.handler?.(state.hostId, { type: 'GAME_STATE_UPDATE', payload: state });
   }
@@ -83,7 +83,7 @@ describe('joinLobby', () => {
     vi.useRealTimers();
   });
 
-  it('resolves once the host broadcasts a state containing this player', async () => {
+  it('resolves once the host sends a state containing this player', async () => {
     const network = new FakeNetwork();
     const states: GameState[] = [];
 
@@ -108,7 +108,7 @@ describe('joinLobby', () => {
     const assertion = expect(pending).rejects.toThrow(JoinLobbyError);
     await vi.advanceTimersByTimeAsync(0);
 
-    // A game already in progress keeps broadcasting, but never seats us.
+    // A game already in progress keeps sending updates, but never seats us.
     network.hostBroadcast(lobbyState(['host', 'someone-else']));
     await vi.advanceTimersByTimeAsync(JOIN_TIMEOUT_MS);
 

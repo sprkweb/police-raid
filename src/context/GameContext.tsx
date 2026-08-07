@@ -4,7 +4,11 @@ import type { NetworkService, PlayerActionPayload } from '../types/network';
 import { createNetworkService } from '../network/createNetworkService';
 import { joinLobby } from '../network/joinLobby';
 import { applyPlayerAction } from '../engine/applyAction';
+import { BOT_ID_PREFIX } from '../engine/constants';
 import { GameEngine } from '../engine/GameEngine';
+import { projectForPlayer } from '../engine/projectState';
+
+const isBot = (id: PlayerId) => id.startsWith(BOT_ID_PREFIX);
 
 interface GameContextType {
   gameState: GameState | null;
@@ -50,10 +54,23 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
   }, []);
 
   const handleStateChange = (newState: GameState) => {
-    setGameState({ ...newState });
-    if (networkRef.current?.isHost) {
-      networkRef.current.broadcast({ type: 'GAME_STATE_UPDATE', payload: newState });
+    const network = networkRef.current;
+    const viewerId = network?.playerId;
+
+    if (network?.isHost) {
+      for (const player of newState.players) {
+        if (player.id === network.playerId) continue;
+        if (isBot(player.id)) continue;
+        network.sendMessage(player.id, {
+          type: 'GAME_STATE_UPDATE',
+          payload: projectForPlayer(newState, player.id),
+        });
+      }
     }
+
+    // Host engine keeps the full state; React (including the host tab) only
+    // mirrors what this player is allowed to see — same rules as clients.
+    setGameState(viewerId ? projectForPlayer(newState, viewerId) : { ...newState });
   };
 
   const createRoom = async (myPlayerName: string): Promise<string> => {
@@ -69,7 +86,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
     setMyPlayerId(myPlayerId);
 
     engineRef.current = new GameEngine(myPlayerId, myPlayerName, handleStateChange);
-    setGameState(engineRef.current.getState());
+    setGameState(projectForPlayer(engineRef.current.getState(), myPlayerId));
 
     networkRef.current.onMessage((from, msg) => {
       if (!engineRef.current) return;

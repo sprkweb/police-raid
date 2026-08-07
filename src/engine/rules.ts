@@ -48,7 +48,7 @@ export function isTeamApproved(approveCount: number, playerCount: number): boole
   return approveCount > playerCount / 2;
 }
 
-export function countApproves(votes: Readonly<Record<PlayerId, Vote>>): number {
+export function countApproves(votes: Readonly<Record<PlayerId, Vote | null>>): number {
   return Object.values(votes).filter((v) => v === 'Approve').length;
 }
 
@@ -67,7 +67,7 @@ export function isRaidSuccessful(sabotageCount: number, requiredSabotages: numbe
   return sabotageCount < requiredSabotages;
 }
 
-export function countSabotages(actions: Readonly<Record<PlayerId, RaidAction>>): number {
+export function countSabotages(actions: Readonly<Record<PlayerId, RaidAction | null>>): number {
   return Object.values(actions).filter((a) => a === 'Sabotage').length;
 }
 

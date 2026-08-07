@@ -77,14 +77,15 @@ export const GameBoard: React.FC = () => {
     else if (onTeam) flag = t('game.flagOnTeam');
 
     let mark: SeatView['mark'];
-    if (isVoting) mark = teamVotes[player.id] ? 'done' : 'waiting';
-    else if (isRaid && onTeam) mark = raidActions[player.id] ? 'done' : 'waiting';
+    if (isVoting) mark = Object.hasOwn(teamVotes, player.id) ? 'done' : 'waiting';
+    else if (isRaid && onTeam) mark = Object.hasOwn(raidActions, player.id) ? 'done' : 'waiting';
 
-    // Свою роль знает каждый; крот видит всех; в конце партии роли открыты всем.
-    const canSeeRole = isOver || isMole || player.id === myPlayerId;
-    const iconTone = canSeeRole
-      ? (player.role === Role.Mole ? 'mole' : 'police')
-      : undefined;
+    // Roles arrive already projected: null means hidden from this viewer.
+    const iconTone = player.role === Role.Mole
+      ? 'mole'
+      : player.role === Role.Police
+        ? 'police'
+        : undefined;
 
     return {
       id: player.id,
@@ -173,7 +174,7 @@ export const GameBoard: React.FC = () => {
     if (!iAmOnTeam) {
       consoleView.title = t('game.notOnDetail');
       consoleView.note = t('game.awaitReturn');
-    } else if (raidActions[myPlayerId]) {
+    } else if (Object.hasOwn(raidActions, myPlayerId)) {
       consoleView.title = t('game.consoleBreach');
       consoleView.note = t('game.reportSent');
     } else {
