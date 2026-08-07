@@ -51,6 +51,12 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
     networkRef.current = createNetworkService();
   }, []);
 
+  // DEV: inspect the React-held (projected) state from the console as window.__PR_GAME_STATE__.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (window as unknown as { __PR_GAME_STATE__?: typeof gameState }).__PR_GAME_STATE__ = gameState;
+  }, [gameState]);
+
   const handleStateChange = (newState: GameState) => {
     const network = networkRef.current;
     const viewerId = network?.playerId;
