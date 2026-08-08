@@ -13,14 +13,15 @@ Single-package Vite + React + TypeScript app. Standard commands live in `package
 Host-authoritative multiplayer over a swappable network transport (historically P2P/WebRTC-oriented).
 
 1. **Transport (`NetworkService`):**
-   - Room create/join plus messaging (`sendMessage` / `broadcast`). Prefer direct `send` for secrets; the room channel is for presence / join only.
+   - Handles all the networking between players: room create/join plus messaging. 
+   - Prefer direct `send` for secrets; the room channel is for presence / join only.
    - Abstracted behind `NetworkService` so the backend can be swapped by changing `createNetworkService()` (e.g. self-hosted WebSocket or WebRTC DataChannels later).
    - Right now uses **Metered Realtime Messaging** (`SignallingClient` in `MeteredNetworkService`) over `wss://rms.metered.ca`. Requires outbound internet and a publishable key (`pk_live_…`) in `.env`
 
 2. **Host-based model:**
    - One player's browser is the "Host" (server). The Host is the ultimate source of truth for the game state.
-   - The Host holds the full Game State in `GameEngine`, verifies rules, and **unicasts** a per-player projected `GAME_STATE_UPDATE` (`projectForPlayer` / `distributeProjectedState`) — roles, vote values, and raid picks are redacted to match UI visibility. Clients accept updates only from the locked `hostId`.
-   - Other players act as "Clients", sending their actions (vote, propose team, sabotage, join) to the Host via direct `send` (not the room channel).
+   - The Host holds the full Game State in `GameEngine`, verifies rules, and **unicasts** a per-player projected `GAME_STATE_UPDATE`, redacted to match the player's UI visibility.
+   - Other players act as "Clients", sending their actions (vote, propose team, sabotage, join) to the Host via direct `send`.
    - If the Host disconnects or closes/refreshes the tab, the game ends for everyone (no host migration).
 
 ## High-level Components
