@@ -8,46 +8,20 @@ import { useTranslation } from 'react-i18next';
 type CopiedField = 'code' | 'link' | null;
 type PendingAction = 'create' | 'join' | null;
 
-function CopyIcon({ done }: { done?: boolean }) {
-  if (done) {
-    return (
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-        <path
-          fill="currentColor"
-          d="M6.4 11.6 2.8 8l1.1-1.1 2.5 2.5 5.3-5.3L12.8 5z"
-        />
-      </svg>
-    );
-  }
+function MaterialIcon({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M5.5 2A1.5 1.5 0 0 0 4 3.5V4H3.5A1.5 1.5 0 0 0 2 5.5v7A1.5 1.5 0 0 0 3.5 14h6a1.5 1.5 0 0 0 1.5-1.5V12h.5A1.5 1.5 0 0 0 13 10.5v-7A1.5 1.5 0 0 0 11.5 2h-6ZM5 3.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5H11V5.5A1.5 1.5 0 0 0 9.5 4H5v-.5ZM3.5 5h6a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5Z"
-      />
-    </svg>
-  );
-}
-
-/** Door + arrow — enter a case. */
-function EnterCaseIcon({ busy }: { busy?: boolean }) {
-  if (busy) {
-    return (
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="pr-spin">
-        <path
-          fill="currentColor"
-          d="M8 1.5a6.5 6.5 0 1 0 6.5 6.5h-1.5A5 5 0 1 1 8 3V1.5Z"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M8.5 2.5v1.1H3.75a.65.65 0 0 0-.65.65v7.5c0 .36.29.65.65.65H8.5v1.1H3.75A1.75 1.75 0 0 1 2 11.75v-7.5C2 3.23 2.78 2.5 3.75 2.5H8.5Zm1.15 2.78 2.72 2.47H6.25v1.1h6.12l-2.72 2.47.74.82L14.5 8.5l-3.11-3.04-.74.82Z"
-      />
-    </svg>
+    <span
+      className={`material-icons${className ? ` ${className}` : ''}`}
+      aria-hidden="true"
+    >
+      {name}
+    </span>
   );
 }
 
@@ -105,7 +79,7 @@ export const Lobby: React.FC = () => {
                   aria-label={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
                   title={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
                 >
-                  <CopyIcon done={copied === 'code'} />
+                  <MaterialIcon name={copied === 'code' ? 'check' : 'content_copy'} />
                 </button>
               </div>
             )}
@@ -152,7 +126,7 @@ export const Lobby: React.FC = () => {
                     aria-label={copied === 'link' ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
                     title={copied === 'link' ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
                   >
-                    <CopyIcon done={copied === 'link'} />
+                    <MaterialIcon name={copied === 'link' ? 'check' : 'content_copy'} />
                   </button>
                 </div>
               </div>
@@ -277,7 +251,10 @@ export const Lobby: React.FC = () => {
                   aria-label={pending === 'join' ? t('lobby.joining') : t('lobby.join')}
                   title={pending === 'join' ? t('lobby.joining') : t('lobby.join')}
                 >
-                  <EnterCaseIcon busy={pending === 'join'} />
+                  <MaterialIcon
+                    name={pending === 'join' ? 'autorenew' : 'login'}
+                    className={pending === 'join' ? 'pr-spin' : undefined}
+                  />
                 </button>
               </div>
             </div>

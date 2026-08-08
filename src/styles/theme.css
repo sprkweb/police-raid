@@ -713,7 +713,14 @@ body {
   color: #e9fff5;
   background: rgba(61, 219, 138, .14);
 }
-.pr-spin { animation: pr-spin .8s linear infinite; }
+.pr-copy-btn .material-icons {
+  font-size: 18px;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+}
+.pr-spin { display: inline-block; animation: pr-spin .8s linear infinite; }
 @keyframes pr-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 640px) {

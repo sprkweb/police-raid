@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import 'material-icons/iconfont/filled.css'
 import { GameProvider } from './context/GameContext'
 import './i18n'
 
