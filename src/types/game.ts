@@ -51,8 +51,16 @@ export interface GameState {
   consecutiveRejections: number;
   currentProposedTeam: PlayerId[];
 
-  teamVotes: Record<PlayerId, Vote>;
-  raidActions: Record<PlayerId, RaidAction>;
+  /**
+   * Vote value, or `null` when the viewer may only know that a ballot was cast
+   * (projected client views). Authoritative host state always stores Vote.
+   */
+  teamVotes: Record<PlayerId, Vote | null>;
+  /**
+   * Raid action, or `null` when the value is hidden from this viewer.
+   * Authoritative host state always stores RaidAction; UI never shows the value.
+   */
+  raidActions: Record<PlayerId, RaidAction | null>;
 
   winner: 'Police' | 'Moles' | null;
 }

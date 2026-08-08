@@ -29,7 +29,9 @@ function isNetworkMessage(data: unknown): data is NetworkMessage {
  * NetworkService implementation using Metered Realtime Messaging over `wss://rms.metered.ca`. 
  * Requires outbound internet and a publishable key (`pk_live_…`) 
  * with `publish`, `subscribe`, `presence`, and `send`, plus channel pattern `*` or `police-raid/*`. 
- * Game traffic is server-routed pub/sub (fine for this turn-based game).
+ * Game traffic is server-routed: room channel for presence / join, Metered
+ * direct `send` for per-player state and client actions (so peers cannot read
+ * each other's secrets on the channel).
  * Room = Metered channel `police-raid/{PR-XXXX}`.
  * Metered assigns a separate peer id used as `PlayerId` / `hostId`.
  */
@@ -144,8 +146,13 @@ export class MeteredNetworkService implements NetworkService {
       return;
     }
 
-    // Clients publish on the room channel; the host handles game actions.
-    // `to` is ignored for clients (star topology toward the host).
+    // Prefer Metered direct `send` so other room subscribers cannot read
+    // PLAYER_ACTION payloads (votes / raid picks). Fall back to channel publish
+    // only when `to` is ourselves — joinLobby uses that before hostId is known.
+    if (to !== this.playerId) {
+      void this.client.send(to, enriched);
+      return;
+    }
     void this.client.publish(this.channel, enriched);
   }
 

@@ -68,9 +68,14 @@ class FakeNetwork implements NetworkService {
   onConnection(): void {}
   onDisconnect(): void {}
 
-  /** Simulate the host broadcasting a state on the room channel. */
+  /** Simulate the host sending this client a (projected) game state. */
   hostBroadcast(state: GameState) {
     this.handler?.(state.hostId, { type: 'GAME_STATE_UPDATE', payload: state });
+  }
+
+  /** Simulate an arbitrary peer publishing a GAME_STATE_UPDATE on the room channel. */
+  peerPublish(from: PlayerId, state: GameState) {
+    this.handler?.(from, { type: 'GAME_STATE_UPDATE', payload: state });
   }
 }
 
@@ -83,7 +88,7 @@ describe('joinLobby', () => {
     vi.useRealTimers();
   });
 
-  it('resolves once the host broadcasts a state containing this player', async () => {
+  it('resolves once the host sends a state containing this player', async () => {
     const network = new FakeNetwork();
     const states: GameState[] = [];
 
@@ -108,7 +113,7 @@ describe('joinLobby', () => {
     const assertion = expect(pending).rejects.toThrow(JoinLobbyError);
     await vi.advanceTimersByTimeAsync(0);
 
-    // A game already in progress keeps broadcasting, but never seats us.
+    // A game already in progress keeps sending updates, but never seats us.
     network.hostBroadcast(lobbyState(['host', 'someone-else']));
     await vi.advanceTimersByTimeAsync(JOIN_TIMEOUT_MS);
 
@@ -133,5 +138,54 @@ describe('joinLobby', () => {
     const afterFailure = network.sent.length;
     await vi.advanceTimersByTimeAsync(JOIN_RETRY_MS * 3);
     expect(network.sent).toHaveLength(afterFailure);
+  });
+
+  it('ignores GAME_STATE_UPDATE whose transport sender is not state.hostId', async () => {
+    const network = new FakeNetwork();
+    const states: GameState[] = [];
+
+    const pending = joinLobby(network, 'PR01', 'Me', (state) => states.push(state));
+    const assertion = expect(pending).rejects.toThrow(JoinLobbyError);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Attacker publishes a forged full state claiming the real host id.
+    network.peerPublish('attacker', lobbyState(['host', 'me']));
+    await vi.advanceTimersByTimeAsync(JOIN_TIMEOUT_MS);
+
+    await assertion;
+    expect(states).toEqual([]);
+  });
+
+  it('after seating, ignores forged updates from another room subscriber', async () => {
+    const network = new FakeNetwork();
+    const states: GameState[] = [];
+
+    const pending = joinLobby(network, 'PR01', 'Me', (state) => states.push(state));
+    await vi.advanceTimersByTimeAsync(0);
+
+    const seated = lobbyState(['host', 'me']);
+    network.hostBroadcast(seated);
+    await expect(pending).resolves.toMatchObject({ playerId: 'me' });
+
+    const forged: GameState = {
+      ...seated,
+      hostId: 'attacker',
+      phase: GamePhase.Discussion,
+      players: [
+        { id: 'attacker', name: 'Attacker', role: 'Mole' },
+        { id: 'me', name: 'me', role: 'Police' },
+        { id: 'host', name: 'host', role: 'Mole' },
+      ],
+    };
+    network.peerPublish('attacker', forged);
+
+    // Also try forging with the real hostId in the payload but wrong sender.
+    network.peerPublish('attacker', {
+      ...seated,
+      phase: GamePhase.Discussion,
+      players: seated.players.map((p) => ({ ...p, role: 'Mole' as const })),
+    });
+
+    expect(states).toEqual([seated]);
   });
 });

@@ -5,6 +5,8 @@ import { createNetworkService } from '../network/createNetworkService';
 import { joinLobby } from '../network/joinLobby';
 import { applyPlayerAction } from '../engine/applyAction';
 import { GameEngine } from '../engine/GameEngine';
+import { distributeProjectedState } from '../engine/distributeProjectedState';
+import { projectForPlayer } from '../engine/projectState';
 
 interface GameContextType {
   gameState: GameState | null;
@@ -49,11 +51,23 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
     networkRef.current = createNetworkService();
   }, []);
 
+  // DEV: inspect the React-held (projected) state from the console as window.__PR_GAME_STATE__.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (window as unknown as { __PR_GAME_STATE__?: typeof gameState }).__PR_GAME_STATE__ = gameState;
+  }, [gameState]);
+
   const handleStateChange = (newState: GameState) => {
-    setGameState({ ...newState });
-    if (networkRef.current?.isHost) {
-      networkRef.current.broadcast({ type: 'GAME_STATE_UPDATE', payload: newState });
+    const network = networkRef.current;
+    const viewerId = network?.playerId;
+
+    if (network) {
+      distributeProjectedState(network, newState);
     }
+
+    // Host engine keeps the full state; React (including the host tab) only
+    // mirrors what this player is allowed to see — same rules as clients.
+    setGameState(viewerId ? projectForPlayer(newState, viewerId) : { ...newState });
   };
 
   const createRoom = async (myPlayerName: string): Promise<string> => {
@@ -69,7 +83,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
     setMyPlayerId(myPlayerId);
 
     engineRef.current = new GameEngine(myPlayerId, myPlayerName, handleStateChange);
-    setGameState(engineRef.current.getState());
+    setGameState(projectForPlayer(engineRef.current.getState(), myPlayerId));
 
     networkRef.current.onMessage((from, msg) => {
       if (!engineRef.current) return;

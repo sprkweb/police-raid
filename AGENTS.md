@@ -13,20 +13,21 @@ Single-package Vite + React + TypeScript app. Standard commands live in `package
 Host-authoritative multiplayer over a swappable network transport (historically P2P/WebRTC-oriented).
 
 1. **Transport (`NetworkService`):**
-   - All the networking between players: creates/joins rooms, sends and broadcasts messages.
+   - Handles all the networking between players: room create/join plus messaging. 
+   - Prefer direct `send` for secrets; the room channel is for presence / join only.
    - Abstracted behind `NetworkService` so the backend can be swapped by changing `createNetworkService()` (e.g. self-hosted WebSocket or WebRTC DataChannels later).
    - Right now uses **Metered Realtime Messaging** (`SignallingClient` in `MeteredNetworkService`) over `wss://rms.metered.ca`. Requires outbound internet and a publishable key (`pk_live_…`) in `.env`
 
 2. **Host-based model:**
    - One player's browser is the "Host" (server). The Host is the ultimate source of truth for the game state.
-   - The Host holds the Game State, verifies rules, and broadcasts `GAME_STATE_UPDATE` to all connected players.
-   - Other players act as "Clients", sending their actions (vote, propose team, sabotage, join) to the Host.
+   - The Host holds the full Game State in `GameEngine`, verifies rules, and **unicasts** a per-player projected `GAME_STATE_UPDATE`, redacted to match the player's UI visibility.
+   - Other players act as "Clients", sending their actions (vote, propose team, sabotage, join) to the Host via direct `send`.
    - If the Host disconnects or closes/refreshes the tab, the game ends for everyone (no host migration).
 
 ## High-level Components
 - **NetworkService:** Room create/join and messaging. It must be abstracted to allow easy swapping of backends.
 - **GameEngine (Host-only):** The state machine that validates actions and advances game phases (Lobby -> Discussion -> Proposing -> Voting -> Raid -> Round End / Game Over). Pure rule helpers live in `src/engine/rules.ts`; inject `random` via `GameEngineOptions` for deterministic tests.
-- **Store/Context:** React Context updates the UI from Host-broadcast game state.
+- **Store/Context:** React Context updates the UI from the projected game state (host React state is projected too; full state stays in the engine).
 - **UI Views:**
  - Lobby (join/create, invite link)
  - Game Board (players, scores, current phase)
