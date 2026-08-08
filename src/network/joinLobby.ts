@@ -1,5 +1,6 @@
 import type { GameState, PlayerId } from '../types/game';
 import type { NetworkMessage, NetworkService } from '../types/network';
+import { shouldAcceptGameStateUpdate } from './acceptGameState';
 
 /** How long to wait for the host to put us in its roster and send state back. */
 export const JOIN_TIMEOUT_MS = 8_000;
@@ -37,7 +38,8 @@ export interface JoinLobbyTiming {
  * from here.
  *
  * `onGameState` receives every state from the moment we are seated, including
- * the one this resolves with.
+ * the one this resolves with. Only updates whose transport sender is
+ * `state.hostId` are applied (and that host id is locked after seating).
  */
 export async function joinLobby(
   network: NetworkService,
@@ -48,17 +50,20 @@ export async function joinLobby(
 ): Promise<JoinLobbyResult> {
   const { timeoutMs = JOIN_TIMEOUT_MS, retryMs = JOIN_RETRY_MS } = timing;
 
-  let seated = false;
+  let lockedHostId: PlayerId | null = null;
   let onSeated: ((state: GameState) => void) | null = null;
 
-  network.onMessage((_from, msg) => {
+  network.onMessage((from, msg) => {
     if (msg.type !== 'GAME_STATE_UPDATE') return;
     const state = msg.payload as GameState;
-    if (!seated) {
-      // Subscribing to the channel is not joining the game: until the host has
-      // us in its roster, its state updates are none of our business.
-      if (!state.players.some((p) => p.id === network.playerId)) return;
-      seated = true;
+    const accept = shouldAcceptGameStateUpdate(from, state, {
+      viewerId: network.playerId,
+      lockedHostId,
+    });
+    if (!accept) return;
+
+    if (lockedHostId === null) {
+      lockedHostId = state.hostId;
       onSeated?.(state);
       onSeated = null;
     }
