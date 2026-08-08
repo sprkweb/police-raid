@@ -29,6 +29,28 @@ function CopyIcon({ done }: { done?: boolean }) {
   );
 }
 
+/** Door + arrow — enter a case. */
+function EnterCaseIcon({ busy }: { busy?: boolean }) {
+  if (busy) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="pr-spin">
+        <path
+          fill="currentColor"
+          d="M8 1.5a6.5 6.5 0 1 0 6.5 6.5h-1.5A5 5 0 1 1 8 3V1.5Z"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M8.5 2.5v1.1H3.75a.65.65 0 0 0-.65.65v7.5c0 .36.29.65.65.65H8.5v1.1H3.75A1.75 1.75 0 0 1 2 11.75v-7.5C2 3.23 2.78 2.5 3.75 2.5H8.5Zm1.15 2.78 2.72 2.47H6.25v1.1h6.12l-2.72 2.47.74.82L14.5 8.5l-3.11-3.04-.74.82Z"
+      />
+    </svg>
+  );
+}
+
 function inviteUrlFor(roomCode: string): string {
   const url = new URL(window.location.href);
   url.searchParams.set('room', roomCode);
@@ -230,24 +252,34 @@ export const Lobby: React.FC = () => {
 
             <div className="pr-lobby-path">
               <div className="pr-lobby-path-label">{t('lobby.joinCaseLabel')}</div>
-              <input
-                type="text"
-                className="pr-input"
-                value={roomCodeInput}
-                onChange={e => setRoomCodeInput(normalizeRoomCode(e.target.value))}
-                placeholder={t('lobby.caseCodePlaceholder')}
-                aria-label={t('lobby.caseCodePlaceholder')}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <button
-                type="button"
-                className="pr-btn pr-green"
-                onClick={handleJoin}
-                disabled={pending !== null}
-              >
-                {pending === 'join' ? t('lobby.joining') : t('lobby.join')}
-              </button>
+              <div className="pr-copyfield pr-joinfield">
+                <input
+                  type="text"
+                  className="pr-input"
+                  value={roomCodeInput}
+                  onChange={e => setRoomCodeInput(normalizeRoomCode(e.target.value))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void handleJoin();
+                    }
+                  }}
+                  placeholder={t('lobby.caseCodePlaceholder')}
+                  aria-label={t('lobby.caseCodePlaceholder')}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  className="pr-copy-btn pr-join-btn"
+                  onClick={handleJoin}
+                  disabled={pending !== null}
+                  aria-label={pending === 'join' ? t('lobby.joining') : t('lobby.join')}
+                  title={pending === 'join' ? t('lobby.joining') : t('lobby.join')}
+                >
+                  <EnterCaseIcon busy={pending === 'join'} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

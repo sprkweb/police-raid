@@ -704,8 +704,17 @@ body {
   border-left: 0;
   border-radius: 2px;
 }
-.pr-copy-btn:hover { color: var(--pr-txt); background: rgba(255, 255, 255, .03); }
+.pr-copy-btn:hover:not(:disabled) { color: var(--pr-txt); background: rgba(255, 255, 255, .03); }
+.pr-copy-btn:disabled { opacity: .45; cursor: not-allowed; }
 .pr-copy-btn.pr-copied { color: var(--pr-green); }
+.pr-joinfield { border-color: rgba(61, 219, 138, .35); }
+.pr-join-btn { color: var(--pr-green); }
+.pr-join-btn:hover:not(:disabled) {
+  color: #e9fff5;
+  background: rgba(61, 219, 138, .14);
+}
+.pr-spin { animation: pr-spin .8s linear infinite; }
+@keyframes pr-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 640px) {
   .pr-lobby-split {
