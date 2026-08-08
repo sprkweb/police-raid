@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { normalizeRoomCode } from '../network/roomCode';
@@ -45,6 +45,7 @@ export const Lobby: React.FC = () => {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<CopiedField>(null);
   const [pending, setPending] = useState<PendingAction>(null);
+  const busyRef = useRef(false);
 
   const copyText = async (field: Exclude<CopiedField, null>, value: string) => {
     try {
@@ -152,22 +153,27 @@ export const Lobby: React.FC = () => {
   }
 
   const handleCreate = async () => {
+    if (busyRef.current) return;
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
     setError('');
+    busyRef.current = true;
     setPending('create');
     try {
       await createRoom(name);
     } catch (e: any) {
       setError(e.message);
     } finally {
+      busyRef.current = false;
       setPending(null);
     }
   };
 
   const handleJoin = async () => {
+    if (busyRef.current) return;
     if (!name.trim()) return setError(t('lobby.errorEnterName'));
     if (!roomCodeInput.trim()) return setError(t('lobby.errorEnterRoomCode'));
     setError('');
+    busyRef.current = true;
     setPending('join');
     try {
       await joinRoom(roomCodeInput, name);
@@ -178,6 +184,7 @@ export const Lobby: React.FC = () => {
           : e.message,
       );
     } finally {
+      busyRef.current = false;
       setPending(null);
     }
   };
@@ -233,7 +240,7 @@ export const Lobby: React.FC = () => {
                   value={roomCodeInput}
                   onChange={e => setRoomCodeInput(normalizeRoomCode(e.target.value))}
                   onKeyDown={e => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && pending === null) {
                       e.preventDefault();
                       void handleJoin();
                     }
