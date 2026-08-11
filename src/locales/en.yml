@@ -30,7 +30,7 @@ lobby:
   linkCopied: "Link copied"
   startGame: "Start operation (5–8 officers required)"
   waitingForHostStart: "Waiting for the senior's signal..."
-  startWithBots: "Start with bots"
+  startWithBots: "Call in reserves and start"
   errorEnterName: "Enter your callsign"
   errorEnterRoomCode: "Enter the case number"
   errorNoHostResponse: "Nobody answered from case {{code}}. Check the number, or ask the senior to open the case again."
