@@ -450,7 +450,7 @@ body {
   font-weight: 700;
   border: 1px solid;
 }
-.pr-seat-mark.pr-done { color: var(--pr-green); border-color: rgba(61, 219, 138, .6); background: rgba(61, 219, 138, .12); }
+.pr-seat-mark.pr-done { color: var(--pr-amber); border-color: rgba(255, 190, 61, .55); background: rgba(255, 190, 61, .12); }
 .pr-seat-mark.pr-waiting { color: var(--pr-txt-3); border-color: var(--pr-line-2); background: var(--pr-panel); }
 
 .pr-seat.pr-me { border-color: var(--pr-blue); box-shadow: inset 0 0 0 1px rgba(74, 168, 255, .25); }

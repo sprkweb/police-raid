@@ -67,7 +67,12 @@ export const OperativeRing: React.FC<Props> = ({ seats, onSelect, children }) =>
           <span className="pr-seat-nm">{seat.name}</span>
           <span className="pr-seat-bd">#{seat.id.slice(-4).toUpperCase()}</span>
           {seat.mark && (
-            <span className={`pr-seat-mark pr-${seat.mark}`}>{seat.mark === 'done' ? '✓' : '·'}</span>
+            <span
+              className={`pr-seat-mark pr-${seat.mark}`}
+              aria-label={seat.mark === 'done' ? 'submitted' : 'pending'}
+            >
+              {seat.mark === 'done' ? '●' : '○'}
+            </span>
           )}
         </button>
       );
