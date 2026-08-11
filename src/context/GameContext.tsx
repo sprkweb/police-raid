@@ -20,7 +20,7 @@ interface GameContextType {
   createRoom: (name: string) => Promise<string>;
 
   startGame: () => void;
-  /** DEV-only: pad with bots and start solo. */
+  /** Pad lobby with bots and start when under MIN_PLAYERS. */
   startGameWithBots: () => void;
   endDiscussion: () => void;
   proposeTeam: (team: PlayerId[]) => void;
@@ -129,7 +129,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       joinRoom, createRoom,
       startGame: () => sendAction({ type: 'START_GAME' }),
       startGameWithBots: () => {
-        if (import.meta.env.DEV && networkRef.current?.isHost) {
+        if (networkRef.current?.isHost) {
           engineRef.current?.startGameWithBots();
         }
       },

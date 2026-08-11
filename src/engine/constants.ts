@@ -20,5 +20,5 @@ export const MAX_PLAYERS = 8;
 export const MAX_ROUNDS = 5;
 export const WINS_NEEDED = 3;
 
-/** Prefixed ids for DEV-only lobby bots. */
+/** Prefixed ids for lobby-fill bots when starting under MIN_PLAYERS. */
 export const BOT_ID_PREFIX = 'bot-';

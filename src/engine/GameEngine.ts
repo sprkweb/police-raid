@@ -1,12 +1,13 @@
 import type { GameState, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
+import { chooseProposedTeam, chooseRaidAction, chooseTeamVote } from './botBehavior';
 import {
   BOT_ID_PREFIX,
   MAX_PLAYERS,
   MIN_PLAYERS,
   type PlayerCount,
 } from './constants';
-import { shuffle, type RandomFn } from './rng';
+import { type RandomFn } from './rng';
 import {
   assignRoles,
   countApproves,
@@ -34,7 +35,7 @@ export class GameEngine {
   private state: GameState;
   private onStateChange: (state: GameState) => void;
   private random: RandomFn;
-  /** DEV: bots auto-play so a solo host can walk through phases. */
+  /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
 
   constructor(
@@ -72,7 +73,7 @@ export class GameEngine {
     this.notify();
   }
 
-  /** DEV-only: pad lobby to MIN_PLAYERS with bots and start so UI can be walked solo. */
+  /** Pad lobby to MIN_PLAYERS with bots and start (for games with fewer than 5 humans). */
   public startGameWithBots() {
     if (this.state.phase !== GamePhase.Lobby) return;
     if (this.state.players.length >= MIN_PLAYERS) {
@@ -122,9 +123,7 @@ export class GameEngine {
           this.state.players.length as PlayerCount,
           this.state.currentRound,
         );
-        const team = shuffle(this.state.players, this.random)
-          .slice(0, size)
-          .map((p) => p.id);
+        const team = chooseProposedTeam(proposer.id, this.state.players, size, this.random);
         this.proposeTeam(proposer.id, team);
         return;
       }
@@ -134,7 +133,16 @@ export class GameEngine {
       let filled = false;
       for (const p of this.state.players) {
         if (isBot(p.id) && !this.state.teamVotes[p.id]) {
-          this.state.teamVotes[p.id] = 'Approve';
+          this.state.teamVotes[p.id] = chooseTeamVote(
+            {
+              botId: p.id,
+              proposedTeam: this.state.currentProposedTeam,
+              currentRound: this.state.currentRound,
+              consecutiveRejections: this.state.consecutiveRejections,
+              playerCount: this.state.players.length,
+            },
+            this.random,
+          );
           filled = true;
         }
       }
@@ -152,7 +160,11 @@ export class GameEngine {
       let filled = false;
       for (const id of this.state.currentProposedTeam) {
         if (isBot(id) && !this.state.raidActions[id]) {
-          this.state.raidActions[id] = 'Support';
+          const player = this.state.players.find((p) => p.id === id);
+          this.state.raidActions[id] = chooseRaidAction(
+            { role: player?.role, currentRound: this.state.currentRound },
+            this.random,
+          );
           filled = true;
         }
       }

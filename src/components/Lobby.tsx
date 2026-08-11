@@ -61,7 +61,7 @@ export const Lobby: React.FC = () => {
   if (gameState) {
     const canStart =
       gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
-    const showDevBots = import.meta.env.DEV && isHost && gameState.players.length < MIN_PLAYERS;
+    const showStartWithBots = isHost && gameState.players.length < MIN_PLAYERS;
     const inviteUrl = activeRoomCode ? inviteUrlFor(activeRoomCode) : '';
 
     return (
@@ -137,9 +137,9 @@ export const Lobby: React.FC = () => {
                 <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
                   {t('lobby.startGame')}
                 </button>
-                {showDevBots && (
+                {showStartWithBots && (
                   <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
-                    {t('lobby.devStartWithBots')}
+                    {t('lobby.startWithBots')}
                   </button>
                 )}
               </>
