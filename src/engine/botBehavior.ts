@@ -2,12 +2,12 @@ import type { Player, PlayerId, RaidAction, Role, Vote } from '../types/game';
 import { Role as Roles } from '../types/game';
 import { shuffle, type RandomFn } from './rng';
 
-/** Likely path for “selfish” / mole-like choices (approve when included, sabotage). */
+/** 
+ * Bot votes selfishly,
+ * with some random noise to make it less predictable. */
 export const BOT_LIKELY_CHANCE = 0.99;
-/** Rare noise so role is never 100% predictable from behavior. */
 export const BOT_UNLIKELY_CHANCE = 0.01;
-/** Round-1 approve rate when the bot is not on the proposed team. */
-export const BOT_ROUND1_OUTSIDE_APPROVE_CHANCE = 0.5;
+export const BOT_RANDOM_CHANCE = 0.5;
 
 export interface ChooseTeamVoteInput {
   botId: PlayerId;
@@ -44,7 +44,7 @@ export function chooseProposedTeam(
 /**
  * Vote for the proposed team.
  * Last proposal before rejection-limit mole win: always Approve.
- * On team: 99% Approve. Off team: 1% Approve (round 1: 50%).
+ * On team: likely to Approve. Off team: unlikely to Approve (round 1: random).
  */
 export function chooseTeamVote(input: ChooseTeamVoteInput, random: RandomFn): Vote {
   const { botId, proposedTeam, currentRound, consecutiveRejections, playerCount } = input;
@@ -60,13 +60,13 @@ export function chooseTeamVote(input: ChooseTeamVoteInput, random: RandomFn): Vo
   }
 
   const approveChance =
-    currentRound === 1 ? BOT_ROUND1_OUTSIDE_APPROVE_CHANCE : BOT_UNLIKELY_CHANCE;
+    currentRound === 1 ? BOT_RANDOM_CHANCE : BOT_UNLIKELY_CHANCE;
   return random() < approveChance ? 'Approve' : 'Reject';
 }
 
 /**
  * Raid action for a bot on the team.
- * Police always Support. Mole sabotages with 99% (round 1: 1%).
+ * Police always Support. Mole sabotages with likely chance (round 1: unlikely chance).
  */
 export function chooseRaidAction(input: ChooseRaidActionInput, random: RandomFn): RaidAction {
   if (input.role !== Roles.Mole) {

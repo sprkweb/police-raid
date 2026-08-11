@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Role } from '../../types/game';
 import {
   BOT_LIKELY_CHANCE,
-  BOT_ROUND1_OUTSIDE_APPROVE_CHANCE,
+  BOT_RANDOM_CHANCE,
   BOT_UNLIKELY_CHANCE,
   chooseProposedTeam,
   chooseRaidAction,
@@ -66,10 +66,10 @@ describe('chooseTeamVote', () => {
 
   it('Approves 50% when off team on round 1', () => {
     const offTeam = { ...base, proposedTeam: ['a', 'b'] as const, currentRound: 1 };
-    expect(chooseTeamVote(offTeam, () => BOT_ROUND1_OUTSIDE_APPROVE_CHANCE - 0.001)).toBe(
+    expect(chooseTeamVote(offTeam, () => BOT_RANDOM_CHANCE - 0.001)).toBe(
       'Approve',
     );
-    expect(chooseTeamVote(offTeam, () => BOT_ROUND1_OUTSIDE_APPROVE_CHANCE)).toBe('Reject');
+    expect(chooseTeamVote(offTeam, () => BOT_RANDOM_CHANCE)).toBe('Reject');
   });
 });
 
