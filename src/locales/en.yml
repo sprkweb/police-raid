@@ -31,6 +31,7 @@ lobby:
   startGame: "Start operation (5–8 officers required)"
   waitingForHostStart: "Waiting for the senior's signal..."
   startWithBots: "Call in reserves and start"
+  enableTimers: "Limit phase time (auto-act on timeout)"
   errorEnterName: "Enter your callsign"
   errorEnterRoomCode: "Enter the case number"
   errorNoHostResponse: "Nobody answered from case {{code}}. Check the number, or ask the senior to open the case again."
@@ -42,6 +43,7 @@ game:
   statRaid: "Raid"
   statDetail: "Detail"
   statRejections: "Rejections in a row"
+  statTimer: "Timer"
 
   dossierTitle: "Personnel file"
   classified: "classified"

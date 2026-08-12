@@ -33,7 +33,7 @@ function inviteUrlFor(roomCode: string): string {
 
 export const Lobby: React.FC = () => {
   const {
-    createRoom, joinRoom, gameState, startGame, startGameWithBots,
+    createRoom, joinRoom, gameState, startGame, startGameWithBots, setTimersEnabled,
     isHost, playerId: myPlayerId, roomCode: activeRoomCode,
   } = useGame();
   const { t } = useTranslation();
@@ -132,6 +132,15 @@ export const Lobby: React.FC = () => {
                 </div>
               </div>
             )}
+            <label className="pr-check">
+              <input
+                type="checkbox"
+                checked={gameState.timersEnabled}
+                disabled={!isHost}
+                onChange={(e) => setTimersEnabled(e.target.checked)}
+              />
+              <span>{t('lobby.enableTimers')}</span>
+            </label>
             {isHost ? (
               <>
                 <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>

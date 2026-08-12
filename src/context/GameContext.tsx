@@ -22,6 +22,8 @@ interface GameContextType {
   startGame: () => void;
   /** Pad lobby with bots and start when under MIN_PLAYERS. */
   startGameWithBots: () => void;
+  /** Host-only lobby toggle for phase time limits. */
+  setTimersEnabled: (enabled: boolean) => void;
   endDiscussion: () => void;
   proposeTeam: (team: PlayerId[]) => void;
   skipProposal: () => void;
@@ -131,6 +133,11 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({ children }
       startGameWithBots: () => {
         if (networkRef.current?.isHost) {
           engineRef.current?.startGameWithBots();
+        }
+      },
+      setTimersEnabled: (enabled) => {
+        if (networkRef.current?.isHost) {
+          engineRef.current?.setTimersEnabled(enabled);
         }
       },
       endDiscussion: () => { if (networkRef.current?.isHost) engineRef.current?.endDiscussion() },

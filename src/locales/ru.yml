@@ -31,6 +31,7 @@ lobby:
   startGame: "Начать операцию (нужно 5–8 человек)"
   waitingForHostStart: "Ждём сигнала старшего..."
   startWithBots: "Вызвать резерв и начать"
+  enableTimers: "Ограничить время фаз (автоход по таймеру)"
   errorEnterName: "Укажите позывной"
   errorEnterRoomCode: "Введите номер дела"
   errorNoHostResponse: "Из дела {{code}} никто не ответил. Проверьте номер или попросите старшего открыть дело заново."
@@ -42,6 +43,7 @@ game:
   statRaid: "Рейд"
   statDetail: "Наряд"
   statRejections: "Отказов подряд"
+  statTimer: "Таймер"
 
   dossierTitle: "Личное дело"
   classified: "секретно"

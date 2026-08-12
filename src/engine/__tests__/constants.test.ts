@@ -4,6 +4,7 @@ import {
   MAX_PLAYERS,
   MAX_ROUNDS,
   MIN_PLAYERS,
+  PHASE_DURATION_MS,
 } from '../constants';
 
 describe('BALANCE / constants', () => {
@@ -20,5 +21,12 @@ describe('BALANCE / constants', () => {
         expect(size).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('defines phase timer durations', () => {
+    expect(PHASE_DURATION_MS.Discussion).toBe(90_000);
+    expect(PHASE_DURATION_MS.ProposingTeam).toBe(20_000);
+    expect(PHASE_DURATION_MS.VotingOnTeam).toBe(20_000);
+    expect(PHASE_DURATION_MS.Raid).toBe(20_000);
   });
 });

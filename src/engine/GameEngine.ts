@@ -5,6 +5,7 @@ import {
   BOT_ID_PREFIX,
   MAX_PLAYERS,
   MIN_PLAYERS,
+  PHASE_DURATION_MS,
   type PlayerCount,
 } from './constants';
 import { type RandomFn } from './rng';
@@ -29,14 +30,19 @@ const isBot = (id: PlayerId) => id.startsWith(BOT_ID_PREFIX);
 export interface GameEngineOptions {
   /** Injected RNG in [0, 1). Defaults to Math.random. */
   random?: RandomFn;
+  /** Current time in ms. Defaults to Date.now. */
+  now?: () => number;
 }
 
 export class GameEngine {
   private state: GameState;
   private onStateChange: (state: GameState) => void;
   private random: RandomFn;
+  private now: () => number;
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
+  private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
+  private phaseTimerGeneration = 0;
 
   constructor(
     hostId: string,
@@ -46,6 +52,7 @@ export class GameEngine {
   ) {
     this.onStateChange = onStateChange;
     this.random = options.random ?? Math.random;
+    this.now = options.now ?? Date.now;
     this.state = createInitialState(hostId, hostName);
     this.notify();
   }
@@ -71,6 +78,91 @@ export class GameEngine {
     if (this.state.phase !== GamePhase.Lobby) return;
     this.state.players = this.state.players.filter((p) => p.id !== id);
     this.notify();
+  }
+
+  /** Host-only lobby setting: enable per-phase countdown + auto-actions. */
+  public setTimersEnabled(enabled: boolean) {
+    if (this.state.phase !== GamePhase.Lobby) return;
+    if (this.state.timersEnabled === enabled) return;
+    this.state.timersEnabled = enabled;
+    this.notify();
+  }
+
+  private disarmPhaseTimer() {
+    if (this.phaseTimerId != null) {
+      clearTimeout(this.phaseTimerId);
+      this.phaseTimerId = null;
+    }
+    this.phaseTimerGeneration++;
+    this.state.phaseEndsAt = null;
+  }
+
+  private armPhaseTimer(durationMs: number) {
+    this.disarmPhaseTimer();
+    if (!this.state.timersEnabled) return;
+
+    const generation = this.phaseTimerGeneration;
+    this.state.phaseEndsAt = this.now() + durationMs;
+    this.phaseTimerId = setTimeout(() => {
+      if (generation !== this.phaseTimerGeneration) return;
+      this.handlePhaseTimeout();
+    }, durationMs);
+  }
+
+  /**
+   * When a phase timer expires, finish unfinished actions the way a bot would
+   * (or end Discussion and move to proposing).
+   */
+  private handlePhaseTimeout() {
+    if (!this.state.timersEnabled) return;
+
+    if (this.state.phase === GamePhase.Discussion) {
+      this.endDiscussion();
+      return;
+    }
+
+    if (this.state.phase === GamePhase.ProposingTeam) {
+      const proposer = this.state.players[this.state.proposerIndex];
+      if (!proposer) return;
+      const numPlayers = this.state.players.length;
+      if (!isSupportedPlayerCount(numPlayers)) return;
+      const size = requiredTeamSize(numPlayers, this.state.currentRound);
+      const team = chooseProposedTeam(proposer.id, this.state.players, size, this.random);
+      this.proposeTeam(proposer.id, team);
+      return;
+    }
+
+    if (this.state.phase === GamePhase.VotingOnTeam) {
+      for (const p of this.state.players) {
+        if (!this.state.teamVotes[p.id]) {
+          this.state.teamVotes[p.id] = chooseTeamVote(
+            {
+              botId: p.id,
+              proposedTeam: this.state.currentProposedTeam,
+              currentRound: this.state.currentRound,
+              consecutiveRejections: this.state.consecutiveRejections,
+              playerCount: this.state.players.length,
+            },
+            this.random,
+          );
+        }
+      }
+      this.resolveVoting();
+      return;
+    }
+
+    if (this.state.phase === GamePhase.Raid) {
+      for (const id of this.state.currentProposedTeam) {
+        if (!this.state.raidActions[id]) {
+          const player = this.state.players.find((p) => p.id === id);
+          this.state.raidActions[id] = chooseRaidAction(
+            { role: player?.role, currentRound: this.state.currentRound },
+            this.random,
+          );
+        }
+      }
+      this.resolveRaid();
+    }
   }
 
   /** Pad lobby to MIN_PLAYERS with bots and start (for games with fewer than 5 humans). */
@@ -110,6 +202,7 @@ export class GameEngine {
 
     this.state.proposerIndex = pickProposerIndex(numPlayers, this.random);
     this.state.phase = GamePhase.Discussion;
+    this.armPhaseTimer(PHASE_DURATION_MS.Discussion);
     this.notify();
   }
 
@@ -181,6 +274,7 @@ export class GameEngine {
   public endDiscussion() {
     if (this.state.phase !== GamePhase.Discussion) return;
     this.state.phase = GamePhase.ProposingTeam;
+    this.armPhaseTimer(PHASE_DURATION_MS.ProposingTeam);
     this.notify();
     this.playBots();
   }
@@ -196,6 +290,7 @@ export class GameEngine {
     this.state.currentProposedTeam = team;
     this.state.teamVotes = {};
     this.state.phase = GamePhase.VotingOnTeam;
+    this.armPhaseTimer(PHASE_DURATION_MS.VotingOnTeam);
     this.notify();
     this.playBots();
   }
@@ -205,6 +300,7 @@ export class GameEngine {
     if (this.state.players[this.state.proposerIndex]?.id !== playerId) return;
 
     this.nextProposer();
+    this.armPhaseTimer(PHASE_DURATION_MS.ProposingTeam);
     this.notify();
     this.playBots();
   }
@@ -230,12 +326,14 @@ export class GameEngine {
       this.state.consecutiveRejections = 0;
       this.state.phase = GamePhase.Raid;
       this.state.raidActions = {};
+      this.armPhaseTimer(PHASE_DURATION_MS.Raid);
     } else {
       this.state.consecutiveRejections++;
       if (molesWinByRejectionLimit(this.state.consecutiveRejections, this.state.players.length)) {
         this.endGame(Role.Mole);
       } else {
         this.nextProposer();
+        this.armPhaseTimer(PHASE_DURATION_MS.ProposingTeam);
       }
     }
     this.notify();
@@ -295,12 +393,14 @@ export class GameEngine {
       this.state.currentRound++;
       this.nextProposer();
       this.state.phase = GamePhase.Discussion;
+      this.armPhaseTimer(PHASE_DURATION_MS.Discussion);
     }
     this.notify();
     this.playBots();
   }
 
   private endGame(winnerRole: Role) {
+    this.disarmPhaseTimer();
     this.state.phase = GamePhase.GameOver;
     this.state.winner = winnerRole === Role.Police ? 'Police' : 'Moles';
   }

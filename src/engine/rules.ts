@@ -27,6 +27,8 @@ export function createInitialState(hostId: PlayerId, hostName: string): GameStat
     teamVotes: {},
     raidActions: {},
     winner: null,
+    timersEnabled: false,
+    phaseEndsAt: null,
   };
 }
 

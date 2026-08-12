@@ -35,6 +35,8 @@ describe('createInitialState', () => {
     expect(state.hostId).toBe('h1');
     expect(state.scores).toEqual({ police: 0, moles: 0 });
     expect(state.winner).toBeNull();
+    expect(state.timersEnabled).toBe(false);
+    expect(state.phaseEndsAt).toBeNull();
   });
 });
 

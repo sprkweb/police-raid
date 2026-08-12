@@ -123,6 +123,11 @@ body {
   letter-spacing: .04em;
 }
 
+.pr-stat-timer .pr-stat-v {
+  font-variant-numeric: tabular-nums;
+  color: var(--pr-amber);
+}
+
 .pr-lang {
   display: flex;
   flex-direction: column;
@@ -752,6 +757,26 @@ body {
 .pr-input::placeholder { color: var(--pr-txt-3); }
 .pr-input:focus { outline: none; border-color: var(--pr-blue); }
 .pr-field { display: flex; flex-direction: column; gap: 6px; }
+.pr-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--pr-ui);
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--pr-txt-2);
+  cursor: pointer;
+}
+.pr-check input {
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: var(--pr-blue);
+}
+.pr-check:has(input:disabled) {
+  cursor: default;
+  opacity: .85;
+}
 .pr-row { display: flex; gap: 8px; }
 .pr-row .pr-btn { width: auto; flex: none; }
 .pr-error { color: var(--pr-red); font-size: 13px; margin: 0; }
