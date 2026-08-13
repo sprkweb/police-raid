@@ -4,7 +4,6 @@ import {
   MAX_PLAYERS,
   MAX_ROUNDS,
   MIN_PLAYERS,
-  PHASE_DURATION_MS,
 } from '../constants';
 
 describe('BALANCE / constants', () => {
