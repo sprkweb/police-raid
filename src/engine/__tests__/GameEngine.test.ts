@@ -37,7 +37,7 @@ describe('GameEngine lobby', () => {
     expect(getState().players.filter((p) => p.id === 'p2')).toHaveLength(1);
   });
 
-  it('removes players only while in Lobby', () => {
+  it('does not drop players from the live roster outside Lobby', () => {
     const ctx = startWithPlayers(5);
     const before = ctx.getState().players.length;
     ctx.engine.removePlayer('p2');
@@ -354,4 +354,68 @@ describe('GameEngine rematch', () => {
     expect(state.hostId).toBe('host');
     expect(state.timersEnabled).toBe(false);
   });
+
+  it('keeps departed players on the GameOver roster, then replaces them with bots on rematch', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    expect(ctx.getState().phase).toBe(GamePhase.GameOver);
+
+    ctx.engine.removePlayer('p2');
+    ctx.engine.removePlayer('p3');
+    ctx.engine.removePlayer('host');
+    expect(ctx.getState().players.map((p) => p.id)).toEqual(['host', 'p2', 'p3', 'p4', 'p5']);
+
+    ctx.engine.startGame();
+    const ids = ctx.getState().players.map((p) => p.id);
+    expect(ids).toHaveLength(5);
+    expect(ids).toContain('host');
+    expect(ids).not.toContain('p2');
+    expect(ids).not.toContain('p3');
+    expect(ids.filter((id) => id.startsWith(BOT_ID_PREFIX))).toEqual([
+      `${BOT_ID_PREFIX}1`,
+      `${BOT_ID_PREFIX}2`,
+    ]);
+    expect(ctx.getState().players[ctx.getState().proposerIndex]?.id).toBe('host');
+  });
+
+  it('lets replacement bots vote so rematch cannot stall with timers off', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    ctx.engine.removePlayer('p2');
+    ctx.engine.startGame();
+
+    beginProposing(ctx);
+    proposeValidTeam(ctx);
+    expect(ctx.getState().phase).toBe(GamePhase.VotingOnTeam);
+
+    for (const player of ctx.getState().players) {
+      if (!player.id.startsWith(BOT_ID_PREFIX)) {
+        ctx.engine.voteTeam(player.id, 'Approve');
+      }
+    }
+
+    expect(ctx.getState().phase).toBe(GamePhase.Raid);
+    expect(Object.keys(ctx.getState().teamVotes)).toHaveLength(5);
+  });
+
+  it('replaces players who disconnected during the previous match', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    ctx.engine.removePlayer('p2');
+    expect(ctx.getState().players.map((p) => p.id)).toContain('p2');
+
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    expect(ctx.getState().phase).toBe(GamePhase.GameOver);
+
+    ctx.engine.startGame();
+    const ids = ctx.getState().players.map((p) => p.id);
+    expect(ids).toEqual(['host', `${BOT_ID_PREFIX}1`, 'p3', 'p4', 'p5']);
+    expect(ctx.getState().players.every((p) => p.role !== null)).toBe(true);
+  });
 });
+
