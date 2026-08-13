@@ -9,6 +9,7 @@ import { OperativeRing } from './OperativeRing';
 import type { SeatView } from './OperativeRing';
 import { ActionButtons, PhaseConsole } from './PhaseConsole';
 import type { ActionView, ConsoleView } from './PhaseConsole';
+import { usePhaseCountdown } from '../hooks/usePhaseCountdown';
 
 const COMPACT_QUERY = '(max-width: 720px)';
 
@@ -31,6 +32,7 @@ export const GameBoard: React.FC = () => {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<PlayerId[]>([]);
   const compact = useCompactLayout();
+  const phaseCountdown = usePhaseCountdown(gameState?.phaseEndsAt);
 
   const round = gameState?.currentRound;
   const proposerIndex = gameState?.proposerIndex;
@@ -112,6 +114,7 @@ export const GameBoard: React.FC = () => {
     stage.text = t('game.textBriefing');
     consoleView.title = t('game.consoleBriefing');
     consoleView.note = t('game.briefingNote');
+    if (phaseCountdown != null && gameState.phaseEndsAt != null) consoleView.big = phaseCountdown;
     if (isHost) actions.push({ key: 'end', label: t('game.endBriefing'), tone: 'blue', onClick: endDiscussion });
     else consoleView.stat = t('game.waitingHost');
   }

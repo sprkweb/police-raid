@@ -24,7 +24,7 @@ export function createTestEngine(
     (state) => {
       latest = state;
     },
-    { random: options.random ?? createSeededRandom(1), ...options },
+    { timersEnabled: false, random: options.random ?? createSeededRandom(1), ...options },
   );
   return {
     engine,

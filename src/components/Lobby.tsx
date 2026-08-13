@@ -33,7 +33,7 @@ function inviteUrlFor(roomCode: string): string {
 
 export const Lobby: React.FC = () => {
   const {
-    createRoom, joinRoom, gameState, startGame, startGameWithBots,
+    createRoom, joinRoom, gameState, startGame, startGameWithBots, setTimersEnabled,
     isHost, playerId: myPlayerId, roomCode: activeRoomCode,
   } = useGame();
   const { t } = useTranslation();
@@ -108,6 +108,17 @@ export const Lobby: React.FC = () => {
 
           <div className="pr-lobby-body">
             {error && <p className="pr-error">{error}</p>}
+            <div className="pr-lobby-options">
+              <label className="pr-check">
+                <input
+                  type="checkbox"
+                  checked={gameState.timersEnabled}
+                  disabled={!isHost}
+                  onChange={(e) => setTimersEnabled(e.target.checked)}
+                />
+                <span>{t('lobby.enableTimers')}</span>
+              </label>
+            </div>
             {activeRoomCode && (
               <div className="pr-field">
                 <label className="pr-label" htmlFor="inviteLink">{t('lobby.inviteLinkLabel')}</label>
@@ -132,20 +143,22 @@ export const Lobby: React.FC = () => {
                 </div>
               </div>
             )}
-            {isHost ? (
-              <>
-                <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
-                  {t('lobby.startGame')}
-                </button>
-                {showStartWithBots && (
-                  <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
-                    {t('lobby.startWithBots')}
+            <div className="pr-lobby-launch">
+              {isHost ? (
+                <>
+                  <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
+                    {t('lobby.startGame')}
                   </button>
-                )}
-              </>
-            ) : (
-              <div className="pr-hint">{t('lobby.waitingForHostStart')}</div>
-            )}
+                  {showStartWithBots && (
+                    <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
+                      {t('lobby.startWithBots')}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="pr-hint">{t('lobby.waitingForHostStart')}</div>
+              )}
+            </div>
           </div>
         </section>
       </div>

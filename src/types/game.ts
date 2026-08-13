@@ -63,4 +63,12 @@ export interface GameState {
   raidActions: Record<PlayerId, RaidAction | null>;
 
   winner: 'Police' | 'Moles' | null;
+
+  /** Host lobby toggle: timed phases with auto-actions on expiry. */
+  timersEnabled: boolean;
+  /**
+   * Absolute timestamp (ms since epoch) when the current timed phase ends.
+   * `null` when timers are off or the phase has no deadline.
+   */
+  phaseEndsAt: number | null;
 }

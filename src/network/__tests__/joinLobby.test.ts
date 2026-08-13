@@ -18,6 +18,8 @@ function lobbyState(playerIds: PlayerId[]): GameState {
     teamVotes: {},
     raidActions: {},
     winner: null,
+    timersEnabled: false,
+    phaseEndsAt: null,
   };
 }
 

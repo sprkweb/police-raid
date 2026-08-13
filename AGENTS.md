@@ -32,3 +32,7 @@ Host-authoritative multiplayer over a swappable network transport (historically 
  - Lobby (join/create, invite link)
  - Game Board (players, scores, current phase)
  - Action Modals/Areas (Team selection, Voting, Raid action)
+
+## Other notes
+
+This is a game, so all the UI, including text, should match the atmosphere of a police raid. 

@@ -123,6 +123,11 @@ body {
   letter-spacing: .04em;
 }
 
+.pr-stat-timer .pr-stat-v {
+  font-variant-numeric: tabular-nums;
+  color: var(--pr-amber);
+}
+
 .pr-lang {
   display: flex;
   flex-direction: column;
@@ -752,6 +757,62 @@ body {
 .pr-input::placeholder { color: var(--pr-txt-3); }
 .pr-input:focus { outline: none; border-color: var(--pr-blue); }
 .pr-field { display: flex; flex-direction: column; gap: 6px; }
+.pr-lobby-options {
+  padding: 2px 0 2px;
+}
+.pr-lobby-launch {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--pr-line);
+}
+.pr-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--pr-ui);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--pr-txt-3);
+  cursor: pointer;
+  user-select: none;
+}
+.pr-check:hover:not(:has(input:disabled)) {
+  color: var(--pr-txt-2);
+}
+.pr-check:has(input:checked) {
+  color: var(--pr-txt-2);
+}
+.pr-check input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: none;
+  border: 1px solid var(--pr-line-2);
+  background: var(--pr-raise);
+  cursor: inherit;
+}
+.pr-check input:checked {
+  border-color: var(--pr-amber);
+  background-color: var(--pr-amber);
+  background-image: linear-gradient(#14100a, #14100a);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 6px 6px;
+}
+.pr-check input:focus-visible {
+  outline: 1px solid var(--pr-blue);
+  outline-offset: 2px;
+}
+.pr-check:has(input:disabled) {
+  cursor: default;
+  opacity: .55;
+}
 .pr-row { display: flex; gap: 8px; }
 .pr-row .pr-btn { width: auto; flex: none; }
 .pr-error { color: var(--pr-red); font-size: 13px; margin: 0; }

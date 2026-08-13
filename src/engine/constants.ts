@@ -22,3 +22,14 @@ export const WINS_NEEDED = 3;
 
 /** Prefixed ids for lobby-fill bots when starting under MIN_PLAYERS. */
 export const BOT_ID_PREFIX = 'bot-';
+
+/**
+ * Per-phase time limits when the host enables timers in the lobby.
+ * Easy to tweak without hunting through engine/UI code.
+ */
+export const PHASE_DURATION_MS = {
+  Discussion: 90_000,
+  ProposingTeam: 20_000,
+  VotingOnTeam: 20_000,
+  Raid: 20_000,
+} as const;

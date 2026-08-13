@@ -20,6 +20,8 @@ function state(hostId: PlayerId, playerIds: PlayerId[], roles: Array<string | nu
     teamVotes: {},
     raidActions: {},
     winner: null,
+    timersEnabled: false,
+    phaseEndsAt: null,
   };
 }
 
