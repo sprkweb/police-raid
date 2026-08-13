@@ -132,29 +132,33 @@ export const Lobby: React.FC = () => {
                 </div>
               </div>
             )}
-            <label className="pr-check">
-              <input
-                type="checkbox"
-                checked={gameState.timersEnabled}
-                disabled={!isHost}
-                onChange={(e) => setTimersEnabled(e.target.checked)}
-              />
-              <span>{t('lobby.enableTimers')}</span>
-            </label>
-            {isHost ? (
-              <>
-                <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
-                  {t('lobby.startGame')}
-                </button>
-                {showStartWithBots && (
-                  <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
-                    {t('lobby.startWithBots')}
+            <div className="pr-lobby-options">
+              <label className="pr-check">
+                <input
+                  type="checkbox"
+                  checked={gameState.timersEnabled}
+                  disabled={!isHost}
+                  onChange={(e) => setTimersEnabled(e.target.checked)}
+                />
+                <span>{t('lobby.enableTimers')}</span>
+              </label>
+            </div>
+            <div className="pr-lobby-launch">
+              {isHost ? (
+                <>
+                  <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
+                    {t('lobby.startGame')}
                   </button>
-                )}
-              </>
-            ) : (
-              <div className="pr-hint">{t('lobby.waitingForHostStart')}</div>
-            )}
+                  {showStartWithBots && (
+                    <button type="button" className="pr-btn pr-green" onClick={startGameWithBots}>
+                      {t('lobby.startWithBots')}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="pr-hint">{t('lobby.waitingForHostStart')}</div>
+              )}
+            </div>
           </div>
         </section>
       </div>
