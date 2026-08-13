@@ -5,3 +5,12 @@ export function formatCountdown(remainingMs: number): string {
   const seconds = totalSec % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
+
+/** Label for a deadline, or `null` when there is no active timer. */
+export function countdownLabel(
+  phaseEndsAt: number | null | undefined,
+  now: number,
+): string | null {
+  if (phaseEndsAt == null) return null;
+  return formatCountdown(phaseEndsAt - now);
+}

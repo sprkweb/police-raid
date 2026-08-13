@@ -1,29 +1,19 @@
 import { useEffect, useState } from 'react';
-import { formatCountdown } from '../engine/formatCountdown';
+import { countdownLabel } from '../engine/formatCountdown';
 
 /**
  * Live countdown label from an absolute deadline, or `null` when inactive.
+ * Derived during render so a new/cleared `phaseEndsAt` never paints the previous value.
  * Re-renders about 4×/sec so the display stays smooth without thrashing.
  */
 export function usePhaseCountdown(phaseEndsAt: number | null | undefined): string | null {
-  const [label, setLabel] = useState<string | null>(() => {
-    if (phaseEndsAt == null) return null;
-    return formatCountdown(phaseEndsAt - Date.now());
-  });
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    if (phaseEndsAt == null) {
-      setLabel(null);
-      return;
-    }
-
-    const tick = () => {
-      setLabel(formatCountdown(phaseEndsAt - Date.now()));
-    };
-    tick();
-    const id = window.setInterval(tick, 250);
+    if (phaseEndsAt == null) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 250);
     return () => window.clearInterval(id);
   }, [phaseEndsAt]);
 
-  return label;
+  return countdownLabel(phaseEndsAt, Date.now());
 }

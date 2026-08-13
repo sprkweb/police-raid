@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { GamePhase } from '../../types/game';
 import { PHASE_DURATION_MS } from '../constants';
-import { formatCountdown } from '../formatCountdown';
+import { formatCountdown, countdownLabel } from '../formatCountdown';
 import { createSequenceRandom } from '../rng';
 import {
   beginProposing,
@@ -32,6 +32,18 @@ describe('formatCountdown', () => {
     expect(formatCountdown(1_001)).toBe('0:02');
     expect(formatCountdown(0)).toBe('0:00');
     expect(formatCountdown(-500)).toBe('0:00');
+  });
+});
+
+describe('countdownLabel', () => {
+  it('returns null when the deadline is cleared', () => {
+    expect(countdownLabel(null, 1_000)).toBeNull();
+    expect(countdownLabel(undefined, 1_000)).toBeNull();
+  });
+
+  it('uses the new deadline immediately (no sticky previous value)', () => {
+    expect(countdownLabel(91_000, 1_000)).toBe('1:30');
+    expect(countdownLabel(21_000, 1_000)).toBe('0:20');
   });
 });
 

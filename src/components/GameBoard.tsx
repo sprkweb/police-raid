@@ -114,7 +114,7 @@ export const GameBoard: React.FC = () => {
     stage.text = t('game.textBriefing');
     consoleView.title = t('game.consoleBriefing');
     consoleView.note = t('game.briefingNote');
-    if (phaseCountdown != null) consoleView.big = phaseCountdown;
+    if (phaseCountdown != null && gameState.phaseEndsAt != null) consoleView.big = phaseCountdown;
     if (isHost) actions.push({ key: 'end', label: t('game.endBriefing'), tone: 'blue', onClick: endDiscussion });
     else consoleView.stat = t('game.waitingHost');
   }
