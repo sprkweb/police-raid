@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { GamePhase } from '../../types/game';
-import { PHASE_DURATION_MS } from '../constants';
+import { PHASE_DURATION_MS, WINS_NEEDED } from '../constants';
 import { formatCountdown, countdownLabel } from '../formatCountdown';
 import { createSequenceRandom } from '../rng';
 import {
@@ -8,6 +8,7 @@ import {
   createTestEngine,
   currentProposerId,
   fillLobby,
+  passSuccessfulRaid,
   proposeValidTeam,
   startWithPlayers,
   teamOfSize,
@@ -152,5 +153,20 @@ describe('GameEngine phase timers', () => {
     vi.advanceTimersByTime(PHASE_DURATION_MS.Raid);
     expect(ctx.getState().phase).not.toBe(GamePhase.Raid);
     expect(ctx.getState().raidResults).toHaveLength(1);
+  });
+
+  it('re-arms a Discussion deadline when rematching from GameOver', () => {
+    const ctx = startWithTimers(5, {
+      random: createSequenceRandom([0, 0, 0, 0, 0]),
+    });
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    expect(ctx.getState().phase).toBe(GamePhase.GameOver);
+    expect(ctx.getState().phaseEndsAt).toBeNull();
+
+    ctx.engine.startGame();
+    expect(ctx.getState().phase).toBe(GamePhase.Discussion);
+    expect(ctx.getState().phaseEndsAt).toBe(Date.now() + PHASE_DURATION_MS.Discussion);
   });
 });

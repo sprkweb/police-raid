@@ -28,7 +28,7 @@ const useCompactLayout = () => {
 };
 
 export const GameBoard: React.FC = () => {
-  const { gameState, playerId: myPlayerId, isHost, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
+  const { gameState, playerId: myPlayerId, isHost, startGame, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
   const { t } = useTranslation();
   const [selected, setSelected] = useState<PlayerId[]>([]);
   const compact = useCompactLayout();
@@ -200,6 +200,16 @@ export const GameBoard: React.FC = () => {
     consoleView.stat = !policeWon && gameState.consecutiveRejections >= players.length
       ? t('game.wonByRejections')
       : t('game.wonByRaids', { raids: policeWon ? gameState.scores.police : gameState.scores.moles });
+    if (isHost) {
+      actions.push({
+        key: 'new-game',
+        label: t('game.startNewGame'),
+        tone: 'blue',
+        onClick: startGame,
+      });
+    } else {
+      consoleView.note = t('game.waitingNewGame');
+    }
   }
 
   const allies = players.filter(p => p.role === Role.Mole && p.id !== myPlayerId).map(p => p.name);

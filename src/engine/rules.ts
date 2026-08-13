@@ -13,11 +13,21 @@ export function isSupportedPlayerCount(n: number): n is PlayerCount {
   return n >= MIN_PLAYERS && n <= MAX_PLAYERS && n in BALANCE;
 }
 
-export function createInitialState(hostId: PlayerId, hostName: string): GameState {
+/** Match fields that reset between games. Seating, host, and timer toggle stay. */
+export function createMatchProgress(): Pick<
+  GameState,
+  | 'currentRound'
+  | 'scores'
+  | 'raidResults'
+  | 'proposerIndex'
+  | 'consecutiveRejections'
+  | 'currentProposedTeam'
+  | 'teamVotes'
+  | 'raidActions'
+  | 'winner'
+  | 'phaseEndsAt'
+> {
   return {
-    phase: GamePhase.Lobby,
-    players: [{ id: hostId, name: hostName, role: null }],
-    hostId,
     currentRound: 1,
     scores: { police: 0, moles: 0 },
     raidResults: [],
@@ -27,8 +37,17 @@ export function createInitialState(hostId: PlayerId, hostName: string): GameStat
     teamVotes: {},
     raidActions: {},
     winner: null,
-    timersEnabled: true,
     phaseEndsAt: null,
+  };
+}
+
+export function createInitialState(hostId: PlayerId, hostName: string): GameState {
+  return {
+    phase: GamePhase.Lobby,
+    players: [{ id: hostId, name: hostName, role: null }],
+    hostId,
+    timersEnabled: true,
+    ...createMatchProgress(),
   };
 }
 

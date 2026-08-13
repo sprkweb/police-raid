@@ -14,6 +14,7 @@ import {
   countApproves,
   countSabotages,
   createInitialState,
+  createMatchProgress,
   isRaidActionAllowed,
   isRaidSuccessful,
   isSupportedPlayerCount,
@@ -196,9 +197,18 @@ export class GameEngine {
     this.playBots();
   }
 
+  /**
+   * Start from Lobby, or rematch from GameOver with the same roster.
+   * Mid-match calls are ignored so a stray START_GAME cannot wipe a live game.
+   */
   public startGame() {
+    if (this.state.phase !== GamePhase.Lobby && this.state.phase !== GamePhase.GameOver) {
+      return;
+    }
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return;
+
+    Object.assign(this.state, createMatchProgress());
 
     const roles = assignRoles(numPlayers, this.random);
     this.state.players.forEach((p, i) => {

@@ -321,3 +321,37 @@ describe('GameEngine startGameWithBots', () => {
     expect(state.players[state.proposerIndex]?.id).toBe('host');
   });
 });
+
+describe('GameEngine rematch', () => {
+  it('ignores startGame while a match is in progress', () => {
+    const ctx = startWithPlayers(5);
+    const rolesBefore = ctx.getState().players.map((p) => p.role);
+    ctx.engine.startGame();
+    expect(ctx.getState().phase).toBe(GamePhase.Discussion);
+    expect(ctx.getState().players.map((p) => p.role)).toEqual(rolesBefore);
+  });
+
+  it('starts a new match from GameOver with the same players', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    const roster = ctx.getState().players.map((p) => ({ id: p.id, name: p.name }));
+    expect(ctx.getState().phase).toBe(GamePhase.GameOver);
+    expect(ctx.getState().scores.police).toBe(WINS_NEEDED);
+
+    ctx.engine.startGame();
+    const state = ctx.getState();
+    expect(state.phase).toBe(GamePhase.Discussion);
+    expect(state.players.map((p) => ({ id: p.id, name: p.name }))).toEqual(roster);
+    expect(state.players.every((p) => p.role !== null)).toBe(true);
+    expect(state.scores).toEqual({ police: 0, moles: 0 });
+    expect(state.raidResults).toEqual([]);
+    expect(state.winner).toBeNull();
+    expect(state.currentRound).toBe(1);
+    expect(state.consecutiveRejections).toBe(0);
+    expect(state.currentProposedTeam).toEqual([]);
+    expect(state.hostId).toBe('host');
+    expect(state.timersEnabled).toBe(false);
+  });
+});
