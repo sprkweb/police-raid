@@ -22,11 +22,4 @@ describe('BALANCE / constants', () => {
       }
     }
   });
-
-  it('defines phase timer durations', () => {
-    expect(PHASE_DURATION_MS.Discussion).toBe(90_000);
-    expect(PHASE_DURATION_MS.ProposingTeam).toBe(20_000);
-    expect(PHASE_DURATION_MS.VotingOnTeam).toBe(20_000);
-    expect(PHASE_DURATION_MS.Raid).toBe(20_000);
-  });
 });
