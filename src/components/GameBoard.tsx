@@ -4,7 +4,7 @@ import { useGame } from '../context/GameContext';
 import { GamePhase, Role } from '../types/game';
 import type { PlayerId } from '../types/game';
 import { MAX_ROUNDS, WINS_NEEDED } from '../engine/constants';
-import { getTeamSize, needsTwoSabotages } from '../engine/selectors';
+import { getTeamSize, needsTwoSabotages, proposingTurnId } from '../engine/selectors';
 import { OperativeRing } from './OperativeRing';
 import type { SeatView } from './OperativeRing';
 import { ActionButtons, PhaseConsole } from './PhaseConsole';
@@ -34,11 +34,12 @@ export const GameBoard: React.FC = () => {
   const compact = useCompactLayout();
   const phaseCountdown = usePhaseCountdown(gameState?.phaseEndsAt);
 
-  const round = gameState?.currentRound;
-  const proposerIndex = gameState?.proposerIndex;
+  const selectionTurn = gameState
+    ? proposingTurnId(gameState)
+    : null;
   useEffect(() => {
     setSelected([]);
-  }, [round, proposerIndex]);
+  }, [selectionTurn]);
 
   const me = gameState?.players.find(p => p.id === myPlayerId);
   if (!gameState || !myPlayerId || !me) return null;
