@@ -46,16 +46,16 @@ describe('GameEngine phase timers', () => {
   });
 
   it('toggles timersEnabled only in Lobby', () => {
-    const { engine, getState } = createTestEngine();
-    expect(getState().timersEnabled).toBe(false);
-
-    engine.setTimersEnabled(true);
+    const { engine, getState } = createTestEngine('host', 'Host', { timersEnabled: true });
     expect(getState().timersEnabled).toBe(true);
+
+    engine.setTimersEnabled(false);
+    expect(getState().timersEnabled).toBe(false);
 
     fillLobby(engine, 5);
     engine.startGame();
-    engine.setTimersEnabled(false);
-    expect(getState().timersEnabled).toBe(true);
+    engine.setTimersEnabled(true);
+    expect(getState().timersEnabled).toBe(false);
   });
 
   it('does not set phaseEndsAt when timers are off', () => {

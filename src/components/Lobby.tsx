@@ -108,6 +108,17 @@ export const Lobby: React.FC = () => {
 
           <div className="pr-lobby-body">
             {error && <p className="pr-error">{error}</p>}
+            <div className="pr-lobby-options">
+              <label className="pr-check">
+                <input
+                  type="checkbox"
+                  checked={gameState.timersEnabled}
+                  disabled={!isHost}
+                  onChange={(e) => setTimersEnabled(e.target.checked)}
+                />
+                <span>{t('lobby.enableTimers')}</span>
+              </label>
+            </div>
             {activeRoomCode && (
               <div className="pr-field">
                 <label className="pr-label" htmlFor="inviteLink">{t('lobby.inviteLinkLabel')}</label>
@@ -132,17 +143,6 @@ export const Lobby: React.FC = () => {
                 </div>
               </div>
             )}
-            <div className="pr-lobby-options">
-              <label className="pr-check">
-                <input
-                  type="checkbox"
-                  checked={gameState.timersEnabled}
-                  disabled={!isHost}
-                  onChange={(e) => setTimersEnabled(e.target.checked)}
-                />
-                <span>{t('lobby.enableTimers')}</span>
-              </label>
-            </div>
             <div className="pr-lobby-launch">
               {isHost ? (
                 <>

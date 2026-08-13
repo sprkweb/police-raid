@@ -32,6 +32,8 @@ export interface GameEngineOptions {
   random?: RandomFn;
   /** Current time in ms. Defaults to Date.now. */
   now?: () => number;
+  /** Override the lobby default (timers on). */
+  timersEnabled?: boolean;
 }
 
 export class GameEngine {
@@ -54,6 +56,9 @@ export class GameEngine {
     this.random = options.random ?? Math.random;
     this.now = options.now ?? Date.now;
     this.state = createInitialState(hostId, hostName);
+    if (options.timersEnabled != null) {
+      this.state.timersEnabled = options.timersEnabled;
+    }
     this.notify();
   }
 
