@@ -120,3 +120,5 @@ game:
   molesWon: "Moles win"
   wonByRaids: "Decisive raids: {{raids}}"
   wonByRejections: "Every detail was rejected"
+  startNewGame: "Start a new operation"
+  waitingNewGame: "Waiting for the senior to start a new operation"

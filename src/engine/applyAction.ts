@@ -9,7 +9,9 @@ export function applyPlayerAction(
 ): void {
   switch (payload.type) {
     case 'START_GAME':
-      engine.startGame();
+      if (playerId === engine.getState().hostId) {
+        engine.startGame();
+      }
       break;
     case 'PROPOSE_TEAM':
       engine.proposeTeam(playerId, payload.team);

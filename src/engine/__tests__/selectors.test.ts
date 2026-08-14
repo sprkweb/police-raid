@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GamePhase } from '../../types/game';
-import { getBalance, getTeamSize, needsTwoSabotages } from '../selectors';
+import { getBalance, getTeamSize, needsTwoSabotages, proposingTurnId } from '../selectors';
 import { createInitialState } from '../rules';
 
 describe('selectors', () => {
@@ -34,5 +34,21 @@ describe('selectors', () => {
     const state = createInitialState('h', 'H');
     expect(getTeamSize(state)).toBe(0);
     expect(state.phase).toBe(GamePhase.Lobby);
+  });
+
+  it('proposingTurnId changes on rematch even when round and proposer stay the same', () => {
+    const state = createInitialState('h', 'H');
+    state.phase = GamePhase.ProposingTeam;
+    state.currentRound = 1;
+    state.proposerIndex = 4;
+    const duringMatch = proposingTurnId(state);
+
+    state.phase = GamePhase.GameOver;
+    const atResults = proposingTurnId(state);
+    expect(atResults).not.toBe(duringMatch);
+
+    state.phase = GamePhase.Discussion;
+    expect(proposingTurnId(state)).not.toBe(duringMatch);
+    expect(proposingTurnId(state)).not.toBe(atResults);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GamePhase } from '../../types/game';
+import { WINS_NEEDED } from '../constants';
 import { applyPlayerAction } from '../applyAction';
 import { createSequenceRandom } from '../rng';
 import {
@@ -7,6 +8,8 @@ import {
   createTestEngine,
   currentProposerId,
   fillLobby,
+  passSuccessfulRaid,
+  startWithPlayers,
   teamOfSize,
 } from './helpers';
 
@@ -51,5 +54,20 @@ describe('applyPlayerAction', () => {
       type: 'SKIP_PROPOSAL',
     });
     expect(ctx.getState().proposerIndex).toBe((before + 1) % 5);
+  });
+
+  it('lets the host rematch from GameOver and ignores other players', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    expect(ctx.getState().phase).toBe(GamePhase.GameOver);
+
+    applyPlayerAction(ctx.engine, 'p2', { type: 'START_GAME' });
+    expect(ctx.getState().phase).toBe(GamePhase.GameOver);
+
+    applyPlayerAction(ctx.engine, 'host', { type: 'START_GAME' });
+    expect(ctx.getState().phase).toBe(GamePhase.Discussion);
+    expect(ctx.getState().scores).toEqual({ police: 0, moles: 0 });
   });
 });

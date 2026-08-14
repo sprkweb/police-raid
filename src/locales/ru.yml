@@ -120,3 +120,5 @@ game:
   molesWon: "Кроты победили"
   wonByRaids: "Решающих рейдов: {{raids}}"
   wonByRejections: "Все наряды отклонены"
+  startNewGame: "Начать новую операцию"
+  waitingNewGame: "Ждём, пока старший начнёт новую операцию"

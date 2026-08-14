@@ -14,6 +14,7 @@ import {
   countApproves,
   countSabotages,
   createInitialState,
+  createMatchProgress,
   isRaidActionAllowed,
   isRaidSuccessful,
   isSupportedPlayerCount,
@@ -43,6 +44,8 @@ export class GameEngine {
   private now: () => number;
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
+  /** Humans who left after the lobby; rematch replaces them with bots. */
+  private departedIds = new Set<PlayerId>();
   private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
   private phaseTimerGeneration = 0;
 
@@ -80,9 +83,17 @@ export class GameEngine {
   }
 
   public removePlayer(id: string) {
-    if (this.state.phase !== GamePhase.Lobby) return;
-    this.state.players = this.state.players.filter((p) => p.id !== id);
-    this.notify();
+    if (isBot(id) || id === this.state.hostId) return;
+
+    if (this.state.phase === GamePhase.Lobby) {
+      this.state.players = this.state.players.filter((p) => p.id !== id);
+      this.notify();
+      return;
+    }
+
+    // Keep the live / results roster intact so a disconnect cannot
+    // collapse player count mid-match. Rematch swaps these seats for bots.
+    this.departedIds.add(id);
   }
 
   /** Host-only lobby setting: enable per-phase countdown + auto-actions. */
@@ -170,35 +181,58 @@ export class GameEngine {
     }
   }
 
+  private nextBotSeat(): { id: PlayerId; name: string; role: null } {
+    let n = 1;
+    while (this.state.players.some((p) => p.id === `${BOT_ID_PREFIX}${n}`)) {
+      n++;
+    }
+    return { id: `${BOT_ID_PREFIX}${n}`, name: `Bot ${n}`, role: null };
+  }
+
+  /** Swap humans who left for bot seats so rematch does not wait on ghosts. */
+  private replaceDepartedWithBots() {
+    if (this.departedIds.size === 0) return;
+
+    for (let i = 0; i < this.state.players.length; i++) {
+      const player = this.state.players[i]!;
+      if (!this.departedIds.has(player.id) || isBot(player.id) || player.id === this.state.hostId) {
+        continue;
+      }
+      this.state.players[i] = this.nextBotSeat();
+      this.botsEnabled = true;
+    }
+    this.departedIds.clear();
+  }
+
   /** Pad lobby to MIN_PLAYERS with bots and start (for games with fewer than 5 humans). */
   public startGameWithBots() {
     if (this.state.phase !== GamePhase.Lobby) return;
-    if (this.state.players.length >= MIN_PLAYERS) {
-      this.startGame();
-      return;
-    }
-
-    let n = 1;
-    while (this.state.players.length < MIN_PLAYERS) {
-      const id = `${BOT_ID_PREFIX}${n}`;
-      if (!this.state.players.find((p) => p.id === id)) {
-        this.state.players.push({ id, name: `Bot ${n}`, role: null });
+    if (this.state.players.length < MIN_PLAYERS) {
+      while (this.state.players.length < MIN_PLAYERS) {
+        this.state.players.push(this.nextBotSeat());
       }
-      n++;
+      this.botsEnabled = true;
     }
-
-    this.botsEnabled = true;
     this.startGame();
-    // Prefer a human proposer so the first propose/vote screens are interactive.
-    const humanIdx = this.state.players.findIndex((p) => !isBot(p.id));
-    if (humanIdx >= 0) this.state.proposerIndex = humanIdx;
-    this.notify();
-    this.playBots();
   }
 
+  /**
+   * Start from Lobby, or rematch from GameOver with the same seat count.
+   * Players who left after the lobby are replaced with bots.
+   * Mid-match calls are ignored so a stray START_GAME cannot wipe a live game.
+   */
   public startGame() {
+    if (this.state.phase !== GamePhase.Lobby && this.state.phase !== GamePhase.GameOver) {
+      return;
+    }
+    if (this.state.phase === GamePhase.GameOver) {
+      this.replaceDepartedWithBots();
+    }
+
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return;
+
+    Object.assign(this.state, createMatchProgress());
 
     const roles = assignRoles(numPlayers, this.random);
     this.state.players.forEach((p, i) => {
@@ -206,9 +240,14 @@ export class GameEngine {
     });
 
     this.state.proposerIndex = pickProposerIndex(numPlayers, this.random);
+    if (this.botsEnabled) {
+      const humanIdx = this.state.players.findIndex((p) => !isBot(p.id));
+      if (humanIdx >= 0) this.state.proposerIndex = humanIdx;
+    }
     this.state.phase = GamePhase.Discussion;
     this.armPhaseTimer(PHASE_DURATION_MS.Discussion);
     this.notify();
+    this.playBots();
   }
 
   private playBots() {

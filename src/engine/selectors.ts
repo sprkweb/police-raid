@@ -15,3 +15,14 @@ export const needsTwoSabotages = (state: GameState, round: number): boolean => {
   if (!isSupportedPlayerCount(count)) return false;
   return requiredSabotagesForRound(count as PlayerCount, round) === 2;
 };
+
+/**
+ * Identity of the current proposing turn. Local detail picks must reset when
+ * this changes — including GameOver → Discussion rematch with the same round
+ * and proposer (e.g. a round-1 rejection win).
+ */
+export function proposingTurnId(
+  state: Pick<GameState, 'phase' | 'currentRound' | 'proposerIndex'>,
+): string {
+  return `${state.phase}:${state.currentRound}:${state.proposerIndex}`;
+}
