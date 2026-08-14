@@ -61,6 +61,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [connectErrorCode, setConnectErrorCode] = useState<string | null>(null);
 
   const networkRef = useRef<NetworkService | null>(null);
+  // Lazy-init once so React Strict Mode's double effect cannot replace a
+  // live connection with a fresh unconnected service (actions would no-op).
+  if (networkRef.current === null) {
+    networkRef.current = createNetworkService();
+  }
   const hostRoomRef = useRef<HostRoom | null>(null);
   const hostPeerIdRef = useRef<PlayerId | null>(null);
   const mySeatIdRef = useRef<PlayerId | null>(null);
@@ -69,7 +74,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const joinRoomRef = useRef<(code: string, name?: string) => Promise<void>>(async () => {});
 
   useEffect(() => {
-    networkRef.current = createNetworkService();
     const code = roomCodeFromLocation();
     if (code) void joinRoomRef.current(code).catch(() => undefined);
   }, []);
