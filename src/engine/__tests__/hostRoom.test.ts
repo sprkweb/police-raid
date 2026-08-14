@@ -109,6 +109,13 @@ describe('HostRoom seating', () => {
 });
 
 describe('HostRoom actions', () => {
+  it('renames a player over the host action path', () => {
+    const room = createHost();
+    const joined = room.handleJoinRequest('peer-a', 'Bravo')!;
+    room.handleAction('peer-a', { type: 'RENAME', name: 'Kilo' });
+    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.name).toBe('Kilo');
+  });
+
   it('ignores PLAYER_ACTION from spectators except rename', () => {
     const room = createHost();
     fillLobby(room.engine, MIN_PLAYERS);

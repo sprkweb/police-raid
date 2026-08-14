@@ -41,7 +41,6 @@ export const Lobby: React.FC = () => {
   const [copied, setCopied] = useState<CopiedField>(null);
   const [pending, setPending] = useState<PendingAction>(null);
   const [editingName, setEditingName] = useState(false);
-  const [draftName, setDraftName] = useState('');
   const busyRef = useRef(false);
 
   const copyText = async (field: Exclude<CopiedField, null>, value: string) => {
@@ -55,9 +54,9 @@ export const Lobby: React.FC = () => {
     }
   };
 
-  const commitRename = () => {
+  const submitCallsign = (raw: string) => {
     setEditingName(false);
-    const next = draftName.trim();
+    const next = raw.trim();
     if (next && next !== playerName) renamePlayer(next);
   };
 
@@ -132,15 +131,14 @@ export const Lobby: React.FC = () => {
                   {isMe && editingName ? (
                     <input
                       className="pr-input pr-roster-rename"
-                      value={draftName}
+                      defaultValue={p.name}
                       autoFocus
                       maxLength={24}
-                      onChange={e => setDraftName(e.target.value)}
-                      onBlur={commitRename}
+                      onBlur={e => submitCallsign(e.currentTarget.value)}
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          commitRename();
+                          submitCallsign(e.currentTarget.value);
                         }
                         if (e.key === 'Escape') {
                           e.preventDefault();
@@ -156,7 +154,6 @@ export const Lobby: React.FC = () => {
                       disabled={!isMe}
                       onClick={() => {
                         if (!isMe) return;
-                        setDraftName(p.name);
                         setEditingName(true);
                       }}
                     >
@@ -186,15 +183,14 @@ export const Lobby: React.FC = () => {
                     {s.id === myPlayerId && editingName ? (
                       <input
                         className="pr-input pr-roster-rename"
-                        value={draftName}
+                        defaultValue={s.name}
                         autoFocus
                         maxLength={24}
-                        onChange={e => setDraftName(e.target.value)}
-                        onBlur={commitRename}
+                        onBlur={e => submitCallsign(e.currentTarget.value)}
                         onKeyDown={e => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            commitRename();
+                            submitCallsign(e.currentTarget.value);
                           }
                           if (e.key === 'Escape') {
                             e.preventDefault();
@@ -210,7 +206,6 @@ export const Lobby: React.FC = () => {
                         disabled={s.id !== myPlayerId}
                         onClick={() => {
                           if (s.id !== myPlayerId) return;
-                          setDraftName(s.name);
                           setEditingName(true);
                         }}
                       >
