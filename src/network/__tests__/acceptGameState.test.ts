@@ -2,65 +2,134 @@ import { describe, expect, it } from 'vitest';
 import { GamePhase, Role, type GameState, type PlayerId } from '../../types/game';
 import { shouldAcceptGameStateUpdate } from '../acceptGameState';
 
-function state(hostId: PlayerId, playerIds: PlayerId[], roles: Array<string | null> = []): GameState {
+function state(
+  hostId: PlayerId,
+  playerIds: PlayerId[],
+  extras: Partial<GameState> = {},
+): GameState {
   return {
-    phase: roles.some(Boolean) ? GamePhase.Discussion : GamePhase.Lobby,
-    players: playerIds.map((id, i) => ({
+    phase: extras.phase ?? GamePhase.Lobby,
+    players: extras.players ?? playerIds.map((id) => ({
       id,
       name: id,
-      role: (roles[i] as GameState['players'][number]['role']) ?? null,
+      role: null,
+      connected: true,
     })),
+    spectators: extras.spectators ?? [],
     hostId,
-    currentRound: 1,
-    scores: { police: 0, moles: 0 },
-    raidResults: [],
-    proposerIndex: 0,
-    consecutiveRejections: 0,
-    currentProposedTeam: [],
-    teamVotes: {},
-    raidActions: {},
-    winner: null,
-    timersEnabled: false,
-    phaseEndsAt: null,
+    stateSeq: extras.stateSeq ?? 1,
+    currentRound: extras.currentRound ?? 1,
+    scores: extras.scores ?? { police: 0, moles: 0 },
+    raidResults: extras.raidResults ?? [],
+    proposerIndex: extras.proposerIndex ?? 0,
+    consecutiveRejections: extras.consecutiveRejections ?? 0,
+    currentProposedTeam: extras.currentProposedTeam ?? [],
+    teamVotes: extras.teamVotes ?? {},
+    raidActions: extras.raidActions ?? {},
+    winner: extras.winner ?? null,
+    timersEnabled: extras.timersEnabled ?? false,
+    phaseEndsAt: extras.phaseEndsAt ?? null,
   };
 }
 
 describe('shouldAcceptGameStateUpdate', () => {
-  it('rejects when transport sender is not state.hostId', () => {
-    const s = state('host', ['host', 'me']);
+  it('rejects when the host peer is not locked yet', () => {
+    const s = state('host-seat', ['host-seat', 'me']);
     expect(
-      shouldAcceptGameStateUpdate('attacker', s, { viewerId: 'me', lockedHostId: null }),
-    ).toBe(false);
-  });
-
-  it('accepts the first seat when from matches hostId and viewer is rostered', () => {
-    const s = state('host', ['host', 'me']);
-    expect(
-      shouldAcceptGameStateUpdate('host', s, { viewerId: 'me', lockedHostId: null }),
-    ).toBe(true);
-  });
-
-  it('rejects first seat when viewer is not in the roster', () => {
-    const s = state('host', ['host', 'someone-else']);
-    expect(
-      shouldAcceptGameStateUpdate('host', s, { viewerId: 'me', lockedHostId: null }),
-    ).toBe(false);
-  });
-
-  it('after lock, ignores a different peer even if they claim to be host in the payload', () => {
-    const forged = state('attacker', ['attacker', 'me'], [Role.Mole, Role.Police]);
-    expect(
-      shouldAcceptGameStateUpdate('attacker', forged, {
-        viewerId: 'me',
-        lockedHostId: 'host',
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'me',
+        lockedHostPeerId: null,
+        lastSeq: 0,
       }),
     ).toBe(false);
   });
 
-  it('after lock, accepts further updates only from the locked host', () => {
-    const s = state('host', ['host', 'me'], [Role.Police, Role.Mole]);
+  it('rejects when transport sender is not the locked host peer', () => {
+    const s = state('host-seat', ['host-seat', 'me']);
     expect(
-      shouldAcceptGameStateUpdate('host', s, { viewerId: 'me', lockedHostId: 'host' }),
+      shouldAcceptGameStateUpdate('attacker', s, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 0,
+      }),
+    ).toBe(false);
+  });
+
+  it('accepts when locked peer matches, viewer is rostered, and seq is newer', () => {
+    const s = state('host-seat', ['host-seat', 'me']);
+    expect(
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 0,
+      }),
     ).toBe(true);
+  });
+
+  it('accepts a spectator who is not on the player roster', () => {
+    const s = state('host-seat', ['host-seat'], {
+      spectators: [{ id: 'watch', name: 'Alpha' }],
+    });
+    expect(
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'watch',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects when the viewer is neither player nor spectator', () => {
+    const s = state('host-seat', ['host-seat', 'someone-else']);
+    expect(
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 0,
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects stale or duplicate stateSeq', () => {
+    const s = state('host-seat', ['host-seat', 'me'], { stateSeq: 3 });
+    expect(
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 3,
+      }),
+    ).toBe(false);
+    expect(
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 4,
+      }),
+    ).toBe(false);
+    expect(
+      shouldAcceptGameStateUpdate('host-peer', s, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 2,
+      }),
+    ).toBe(true);
+  });
+
+  it('after lock, ignores a different peer even if they claim to be host in the payload', () => {
+    const forged = state('attacker', ['attacker', 'me'], {
+      phase: GamePhase.Discussion,
+      players: [
+        { id: 'attacker', name: 'Attacker', role: Role.Mole, connected: true },
+        { id: 'me', name: 'me', role: Role.Police, connected: true },
+      ],
+      stateSeq: 9,
+    });
+    expect(
+      shouldAcceptGameStateUpdate('attacker', forged, {
+        seatId: 'me',
+        lockedHostPeerId: 'host-peer',
+        lastSeq: 0,
+      }),
+    ).toBe(false);
   });
 });

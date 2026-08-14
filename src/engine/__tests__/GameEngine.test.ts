@@ -55,6 +55,38 @@ describe('GameEngine lobby', () => {
     engine.startGame();
     expect(getState().phase).toBe(GamePhase.Lobby);
   });
+
+  it('adds spectators when the roster is full or the match has started', () => {
+    const lobby = createTestEngine();
+    fillLobby(lobby.engine, MAX_PLAYERS);
+    lobby.engine.addSpectator('watch', 'Alpha');
+    expect(lobby.getState().spectators).toEqual([{ id: 'watch', name: 'Alpha' }]);
+
+    const playing = startWithPlayers(5);
+    playing.engine.addPlayer('late', 'Late');
+    expect(playing.getState().players).toHaveLength(5);
+    playing.engine.addSpectator('watch', 'Alpha');
+    expect(playing.getState().spectators.map((s) => s.name)).toEqual(['Alpha']);
+  });
+
+  it('renames a player to a unique callsign and marks disconnects', () => {
+    const { engine, getState } = createTestEngine('host', 'Ada');
+    engine.addPlayer('p2', 'Bravo');
+    expect(engine.rename('p2', 'Kilo')).toBe(true);
+    expect(getState().players.find((p) => p.id === 'p2')?.name).toBe('Kilo');
+
+    engine.setPlayerConnected('p2', false);
+    expect(getState().players.find((p) => p.id === 'p2')?.connected).toBe(false);
+    engine.setPlayerConnected('p2', true);
+    expect(getState().players.find((p) => p.id === 'p2')?.connected).toBe(true);
+  });
+
+  it('increments stateSeq on each notify', () => {
+    const { engine, getState } = createTestEngine();
+    const first = getState().stateSeq;
+    engine.addPlayer('p2', 'Bravo');
+    expect(getState().stateSeq).toBe(first + 1);
+  });
 });
 
 describe('GameEngine startGame', () => {

@@ -10,6 +10,7 @@ export interface SeatView {
   isLead: boolean;
   isAlly: boolean;
   dimmed: boolean;
+  offline?: boolean;
   reveal?: 'police' | 'mole';
   /** Цвет иконки по роли, если зрителю она известна (своя / кроту / конец игры). */
   iconTone?: 'police' | 'mole';
@@ -35,6 +36,7 @@ const seatClassName = (seat: SeatView, selectable: boolean) => {
   if (seat.isMe) classes.push('pr-me');
   if (seat.isLead) classes.push('pr-lead');
   if (seat.dimmed) classes.push('pr-dim');
+  if (seat.offline) classes.push('pr-offline');
   if (seat.flag) classes.push('pr-has-flag');
   if (selectable) classes.push('pr-selectable');
   return classes.join(' ');

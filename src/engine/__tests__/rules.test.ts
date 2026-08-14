@@ -32,7 +32,7 @@ describe('createInitialState', () => {
   it('starts in lobby with the host seated', () => {
     const state = createInitialState('h1', 'Alice');
     expect(state.phase).toBe(GamePhase.Lobby);
-    expect(state.players).toEqual([{ id: 'h1', name: 'Alice', role: null }]);
+    expect(state.players).toEqual([{ id: 'h1', name: 'Alice', role: null, connected: true }]);
     expect(state.hostId).toBe('h1');
     expect(state.scores).toEqual({ police: 0, moles: 0 });
     expect(state.winner).toBeNull();

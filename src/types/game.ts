@@ -26,6 +26,13 @@ export interface Player {
   id: PlayerId;
   name: string;
   role: Role | null;
+  /** False while this seat’s current transport peer is gone. */
+  connected: boolean;
+}
+
+export interface Spectator {
+  id: PlayerId;
+  name: string;
 }
 
 export interface RaidResult {
@@ -38,7 +45,13 @@ export interface RaidResult {
 export interface GameState {
   phase: GamePhase;
   players: Player[];
+  spectators: Spectator[];
   hostId: PlayerId;
+  /**
+   * Monotonic revision. Clients ignore `GAME_STATE_UPDATE` payloads whose
+   * `stateSeq` is not greater than the last one they applied.
+   */
+  stateSeq: number;
 
   currentRound: number;
   scores: {

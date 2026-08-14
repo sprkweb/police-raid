@@ -13,7 +13,7 @@ describe('selectors', () => {
     const state = createInitialState('h', 'H');
     // pad to 5 so balance exists
     for (let i = 2; i <= 5; i++) {
-      state.players.push({ id: `p${i}`, name: `P${i}`, role: null });
+      state.players.push({ id: `p${i}`, name: `P${i}`, role: null, connected: true });
     }
     state.currentRound = 2;
     expect(getTeamSize(state)).toBe(3);
@@ -23,7 +23,7 @@ describe('selectors', () => {
   it('needsTwoSabotages is true only for configured rounds', () => {
     const state = createInitialState('h', 'H');
     for (let i = 2; i <= 7; i++) {
-      state.players.push({ id: `p${i}`, name: `P${i}`, role: null });
+      state.players.push({ id: `p${i}`, name: `P${i}`, role: null, connected: true });
     }
     expect(state.players).toHaveLength(7);
     expect(needsTwoSabotages(state, 4)).toBe(true);

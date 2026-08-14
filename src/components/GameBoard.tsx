@@ -28,7 +28,10 @@ const useCompactLayout = () => {
 };
 
 export const GameBoard: React.FC = () => {
-  const { gameState, playerId: myPlayerId, isHost, startGame, endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction } = useGame();
+  const {
+    gameState, playerId: myPlayerId, isHost, isSpectator, startGame,
+    endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction,
+  } = useGame();
   const { t } = useTranslation();
   const [selected, setSelected] = useState<PlayerId[]>([]);
   const compact = useCompactLayout();
@@ -42,10 +45,12 @@ export const GameBoard: React.FC = () => {
   }, [selectionTurn]);
 
   const me = gameState?.players.find(p => p.id === myPlayerId);
-  if (!gameState || !myPlayerId || !me) return null;
+  const spectatorMe = gameState?.spectators.find(s => s.id === myPlayerId);
+  if (!gameState || !myPlayerId || (!me && !spectatorMe)) return null;
 
   const { phase, players, currentProposedTeam, teamVotes, raidActions } = gameState;
-  const isMole = me.role === Role.Mole;
+  const observing = isSpectator || !me;
+  const isMole = !observing && me?.role === Role.Mole;
   const teamSize = getTeamSize(gameState);
   const lead = players[gameState.proposerIndex];
   const iAmLead = lead?.id === myPlayerId;
@@ -73,7 +78,8 @@ export const GameBoard: React.FC = () => {
     const reveal = isOver ? (player.role === Role.Mole ? 'mole' : 'police') : undefined;
 
     let flag: string | undefined;
-    if (isOver) flag = player.role === Role.Mole ? t('game.mole') : t('game.policeOfficer');
+    if (!player.connected) flag = t('game.flagOffline');
+    else if (isOver) flag = player.role === Role.Mole ? t('game.mole') : t('game.policeOfficer');
     else if (player.id === myPlayerId) flag = t('game.flagYou');
     else if (isAlly) flag = t('game.flagAlly');
     else if (isLead) flag = t('game.flagLead');
@@ -98,7 +104,8 @@ export const GameBoard: React.FC = () => {
       onTeam,
       isLead,
       isAlly,
-      dimmed: isRaid && !onTeam,
+      dimmed: (isRaid && !onTeam) || !player.connected,
+      offline: !player.connected,
       reveal,
       iconTone,
       mark,
@@ -116,8 +123,11 @@ export const GameBoard: React.FC = () => {
     consoleView.title = t('game.consoleBriefing');
     consoleView.note = t('game.briefingNote');
     if (phaseCountdown != null && gameState.phaseEndsAt != null) consoleView.big = phaseCountdown;
-    if (isHost) actions.push({ key: 'end', label: t('game.endBriefing'), tone: 'blue', onClick: endDiscussion });
-    else consoleView.stat = t('game.waitingHost');
+    if (isHost && !observing) {
+      actions.push({ key: 'end', label: t('game.endBriefing'), tone: 'blue', onClick: endDiscussion });
+    } else if (!observing) {
+      consoleView.stat = t('game.waitingHost');
+    }
   }
 
   if (isProposing) {
@@ -155,7 +165,9 @@ export const GameBoard: React.FC = () => {
     consoleView.stat = t('game.signatures', { votes: Object.keys(teamVotes).length, total: players.length });
 
     const myVote = teamVotes[myPlayerId];
-    if (myVote) {
+    if (observing) {
+      consoleView.note = t('game.observingVote');
+    } else if (myVote) {
       consoleView.note = myVote === 'Approve' ? t('game.youApproved') : t('game.youRejected');
     } else {
       consoleView.note = t('game.voteQuestion', { size: currentProposedTeam.length });
@@ -175,7 +187,10 @@ export const GameBoard: React.FC = () => {
       total: currentProposedTeam.length,
     });
 
-    if (!iAmOnTeam) {
+    if (observing) {
+      consoleView.title = t('game.observingRaid');
+      consoleView.note = t('game.awaitReturn');
+    } else if (!iAmOnTeam) {
       consoleView.title = t('game.notOnDetail');
       consoleView.note = t('game.awaitReturn');
     } else if (Object.hasOwn(raidActions, myPlayerId)) {
@@ -230,8 +245,12 @@ export const GameBoard: React.FC = () => {
             </div>
             <div>
               <div className="pr-label">{t('game.yourStatus')}</div>
-              <div className="pr-role">{isMole ? t('game.mole') : t('game.policeOfficer')}</div>
-              <div className="pr-task">{isMole ? t('game.taskMole') : t('game.taskPolice')}</div>
+              <div className="pr-role">
+                {observing ? t('game.observer') : isMole ? t('game.mole') : t('game.policeOfficer')}
+              </div>
+              <div className="pr-task">
+                {observing ? t('game.taskObserver') : isMole ? t('game.taskMole') : t('game.taskPolice')}
+              </div>
               {isMole && (
                 <div className="pr-allies">
                   {allies.length > 0
@@ -241,6 +260,19 @@ export const GameBoard: React.FC = () => {
               )}
             </div>
           </div>
+          {gameState.spectators.length > 0 && (
+            <div className="pr-observers">
+              <div className="pr-label">{t('game.observers', { count: gameState.spectators.length })}</div>
+              <ul className="pr-observer-list">
+                {gameState.spectators.map(s => (
+                  <li key={s.id}>
+                    {s.name}
+                    {s.id === myPlayerId ? ` · ${t('lobby.you')}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
 
         <section className="pr-panel pr-area-case">
@@ -295,6 +327,7 @@ export const GameBoard: React.FC = () => {
 
         <section className="pr-panel pr-area-stage">
           <div className="pr-stage-head">
+            {observing && <div className="pr-observe-banner">{t('game.observingBanner')}</div>}
             <div className="pr-stage-kicker">{stage.kicker}</div>
             <h2>{stage.title}</h2>
             <p>{stage.text}</p>

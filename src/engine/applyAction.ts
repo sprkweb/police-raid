@@ -25,5 +25,8 @@ export function applyPlayerAction(
     case 'RAID_ACTION':
       engine.submitRaidAction(playerId, payload.action);
       break;
+    case 'RENAME':
+      engine.rename(playerId, payload.name);
+      break;
   }
 }

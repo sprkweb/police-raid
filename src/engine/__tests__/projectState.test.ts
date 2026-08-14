@@ -6,11 +6,11 @@ import { createInitialState } from '../rules';
 function baseState(overrides: Partial<GameState> = {}): GameState {
   const state = createInitialState('host', 'Host');
   state.players = [
-    { id: 'host', name: 'Host', role: Role.Police },
-    { id: 'mole1', name: 'Mole One', role: Role.Mole },
-    { id: 'mole2', name: 'Mole Two', role: Role.Mole },
-    { id: 'cop2', name: 'Cop Two', role: Role.Police },
-    { id: 'cop3', name: 'Cop Three', role: Role.Police },
+    { id: 'host', name: 'Host', role: Role.Police, connected: true },
+    { id: 'mole1', name: 'Mole One', role: Role.Mole, connected: true },
+    { id: 'mole2', name: 'Mole Two', role: Role.Mole, connected: true },
+    { id: 'cop2', name: 'Cop Two', role: Role.Police, connected: true },
+    { id: 'cop3', name: 'Cop Three', role: Role.Police, connected: true },
   ];
   state.phase = GamePhase.VotingOnTeam;
   state.currentProposedTeam = ['host', 'mole1'];
@@ -93,5 +93,26 @@ describe('projectForPlayer', () => {
     expect(state.currentProposedTeam).toEqual(['host', 'mole1']);
     expect(state.teamVotes).toEqual({ host: 'Approve', mole1: 'Reject' });
     expect(roleOf(state, 'mole1')).toBe(Role.Mole);
+  });
+
+  it('hides every role from a spectator until GameOver', () => {
+    const state = baseState({
+      spectators: [{ id: 'watch', name: 'Alpha' }],
+      teamVotes: { host: 'Approve', cop2: 'Reject' },
+    });
+    const view = projectForPlayer(state, 'watch');
+    expect(view.players.every((p) => p.role === null)).toBe(true);
+    expect(view.spectators).toEqual([{ id: 'watch', name: 'Alpha' }]);
+    expect(view.teamVotes).toEqual({ host: null, cop2: null });
+
+    const over = projectForPlayer(
+      baseState({
+        phase: GamePhase.GameOver,
+        winner: 'Police',
+        spectators: [{ id: 'watch', name: 'Alpha' }],
+      }),
+      'watch',
+    );
+    expect(over.players.every((p) => p.role !== null)).toBe(true);
   });
 });

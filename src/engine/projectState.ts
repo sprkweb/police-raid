@@ -38,6 +38,7 @@ export function projectForPlayer(state: GameState, viewerId: PlayerId): GameStat
   return {
     ...state,
     players,
+    spectators: state.spectators.map((s) => ({ ...s })),
     scores: { ...state.scores },
     raidResults: state.raidResults.map((r) => ({ ...r, team: [...r.team] })),
     currentProposedTeam: [...state.currentProposedTeam],
