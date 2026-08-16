@@ -4,6 +4,7 @@ import {
   loadSeatSession,
   saveSeatSession,
   seatSessionKey,
+  waitForSeatSession,
   type StorageLike,
 } from '../seatSession';
 
@@ -43,5 +44,27 @@ describe('seatSession', () => {
     expect(loadSeatSession('X', storage)).toBeNull();
     storage.setItem(seatSessionKey('X'), JSON.stringify({ seatId: 'a', secret: 'b', hostPeerId: 'c', kind: 'admin' }));
     expect(loadSeatSession('X', storage)).toBeNull();
+  });
+
+  it('waits until a session appears', async () => {
+    const storage = memory();
+    const session = {
+      seatId: 'seat-1',
+      secret: 'sekrit',
+      hostPeerId: 'host-peer',
+      kind: 'player' as const,
+    };
+    let ticks = 0;
+    const pending = waitForSeatSession('ab12', {
+      storage,
+      timeoutMs: 1_000,
+      intervalMs: 1,
+      now: () => ticks,
+      sleep: async () => {
+        ticks += 1;
+        if (ticks === 2) saveSeatSession('ab12', session, storage);
+      },
+    });
+    await expect(pending).resolves.toEqual(session);
   });
 });

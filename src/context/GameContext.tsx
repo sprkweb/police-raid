@@ -6,9 +6,15 @@ import { enterRoom } from '../network/enterRoom';
 import { HostRoom } from '../engine/hostRoom';
 import { distributeProjectedState, sendProjectedState } from '../engine/distributeProjectedState';
 import { projectForPlayer } from '../engine/projectState';
-import { randomCallsign } from '../engine/callsigns';
+import { preferredCallsign, saveLastCallsign } from '../network/callsignMemory';
 import { clearRoomUrl, roomCodeFromLocation, syncRoomUrl } from '../network/roomUrl';
-import { clearSeatSession, loadSeatSession, saveSeatSession } from '../network/seatSession';
+import {
+  clearSeatSession,
+  loadSeatSession,
+  saveSeatSession,
+  waitForSeatSession,
+} from '../network/seatSession';
+import { announceSeatClaim, claimTakesOverSeat, electJoinLeader, getTabId, subscribeSeatClaims } from '../network/tabPresence';
 import { normalizeRoomCode } from '../network/roomCode';
 
 interface GameContextType {
@@ -20,6 +26,8 @@ interface GameContextType {
   isSpectator: boolean;
   connecting: boolean;
   hostGone: boolean;
+  /** This tab lost the seat to another tab in the same browser. */
+  sessionTakenOver: boolean;
   /** Case code that failed to connect, if any. */
   connectErrorCode: string | null;
   /** Short shareable lobby code. */
@@ -58,6 +66,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [hostGone, setHostGone] = useState(false);
+  const [sessionTakenOver, setSessionTakenOver] = useState(false);
   const [connectErrorCode, setConnectErrorCode] = useState<string | null>(null);
 
   const networkRef = useRef<NetworkService | null>(null);
@@ -70,7 +79,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hostPeerIdRef = useRef<PlayerId | null>(null);
   const mySeatIdRef = useRef<PlayerId | null>(null);
   const seatedRef = useRef(false);
+  const ownsSeatRef = useRef(false);
   const busyRef = useRef(false);
+  const tabIdRef = useRef(getTabId());
+  const yieldToOtherTabRef = useRef<() => Promise<void>>(async () => {});
   const joinRoomRef = useRef<(code: string, name?: string) => Promise<void>>(async () => {});
 
   useEffect(() => {
@@ -83,6 +95,39 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (window as unknown as { __PR_GAME_STATE__?: typeof gameState }).__PR_GAME_STATE__ = gameState;
   }, [gameState]);
 
+  const yieldToOtherTab = async () => {
+    if (hostRoomRef.current) return;
+    if (!seatedRef.current) return;
+    seatedRef.current = false;
+    ownsSeatRef.current = false;
+    hostPeerIdRef.current = null;
+    mySeatIdRef.current = null;
+    await networkRef.current?.disconnect().catch(() => undefined);
+    networkRef.current = createNetworkService();
+    setGameState(null);
+    setMyPlayerId(null);
+    setIsHost(false);
+    setSeatKind('player');
+    setRoomCode(null);
+    setHostGone(false);
+    setConnecting(false);
+    setConnectErrorCode(null);
+    setSessionTakenOver(true);
+    busyRef.current = false;
+  };
+  yieldToOtherTabRef.current = yieldToOtherTab;
+
+  useEffect(() => {
+    if (!roomCode || !myPlayerId || isHost) return;
+    const tabId = tabIdRef.current;
+    announceSeatClaim({ roomCode, seatId: myPlayerId, tabId });
+    return subscribeSeatClaims((incoming) => {
+      if (claimTakesOverSeat(incoming, { roomCode, seatId: myPlayerId, tabId })) {
+        void yieldToOtherTabRef.current();
+      }
+    });
+  }, [roomCode, myPlayerId, isHost]);
+
   const handleHostStateChange = (newState: GameState) => {
     const network = networkRef.current;
     const room = hostRoomRef.current;
@@ -94,7 +139,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const me = viewerId
       ? newState.players.find((p) => p.id === viewerId) ?? newState.spectators.find((s) => s.id === viewerId)
       : undefined;
-    if (me) setMyName(me.name);
+    if (me) {
+      setMyName(me.name);
+      saveLastCallsign(me.name);
+    }
   };
 
   const wireHostHandlers = (network: NetworkService, room: HostRoom) => {
@@ -132,9 +180,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     busyRef.current = true;
     setConnecting(true);
     setHostGone(false);
+    setSessionTakenOver(false);
     setConnectErrorCode(null);
     try {
-      const callsign = (myPlayerName ?? '').trim() || randomCallsign();
+      const callsign = preferredCallsign(myPlayerName);
       const code = await networkRef.current.initializeAsHost();
       const hostPeerId = networkRef.current.playerId;
       if (!hostPeerId) throw new Error('Missing peer id after host init');
@@ -144,8 +193,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       hostPeerIdRef.current = hostPeerId;
       mySeatIdRef.current = room.hostSeatId;
       seatedRef.current = true;
+      ownsSeatRef.current = true;
 
       setMyName(callsign);
+      saveLastCallsign(callsign);
       setIsHost(true);
       setSeatKind('player');
       setRoomCode(code);
@@ -169,11 +220,19 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     busyRef.current = true;
     setConnecting(true);
     setHostGone(false);
+    setSessionTakenOver(false);
     setConnectErrorCode(null);
     const normalized = normalizeRoomCode(code);
+    const hadSessionAtStart = Boolean(loadSeatSession(normalized));
     try {
-      const callsign = (myPlayerName ?? '').trim() || randomCallsign();
-      const session = loadSeatSession(normalized);
+      const callsign = preferredCallsign(myPlayerName);
+      let session = loadSeatSession(normalized);
+      if (!session) {
+        const role = await electJoinLeader({ roomCode: normalized, tabId: tabIdRef.current });
+        if (role === 'follower') {
+          session = await waitForSeatSession(normalized, { timeoutMs: 10_000 });
+        }
+      }
       mySeatIdRef.current = session?.seatId ?? null;
       const joined = await enterRoom(network, normalized, {
         name: callsign,
@@ -181,12 +240,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         onGameState: (state) => {
           setGameState(state);
           const viewer = joinedSeatName(state, mySeatIdRef.current);
-          if (viewer) setMyName(viewer);
+          if (viewer) {
+            setMyName(viewer);
+            saveLastCallsign(viewer);
+          }
         },
       });
 
       mySeatIdRef.current = joined.seatId;
       seatedRef.current = true;
+      ownsSeatRef.current = true;
       setIsHost(false);
       setMyPlayerId(joined.seatId);
       setSeatKind(joined.kind);
@@ -195,6 +258,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       hostPeerIdRef.current = joined.hostPeerId;
       const named = joinedSeatName(joined.state, joined.seatId);
       setMyName(named ?? callsign);
+      saveLastCallsign(named ?? callsign);
       saveSeatSession(joined.roomCode, {
         seatId: joined.seatId,
         secret: joined.secret,
@@ -209,7 +273,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
     } catch (err) {
-      clearSeatSession(normalized);
+      if (hadSessionAtStart) clearSeatSession(normalized);
       clearRoomUrl();
       setConnectErrorCode(normalized);
       throw err;
@@ -222,14 +286,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const returnToCheckIn = async () => {
     const code = roomCode;
+    const shouldClearSeat = Boolean(code) && ownsSeatRef.current;
     hostRoomRef.current?.dispose();
     hostRoomRef.current = null;
     hostPeerIdRef.current = null;
     mySeatIdRef.current = null;
     seatedRef.current = false;
+    ownsSeatRef.current = false;
     await networkRef.current?.disconnect().catch(() => undefined);
     networkRef.current = createNetworkService();
-    if (code) clearSeatSession(code);
+    if (shouldClearSeat && code) clearSeatSession(code);
     clearRoomUrl();
     setGameState(null);
     setMyPlayerId(null);
@@ -238,6 +304,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSeatKind('player');
     setRoomCode(null);
     setHostGone(false);
+    setSessionTakenOver(false);
     setConnecting(false);
     setConnectErrorCode(null);
     busyRef.current = false;
@@ -257,6 +324,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const renamePlayer = (name: string) => {
+    const next = name.trim();
+    if (next) saveLastCallsign(next);
     sendAction({ type: 'RENAME', name });
   };
 
@@ -269,6 +338,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isSpectator: seatKind === 'spectator',
       connecting,
       hostGone,
+      sessionTakenOver,
       connectErrorCode,
       roomCode,
       joinRoom,

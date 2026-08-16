@@ -1,7 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { normalizeRoomCode } from '../network/roomCode';
+import { defaultCallsignField, loadLastCallsign } from '../network/callsignMemory';
+import { randomCallsign } from '../engine/callsigns';
 import { JoinLobbyError } from '../network/joinLobby';
 import { useTranslation } from 'react-i18next';
 
@@ -32,7 +34,8 @@ export const Lobby: React.FC = () => {
     connecting, connectErrorCode, playerName,
   } = useGame();
   const { t } = useTranslation();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => defaultCallsignField());
+  const hadGameRef = useRef(false);
   const [roomCodeInput, setRoomCodeInput] = useState(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('room');
     return fromUrl ? normalizeRoomCode(fromUrl) : '';
@@ -42,6 +45,17 @@ export const Lobby: React.FC = () => {
   const [pending, setPending] = useState<PendingAction>(null);
   const [editingName, setEditingName] = useState(false);
   const busyRef = useRef(false);
+
+  useEffect(() => {
+    if (gameState) {
+      hadGameRef.current = true;
+      return;
+    }
+    if (hadGameRef.current) {
+      hadGameRef.current = false;
+      setName(loadLastCallsign() || randomCallsign());
+    }
+  }, [gameState]);
 
   const copyText = async (field: Exclude<CopiedField, null>, value: string) => {
     try {
@@ -313,7 +327,7 @@ export const Lobby: React.FC = () => {
               className="pr-input"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder={t('lobby.callsignOptional')}
+              placeholder={t('lobby.callsignPlaceholder')}
               autoComplete="nickname"
             />
           </div>

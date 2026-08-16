@@ -76,3 +76,29 @@ export function clearSeatSession(
     // ignore
   }
 }
+
+export async function waitForSeatSession(
+  roomCode: string,
+  options: {
+    storage?: StorageLike | null;
+    timeoutMs?: number;
+    intervalMs?: number;
+    sleep?: (ms: number) => Promise<void>;
+    now?: () => number;
+  } = {},
+): Promise<SeatSession | null> {
+  const storage = options.storage === undefined ? defaultStorage() : options.storage;
+  const timeoutMs = options.timeoutMs ?? 8_000;
+  const intervalMs = options.intervalMs ?? 50;
+  const sleep = options.sleep ?? ((ms) => new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  }));
+  const now = options.now ?? Date.now;
+  const start = now();
+  for (;;) {
+    const session = loadSeatSession(roomCode, storage);
+    if (session) return session;
+    if (now() - start >= timeoutMs) return null;
+    await sleep(intervalMs);
+  }
+}
