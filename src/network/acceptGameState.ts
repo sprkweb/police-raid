@@ -1,27 +1,31 @@
 import type { GameState, PlayerId } from '../types/game';
 
+export function isViewerSeated(state: GameState, seatId: PlayerId): boolean {
+  return (
+    state.players.some((p) => p.id === seatId) ||
+    state.spectators.some((s) => s.id === seatId)
+  );
+}
+
 /**
  * Whether a client should apply an incoming GAME_STATE_UPDATE.
  *
- * The transport `from` peer must be the state's `hostId`. After the first
- * accepted seat, that host id is locked so another room subscriber cannot
- * publish a forged full state (e.g. unredacted roles) and overwrite React.
+ * The transport `from` peer is locked after JOIN_RESPONSE / reclaim — it is
+ * **not** compared to `state.hostId`, which is a stable seat id. Stale
+ * snapshots (`stateSeq` not greater than the last applied) are dropped.
  */
 export function shouldAcceptGameStateUpdate(
   from: PlayerId,
   state: GameState,
   options: {
-    viewerId: PlayerId | null;
-    lockedHostId: PlayerId | null;
+    seatId: PlayerId | null;
+    lockedHostPeerId: PlayerId | null;
+    lastSeq: number;
   },
 ): boolean {
-  if (from !== state.hostId) return false;
-
-  const { viewerId, lockedHostId } = options;
-  if (lockedHostId !== null) {
-    return from === lockedHostId && state.hostId === lockedHostId;
-  }
-
-  if (!viewerId) return false;
-  return state.players.some((p) => p.id === viewerId);
+  const { seatId, lockedHostPeerId, lastSeq } = options;
+  if (lockedHostPeerId === null || from !== lockedHostPeerId) return false;
+  if (!seatId || !isViewerSeated(state, seatId)) return false;
+  if (typeof state.stateSeq === 'number' && state.stateSeq <= lastSeq) return false;
+  return true;
 }

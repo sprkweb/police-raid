@@ -44,8 +44,10 @@ export function createMatchProgress(): Pick<
 export function createInitialState(hostId: PlayerId, hostName: string): GameState {
   return {
     phase: GamePhase.Lobby,
-    players: [{ id: hostId, name: hostName, role: null }],
+    players: [{ id: hostId, name: hostName, role: null, connected: true }],
+    spectators: [],
     hostId,
+    stateSeq: 0,
     timersEnabled: true,
     ...createMatchProgress(),
   };

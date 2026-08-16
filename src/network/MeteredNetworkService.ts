@@ -32,8 +32,8 @@ function isNetworkMessage(data: unknown): data is NetworkMessage {
  * Game traffic is server-routed: room channel for presence / join, Metered
  * direct `send` for per-player state and client actions (so peers cannot read
  * each other's secrets on the channel).
- * Room = Metered channel `police-raid/{PR-XXXX}`.
- * Metered assigns a separate peer id used as `PlayerId` / `hostId`.
+ * Room = Metered channel `police-raid/{XXXX}`.
+ * Metered assigns a transport `peerId`; the game seat id is issued by the host.
  */
 export class MeteredNetworkService implements NetworkService {
   public isHost = false;
@@ -148,7 +148,7 @@ export class MeteredNetworkService implements NetworkService {
 
     // Prefer Metered direct `send` so other room subscribers cannot read
     // PLAYER_ACTION payloads (votes / raid picks). Fall back to channel publish
-    // only when `to` is ourselves — joinLobby uses that before hostId is known.
+    // only when `to` is ourselves — enterRoom uses that before hostPeerId is known.
     if (to !== this.playerId) {
       void this.client.send(to, enriched);
       return;

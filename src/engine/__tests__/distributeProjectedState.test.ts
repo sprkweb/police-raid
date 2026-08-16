@@ -8,10 +8,10 @@ import { createInitialState } from '../rules';
 function playingState(): GameState {
   const state = createInitialState('host', 'Host');
   state.players = [
-    { id: 'host', name: 'Host', role: Role.Police },
-    { id: 'mole1', name: 'Mole One', role: Role.Mole },
-    { id: 'cop2', name: 'Cop Two', role: Role.Police },
-    { id: `${BOT_ID_PREFIX}1`, name: 'Bot 1', role: Role.Mole },
+    { id: 'host', name: 'Host', role: Role.Police, connected: true },
+    { id: 'mole1', name: 'Mole One', role: Role.Mole, connected: true },
+    { id: 'cop2', name: 'Cop Two', role: Role.Police, connected: true },
+    { id: `${BOT_ID_PREFIX}1`, name: 'Bot 1', role: Role.Mole, connected: true },
   ];
   state.phase = GamePhase.VotingOnTeam;
   state.teamVotes = { host: 'Approve', mole1: 'Reject', cop2: 'Approve' };
@@ -28,13 +28,15 @@ describe('distributeProjectedState', () => {
     const sent: Array<{ to: PlayerId; message: NetworkMessage }> = [];
     const network = {
       isHost: true,
-      playerId: 'host' as PlayerId,
       sendMessage: (to: PlayerId, message: NetworkMessage) => {
         sent.push({ to, message });
       },
     };
+    const seats = {
+      peerIdForSeat: (id: PlayerId) => id,
+    };
 
-    distributeProjectedState(network, playingState());
+    distributeProjectedState(network, playingState(), seats);
 
     expect(sent.map((s) => s.to).sort()).toEqual(['cop2', 'mole1']);
 
@@ -59,8 +61,46 @@ describe('distributeProjectedState', () => {
   it('does nothing when not host', () => {
     const sendMessage = vi.fn();
     distributeProjectedState(
-      { isHost: false, playerId: 'cop2', sendMessage },
+      { isHost: false, sendMessage },
       playingState(),
+      { peerIdForSeat: (id) => id },
+    );
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('routes to the current peer id, not the seat id, and includes spectators', () => {
+    const sent: Array<{ to: PlayerId; message: NetworkMessage }> = [];
+    const network = {
+      isHost: true,
+      sendMessage: (to: PlayerId, message: NetworkMessage) => {
+        sent.push({ to, message });
+      },
+    };
+    const state = playingState();
+    state.spectators = [{ id: 'seat-watch', name: 'Alpha' }];
+    const seats = {
+      peerIdForSeat: (id: PlayerId) => {
+        if (id === 'mole1') return 'peer-mole';
+        if (id === 'cop2') return 'peer-cop';
+        if (id === 'seat-watch') return 'peer-watch';
+        return null;
+      },
+    };
+
+    distributeProjectedState(network, state, seats);
+
+    expect(sent.map((s) => s.to).sort()).toEqual(['peer-cop', 'peer-mole', 'peer-watch']);
+    const toWatch = sent.find((s) => s.to === 'peer-watch')!.message.payload as GameState;
+    expect(roleOf(toWatch, 'mole1')).toBeNull();
+    expect(roleOf(toWatch, 'cop2')).toBeNull();
+  });
+
+  it('skips seats with no live peer', () => {
+    const sendMessage = vi.fn();
+    distributeProjectedState(
+      { isHost: true, sendMessage },
+      playingState(),
+      { peerIdForSeat: () => null },
     );
     expect(sendMessage).not.toHaveBeenCalled();
   });

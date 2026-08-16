@@ -11,11 +11,11 @@ import {
 import { createSequenceRandom } from '../rng';
 
 const players = [
-  { id: 'bot-1', name: 'Bot 1', role: null },
-  { id: 'a', name: 'A', role: null },
-  { id: 'b', name: 'B', role: null },
-  { id: 'c', name: 'C', role: null },
-  { id: 'd', name: 'D', role: null },
+  { id: 'bot-1', name: 'Bot 1', role: null, connected: true },
+  { id: 'a', name: 'A', role: null, connected: true },
+  { id: 'b', name: 'B', role: null, connected: true },
+  { id: 'c', name: 'C', role: null, connected: true },
+  { id: 'd', name: 'D', role: null, connected: true },
 ];
 
 describe('chooseProposedTeam', () => {

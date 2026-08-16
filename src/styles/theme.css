@@ -489,6 +489,7 @@ body {
 .pr-seat.pr-ally .pr-seat-flag { background: var(--pr-red); color: #1a0605; }
 
 .pr-seat.pr-dim { opacity: .45; }
+.pr-seat.pr-offline { opacity: .4; filter: grayscale(.35); }
 
 .pr-seat.pr-reveal-police { border-color: rgba(74, 168, 255, .7); }
 .pr-seat.pr-reveal-police .pr-seat-flag { background: rgba(74, 168, 255, .18); color: var(--pr-blue); }
@@ -850,7 +851,34 @@ body {
   text-transform: uppercase;
   font-size: 14px;
   min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
 }
+.pr-roster-name:disabled {
+  cursor: default;
+}
+.pr-roster-name-mine {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+.pr-roster-name-mine:hover {
+  color: var(--pr-blue);
+}
+.pr-roster-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: .03em;
+}
+.pr-roster-offline { opacity: .55; }
 .pr-roster-tags {
   margin-left: auto;
   display: flex;
@@ -869,6 +897,64 @@ body {
 .pr-tag.pr-tag-blue { color: var(--pr-blue); }
 .pr-tag.pr-tag-amber { color: var(--pr-amber); }
 .pr-hint { padding: 4px 0; color: var(--pr-txt-3); font-size: 13px; text-align: center; }
+.pr-connecting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.pr-observers {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--pr-line);
+}
+.pr-observer-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--pr-txt-2);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pr-observer-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pr-observe-banner {
+  font-family: var(--pr-ui);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pr-amber);
+  margin-bottom: 8px;
+}
+.pr-hostgone {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 12, 15, .72);
+}
+.pr-hostgone-panel {
+  max-width: 420px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pr-hostgone-panel h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.pr-hostgone-panel p {
+  margin: 0;
+  color: var(--pr-txt-2);
+  font-size: 14px;
+}
 
 /* ---------- Адаптив ---------- */
 

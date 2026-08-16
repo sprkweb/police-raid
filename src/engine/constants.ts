@@ -23,6 +23,12 @@ export const WINS_NEEDED = 3;
 /** Prefixed ids for lobby-fill bots when starting under MIN_PLAYERS. */
 export const BOT_ID_PREFIX = 'bot-';
 
+/** How long a disconnected lobby seat is held before it is dropped. */
+export const LOBBY_DISCONNECT_GRACE_MS = 15_000;
+
+/** Callsign length after trim. */
+export const MAX_CALLSIGN_LENGTH = 24;
+
 /**
  * Per-phase time limits when the host enables timers in the lobby.
  * Easy to tweak without hunting through engine/UI code.

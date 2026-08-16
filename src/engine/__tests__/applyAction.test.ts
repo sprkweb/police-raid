@@ -70,4 +70,10 @@ describe('applyPlayerAction', () => {
     expect(ctx.getState().phase).toBe(GamePhase.Discussion);
     expect(ctx.getState().scores).toEqual({ police: 0, moles: 0 });
   });
+
+  it('routes RENAME', () => {
+    const ctx = createTestEngine('host', 'Host');
+    applyPlayerAction(ctx.engine, 'host', { type: 'RENAME', name: 'Kilo' });
+    expect(ctx.getState().players[0]?.name).toBe('Kilo');
+  });
 });

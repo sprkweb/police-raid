@@ -55,6 +55,59 @@ describe('GameEngine lobby', () => {
     engine.startGame();
     expect(getState().phase).toBe(GamePhase.Lobby);
   });
+
+  it('does not start while a lobby grace seat is needed to reach MIN_PLAYERS', () => {
+    const { engine, getState } = createTestEngine();
+    fillLobby(engine, MIN_PLAYERS);
+    engine.setPlayerConnected('p2', false);
+    engine.startGame();
+    expect(getState().phase).toBe(GamePhase.Lobby);
+    expect(getState().players.map((p) => p.id)).toContain('p2');
+    expect(getState().players.find((p) => p.id === 'p2')?.connected).toBe(false);
+  });
+
+  it('drops disconnected lobby seats when enough officers are live', () => {
+    const { engine, getState } = createTestEngine();
+    fillLobby(engine, MIN_PLAYERS + 1);
+    engine.setPlayerConnected('p2', false);
+    engine.startGame();
+    expect(getState().phase).toBe(GamePhase.Discussion);
+    expect(getState().players).toHaveLength(MIN_PLAYERS);
+    expect(getState().players.map((p) => p.id)).not.toContain('p2');
+    expect(getState().players.every((p) => p.connected)).toBe(true);
+  });
+
+  it('adds spectators when the roster is full or the match has started', () => {
+    const lobby = createTestEngine();
+    fillLobby(lobby.engine, MAX_PLAYERS);
+    lobby.engine.addSpectator('watch', 'Alpha');
+    expect(lobby.getState().spectators).toEqual([{ id: 'watch', name: 'Alpha' }]);
+
+    const playing = startWithPlayers(5);
+    playing.engine.addPlayer('late', 'Late');
+    expect(playing.getState().players).toHaveLength(5);
+    playing.engine.addSpectator('watch', 'Alpha');
+    expect(playing.getState().spectators.map((s) => s.name)).toEqual(['Alpha']);
+  });
+
+  it('renames a player to a unique callsign and marks disconnects', () => {
+    const { engine, getState } = createTestEngine('host', 'Ada');
+    engine.addPlayer('p2', 'Bravo');
+    expect(engine.rename('p2', 'Kilo')).toBe(true);
+    expect(getState().players.find((p) => p.id === 'p2')?.name).toBe('Kilo');
+
+    engine.setPlayerConnected('p2', false);
+    expect(getState().players.find((p) => p.id === 'p2')?.connected).toBe(false);
+    engine.setPlayerConnected('p2', true);
+    expect(getState().players.find((p) => p.id === 'p2')?.connected).toBe(true);
+  });
+
+  it('increments stateSeq on each notify', () => {
+    const { engine, getState } = createTestEngine();
+    const first = getState().stateSeq;
+    engine.addPlayer('p2', 'Bravo');
+    expect(getState().stateSeq).toBe(first + 1);
+  });
 });
 
 describe('GameEngine startGame', () => {
@@ -319,6 +372,21 @@ describe('GameEngine startGameWithBots', () => {
     expect(state.phase).toBe(GamePhase.Discussion);
     // Human should be preferred as proposer
     expect(state.players[state.proposerIndex]?.id).toBe('host');
+  });
+
+  it('drops offline lobby seats before padding with bots', () => {
+    const { engine, getState } = createTestEngine('host', 'Host', {
+      random: createSeededRandom(1),
+    });
+    engine.addPlayer('p2', 'Bravo');
+    engine.addPlayer('p3', 'Ghost');
+    engine.setPlayerConnected('p3', false);
+    engine.startGameWithBots();
+    const state = getState();
+    expect(state.phase).toBe(GamePhase.Discussion);
+    expect(state.players.map((p) => p.id)).not.toContain('p3');
+    expect(state.players).toHaveLength(MIN_PLAYERS);
+    expect(state.players.every((p) => p.connected)).toBe(true);
   });
 });
 

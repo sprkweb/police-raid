@@ -1,7 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants';
 import { normalizeRoomCode } from '../network/roomCode';
+import { defaultCallsignField, loadLastCallsign } from '../network/callsignMemory';
+import { randomCallsign } from '../engine/callsigns';
 import { JoinLobbyError } from '../network/joinLobby';
 import { useTranslation } from 'react-i18next';
 
@@ -25,19 +27,15 @@ function MaterialIcon({
   );
 }
 
-function inviteUrlFor(roomCode: string): string {
-  const url = new URL(window.location.href);
-  url.searchParams.set('room', roomCode);
-  return url.toString();
-}
-
 export const Lobby: React.FC = () => {
   const {
     createRoom, joinRoom, gameState, startGame, startGameWithBots, setTimersEnabled,
-    isHost, playerId: myPlayerId, roomCode: activeRoomCode,
+    isHost, playerId: myPlayerId, roomCode: activeRoomCode, renamePlayer,
+    connecting, connectErrorCode, playerName,
   } = useGame();
   const { t } = useTranslation();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => defaultCallsignField());
+  const hadGameRef = useRef(false);
   const [roomCodeInput, setRoomCodeInput] = useState(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('room');
     return fromUrl ? normalizeRoomCode(fromUrl) : '';
@@ -45,7 +43,19 @@ export const Lobby: React.FC = () => {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<CopiedField>(null);
   const [pending, setPending] = useState<PendingAction>(null);
+  const [editingName, setEditingName] = useState(false);
   const busyRef = useRef(false);
+
+  useEffect(() => {
+    if (gameState) {
+      hadGameRef.current = true;
+      return;
+    }
+    if (hadGameRef.current) {
+      hadGameRef.current = false;
+      setName(loadLastCallsign() || randomCallsign());
+    }
+  }, [gameState]);
 
   const copyText = async (field: Exclude<CopiedField, null>, value: string) => {
     try {
@@ -58,11 +68,37 @@ export const Lobby: React.FC = () => {
     }
   };
 
+  const submitCallsign = (raw: string) => {
+    setEditingName(false);
+    const next = raw.trim();
+    if (next && next !== playerName) renamePlayer(next);
+  };
+
+  if (connecting && !gameState) {
+    return (
+      <div className="pr-lobby pr-lobby-checkin">
+        <section className="pr-panel pr-lobby-panel">
+          <div className="pr-lobby-head">
+            <div className="pr-stage-kicker">{t('lobby.kicker')}</div>
+            <h2>{t('lobby.connectingTitle')}</h2>
+            <p>{t('lobby.connectingBrief')}</p>
+          </div>
+          <div className="pr-lobby-body">
+            <div className="pr-hint pr-connecting">
+              <MaterialIcon name="autorenew" className="pr-spin" />
+              <span>{t('lobby.joining')}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   if (gameState) {
-    const canStart =
-      gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
-    const showStartWithBots = isHost && gameState.players.length < MIN_PLAYERS;
-    const inviteUrl = activeRoomCode ? inviteUrlFor(activeRoomCode) : '';
+    const connectedCount = gameState.players.filter((p) => p.connected).length;
+    const canStart = connectedCount >= MIN_PLAYERS && connectedCount <= MAX_PLAYERS;
+    const showStartWithBots = isHost && connectedCount < MIN_PLAYERS;
+    const caseUrl = typeof window !== 'undefined' ? window.location.href : '';
 
     return (
       <div className="pr-lobby pr-lobby-staging">
@@ -82,6 +118,15 @@ export const Lobby: React.FC = () => {
                 >
                   <MaterialIcon name={copied === 'code' ? 'check' : 'content_copy'} />
                 </button>
+                <button
+                  type="button"
+                  className={`pr-copy-btn pr-copy-btn-inline${copied === 'link' ? ' pr-copied' : ''}`}
+                  onClick={() => copyText('link', caseUrl)}
+                  aria-label={copied === 'link' ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
+                  title={copied === 'link' ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
+                >
+                  <MaterialIcon name={copied === 'link' ? 'check' : 'link'} />
+                </button>
               </div>
             )}
             <p>{t('lobby.stagingBrief')}</p>
@@ -92,19 +137,101 @@ export const Lobby: React.FC = () => {
           </div>
 
           <div className="pr-roster">
-            {gameState.players.map(p => (
-              <div key={p.id} className="pr-roster-item">
-                <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
-                <span className="pr-roster-name">{p.name}</span>
-                <span className="pr-roster-tags">
-                  {p.id === myPlayerId && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
-                  {p.id === gameState.hostId && (
-                    <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
+            {gameState.players.map(p => {
+              const isMe = p.id === myPlayerId;
+              return (
+                <div key={p.id} className={`pr-roster-item${p.connected ? '' : ' pr-roster-offline'}`}>
+                  <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
+                  {isMe && editingName ? (
+                    <input
+                      className="pr-input pr-roster-rename"
+                      defaultValue={p.name}
+                      autoFocus
+                      maxLength={24}
+                      onBlur={e => submitCallsign(e.currentTarget.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          submitCallsign(e.currentTarget.value);
+                        }
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setEditingName(false);
+                        }
+                      }}
+                      aria-label={t('lobby.callsignLabel')}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className={`pr-roster-name${isMe ? ' pr-roster-name-mine' : ''}`}
+                      disabled={!isMe}
+                      onClick={() => {
+                        if (!isMe) return;
+                        setEditingName(true);
+                      }}
+                    >
+                      {p.name}
+                    </button>
                   )}
-                </span>
-              </div>
-            ))}
+                  <span className="pr-roster-tags">
+                    {!p.connected && <span className="pr-tag">{t('lobby.offline')}</span>}
+                    {isMe && <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>}
+                    {p.id === gameState.hostId && (
+                      <span className="pr-tag pr-tag-amber">{t('lobby.host')}</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
+
+          {gameState.spectators.length > 0 && (
+            <div className="pr-observers">
+              <div className="pr-panel-head">
+                <h2>{t('lobby.observers', { count: gameState.spectators.length })}</h2>
+              </div>
+              <ul className="pr-observer-list">
+                {gameState.spectators.map(s => (
+                  <li key={s.id}>
+                    {s.id === myPlayerId && editingName ? (
+                      <input
+                        className="pr-input pr-roster-rename"
+                        defaultValue={s.name}
+                        autoFocus
+                        maxLength={24}
+                        onBlur={e => submitCallsign(e.currentTarget.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            submitCallsign(e.currentTarget.value);
+                          }
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setEditingName(false);
+                          }
+                        }}
+                        aria-label={t('lobby.callsignLabel')}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className={`pr-roster-name${s.id === myPlayerId ? ' pr-roster-name-mine' : ''}`}
+                        disabled={s.id !== myPlayerId}
+                        onClick={() => {
+                          if (s.id !== myPlayerId) return;
+                          setEditingName(true);
+                        }}
+                      >
+                        {s.name}
+                      </button>
+                    )}
+                    {s.id === myPlayerId ? <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="pr-lobby-body">
             {error && <p className="pr-error">{error}</p>}
@@ -119,30 +246,6 @@ export const Lobby: React.FC = () => {
                 <span>{t('lobby.enableTimers')}</span>
               </label>
             </div>
-            {activeRoomCode && (
-              <div className="pr-field">
-                <label className="pr-label" htmlFor="inviteLink">{t('lobby.inviteLinkLabel')}</label>
-                <div className="pr-copyfield">
-                  <input
-                    id="inviteLink"
-                    type="text"
-                    className="pr-input"
-                    value={inviteUrl}
-                    readOnly
-                    onFocus={e => e.currentTarget.select()}
-                  />
-                  <button
-                    type="button"
-                    className={`pr-copy-btn${copied === 'link' ? ' pr-copied' : ''}`}
-                    onClick={() => copyText('link', inviteUrl)}
-                    aria-label={copied === 'link' ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
-                    title={copied === 'link' ? t('lobby.linkCopied') : t('lobby.copyInviteLink')}
-                  >
-                    <MaterialIcon name={copied === 'link' ? 'check' : 'content_copy'} />
-                  </button>
-                </div>
-              </div>
-            )}
             <div className="pr-lobby-launch">
               {isHost ? (
                 <>
@@ -167,14 +270,13 @@ export const Lobby: React.FC = () => {
 
   const handleCreate = async () => {
     if (busyRef.current) return;
-    if (!name.trim()) return setError(t('lobby.errorEnterName'));
     setError('');
     busyRef.current = true;
     setPending('create');
     try {
       await createRoom(name);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       busyRef.current = false;
       setPending(null);
@@ -183,24 +285,27 @@ export const Lobby: React.FC = () => {
 
   const handleJoin = async () => {
     if (busyRef.current) return;
-    if (!name.trim()) return setError(t('lobby.errorEnterName'));
     if (!roomCodeInput.trim()) return setError(t('lobby.errorEnterRoomCode'));
     setError('');
     busyRef.current = true;
     setPending('join');
     try {
       await joinRoom(roomCodeInput, name);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(
         e instanceof JoinLobbyError
           ? t('lobby.errorNoHostResponse', { code: normalizeRoomCode(roomCodeInput) })
-          : e.message,
+          : e instanceof Error ? e.message : String(e),
       );
     } finally {
       busyRef.current = false;
       setPending(null);
     }
   };
+
+  const shownError = error || (connectErrorCode
+    ? t('lobby.errorNoHostResponse', { code: connectErrorCode })
+    : '');
 
   return (
     <div className="pr-lobby pr-lobby-checkin">
@@ -212,7 +317,7 @@ export const Lobby: React.FC = () => {
         </div>
 
         <div className="pr-lobby-body">
-          {error && <p className="pr-error">{error}</p>}
+          {shownError && <p className="pr-error">{shownError}</p>}
 
           <div className="pr-field">
             <label className="pr-label" htmlFor="playerName">{t('lobby.callsignLabel')}</label>

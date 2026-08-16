@@ -1,6 +1,7 @@
-import type { GameState, PlayerId, Vote, RaidAction } from '../types/game';
+import type { GameState, Player, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
 import { chooseProposedTeam, chooseRaidAction, chooseTeamVote } from './botBehavior';
+import { uniquifyCallsign, normalizeCallsign } from './callsigns';
 import {
   BOT_ID_PREFIX,
   MAX_PLAYERS,
@@ -70,16 +71,71 @@ export class GameEngine {
   }
 
   private notify() {
-    this.onStateChange({ ...this.state, players: [...this.state.players] });
+    this.state.stateSeq += 1;
+    this.onStateChange({
+      ...this.state,
+      players: this.state.players.map((p) => ({ ...p })),
+      spectators: this.state.spectators.map((s) => ({ ...s })),
+    });
+  }
+
+  public takenNames(exceptId?: PlayerId): string[] {
+    return [...this.state.players, ...this.state.spectators]
+      .filter((p) => p.id !== exceptId)
+      .map((p) => p.name);
+  }
+
+  public canAddPlayer(): boolean {
+    return this.state.phase === GamePhase.Lobby && this.state.players.length < MAX_PLAYERS;
   }
 
   public addPlayer(id: string, name: string) {
-    if (this.state.phase !== GamePhase.Lobby) return;
-    if (this.state.players.length >= MAX_PLAYERS) return;
+    if (!this.canAddPlayer()) return;
     if (!this.state.players.find((p) => p.id === id)) {
-      this.state.players.push({ id, name, role: null });
+      this.state.players.push({ id, name, role: null, connected: true });
       this.notify();
     }
+  }
+
+  public addSpectator(id: string, name: string) {
+    if (this.state.players.some((p) => p.id === id)) return;
+    if (this.state.spectators.some((s) => s.id === id)) return;
+    this.state.spectators.push({ id, name });
+    this.notify();
+  }
+
+  public removeSpectator(id: string) {
+    const next = this.state.spectators.filter((s) => s.id !== id);
+    if (next.length === this.state.spectators.length) return;
+    this.state.spectators = next;
+    this.notify();
+  }
+
+  public setPlayerConnected(id: string, connected: boolean) {
+    const player = this.state.players.find((p) => p.id === id);
+    if (!player || isBot(id) || id === this.state.hostId) return;
+    if (player.connected === connected) return;
+    player.connected = connected;
+    if (connected) {
+      this.departedIds.delete(id);
+    } else if (this.state.phase !== GamePhase.Lobby) {
+      this.departedIds.add(id);
+    }
+    this.notify();
+  }
+
+  public rename(id: string, rawName: string): boolean {
+    const desired = normalizeCallsign(rawName);
+    if (!desired) return false;
+    const player = this.state.players.find((p) => p.id === id);
+    const spectator = this.state.spectators.find((s) => s.id === id);
+    const target = player ?? spectator;
+    if (!target) return false;
+    const unique = uniquifyCallsign(desired, this.takenNames(id));
+    if (target.name === unique) return false;
+    target.name = unique;
+    this.notify();
+    return true;
   }
 
   public removePlayer(id: string) {
@@ -94,6 +150,11 @@ export class GameEngine {
     // Keep the live / results roster intact so a disconnect cannot
     // collapse player count mid-match. Rematch swaps these seats for bots.
     this.departedIds.add(id);
+    const player = this.state.players.find((p) => p.id === id);
+    if (player && player.connected) {
+      player.connected = false;
+      this.notify();
+    }
   }
 
   /** Host-only lobby setting: enable per-phase countdown + auto-actions. */
@@ -181,12 +242,12 @@ export class GameEngine {
     }
   }
 
-  private nextBotSeat(): { id: PlayerId; name: string; role: null } {
+  private nextBotSeat(): Player {
     let n = 1;
     while (this.state.players.some((p) => p.id === `${BOT_ID_PREFIX}${n}`)) {
       n++;
     }
-    return { id: `${BOT_ID_PREFIX}${n}`, name: `Bot ${n}`, role: null };
+    return { id: `${BOT_ID_PREFIX}${n}`, name: `Bot ${n}`, role: null, connected: true };
   }
 
   /** Swap humans who left for bot seats so rematch does not wait on ghosts. */
@@ -204,9 +265,20 @@ export class GameEngine {
     this.departedIds.clear();
   }
 
+  /** Lobby grace seats stay on the roster for reclaim; they cannot start a match. */
+  private liveLobbyPlayers(): Player[] {
+    return this.state.players.filter(
+      (p) => p.connected || isBot(p.id) || p.id === this.state.hostId,
+    );
+  }
+
   /** Pad lobby to MIN_PLAYERS with bots and start (for games with fewer than 5 humans). */
   public startGameWithBots() {
     if (this.state.phase !== GamePhase.Lobby) return;
+    const live = this.liveLobbyPlayers();
+    if (live.length !== this.state.players.length) {
+      this.state.players = live;
+    }
     if (this.state.players.length < MIN_PLAYERS) {
       while (this.state.players.length < MIN_PLAYERS) {
         this.state.players.push(this.nextBotSeat());
@@ -227,6 +299,12 @@ export class GameEngine {
     }
     if (this.state.phase === GamePhase.GameOver) {
       this.replaceDepartedWithBots();
+    } else {
+      const live = this.liveLobbyPlayers();
+      if (live.length !== this.state.players.length) {
+        if (!isSupportedPlayerCount(live.length)) return;
+        this.state.players = live;
+      }
     }
 
     const numPlayers = this.state.players.length;
