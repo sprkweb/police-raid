@@ -118,6 +118,14 @@ game:
   youRejected: "You rejected the detail"
   signatures: "Signatures {{votes}} of {{total}}"
 
+  kickerVoteResult: "Phase 03 · signatures in"
+  titleVoteResult: "Detail vote"
+  textVoteResult: "Every signature is on the table. The circle shows who signed the detail off — and who sent it back."
+  consoleVoteResult: "Vote result"
+  voteAccepted: "Detail approved"
+  voteRejected: "Detail rejected"
+  voteTally: "Aye {{yes}} · Nay {{no}}"
+
   kickerBreach: "Phase 04 · breach"
   titleBreach: "Breaching the site"
   textBreach: "The detail is in position. Everyone decides alone, and nobody sees what you picked."
@@ -128,6 +136,14 @@ game:
   notOnDetail: "You are not on the detail"
   awaitReturn: "Wait for the detail to return"
   reports: "Reports {{reports}} of {{total}}"
+
+  kickerRoundEnd: "Phase 04 · after-action"
+  titleRoundEnd: "Raid result"
+  textRoundEnd: "The detail is back. Sabotage is counted, not named."
+  consoleRoundEnd: "After-action"
+  raidResultClean: "Raid came back clean"
+  raidResultBlown: "Raid was compromised"
+  raidResultSabotage: "Sabotage reports: {{count}}"
 
   kickerClosed: "Case closed"
   titleClosed: "Operation result"

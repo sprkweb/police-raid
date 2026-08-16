@@ -31,11 +31,13 @@ export const MAX_CALLSIGN_LENGTH = 24;
 
 /**
  * Per-phase time limits when the host enables timers in the lobby.
- * Easy to tweak without hunting through engine/UI code.
+ * VoteResult / RoundEnd always run (even if lobby timers are off).
  */
 export const PHASE_DURATION_MS = {
   Discussion: 90_000,
   ProposingTeam: 20_000,
   VotingOnTeam: 20_000,
+  VoteResult: 2_000,
   Raid: 20_000,
+  RoundEnd: 3_000,
 } as const;

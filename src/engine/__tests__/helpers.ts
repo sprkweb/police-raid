@@ -24,7 +24,13 @@ export function createTestEngine(
     (state) => {
       latest = state;
     },
-    { timersEnabled: false, random: options.random ?? createSeededRandom(1), ...options },
+    {
+      timersEnabled: false,
+      voteResultDurationMs: 0,
+      roundEndDurationMs: 0,
+      random: options.random ?? createSeededRandom(1),
+      ...options,
+    },
   );
   return {
     engine,

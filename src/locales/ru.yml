@@ -118,6 +118,14 @@ game:
   youRejected: "Вы отклонили наряд"
   signatures: "Подписей {{votes}} из {{total}}"
 
+  kickerVoteResult: "Фаза 03 · подписи собраны"
+  titleVoteResult: "Итог голосования"
+  textVoteResult: "Все подписи на столе. В круге видно, кто утвердил наряд — и кто его завернул."
+  consoleVoteResult: "Результат голосования"
+  voteAccepted: "Наряд утверждён"
+  voteRejected: "Наряд отклонён"
+  voteTally: "За {{yes}} · против {{no}}"
+
   kickerBreach: "Фаза 04 · выезд"
   titleBreach: "Штурм объекта"
   textBreach: "Группа на позиции. Каждый в наряде решает сам, и никто не увидит, что именно вы выбрали."
@@ -128,6 +136,14 @@ game:
   notOnDetail: "Вы не в наряде"
   awaitReturn: "Ожидайте возвращения группы"
   reports: "Рапортов {{reports}} из {{total}}"
+
+  kickerRoundEnd: "Фаза 04 · разбор"
+  titleRoundEnd: "Итог рейда"
+  textRoundEnd: "Группа вернулась. Саботаж считают, но не называют."
+  consoleRoundEnd: "Разбор выезда"
+  raidResultClean: "Рейд прошёл чисто"
+  raidResultBlown: "Рейд сорван"
+  raidResultSabotage: "Саботажей: {{count}}"
 
   kickerClosed: "Дело закрыто"
   titleClosed: "Итог операции"

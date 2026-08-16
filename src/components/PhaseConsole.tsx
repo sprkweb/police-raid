@@ -4,9 +4,10 @@ export interface ConsoleView {
   title: string;
   big?: string;
   verdict?: string;
-  verdictTone?: 'police' | 'moles';
+  verdictTone?: 'police' | 'moles' | 'approve' | 'reject' | 'clean' | 'blown';
   note?: string;
   stat?: string;
+  result?: boolean;
 }
 
 export interface ActionView {
@@ -18,15 +19,17 @@ export interface ActionView {
 }
 
 export const PhaseConsole: React.FC<{ view: ConsoleView }> = ({ view }) => (
-  <>
+  <div className={view.result ? 'pr-console-result' : undefined}>
     <div className="pr-console-title">{view.title}</div>
     {view.big && <div className="pr-console-big">{view.big}</div>}
     {view.verdict && (
-      <div className={`pr-verdict${view.verdictTone === 'moles' ? ' pr-moles-won' : ''}`}>{view.verdict}</div>
+      <div className={`pr-verdict${view.verdictTone ? ` pr-verdict-${view.verdictTone}` : ''}`}>
+        {view.verdict}
+      </div>
     )}
     {view.note && <div className="pr-console-note">{view.note}</div>}
     {view.stat && <div className="pr-console-stat">{view.stat}</div>}
-  </>
+  </div>
 );
 
 export const ActionButtons: React.FC<{ actions: ActionView[] }> = ({ actions }) => {

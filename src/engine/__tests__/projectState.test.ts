@@ -64,6 +64,31 @@ describe('projectForPlayer', () => {
     expect(view.teamVotes.mole1).toBeNull();
   });
 
+  it('reveals every vote value on VoteResult and Raid', () => {
+    const votes = { host: 'Approve' as const, mole1: 'Reject' as const, cop2: 'Approve' as const };
+    const resultView = projectForPlayer(
+      baseState({ phase: GamePhase.VoteResult, teamVotes: votes }),
+      'cop2',
+    );
+    expect(resultView.teamVotes).toEqual(votes);
+
+    const raidView = projectForPlayer(
+      baseState({ phase: GamePhase.Raid, teamVotes: votes }),
+      'cop3',
+    );
+    expect(raidView.teamVotes).toEqual(votes);
+
+    const spectatorView = projectForPlayer(
+      baseState({
+        phase: GamePhase.VoteResult,
+        teamVotes: votes,
+        spectators: [{ id: 'watch', name: 'Alpha' }],
+      }),
+      'watch',
+    );
+    expect(spectatorView.teamVotes).toEqual(votes);
+  });
+
   it('redacts all raid action values (UI never shows them)', () => {
     const state = baseState({
       phase: GamePhase.Raid,
