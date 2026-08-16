@@ -139,6 +139,12 @@ export class HostRoom {
     if (payload.type === 'START_GAME') this.pruneOrphanPlayerSeats();
   }
 
+  /** Pad with bots and start; drop seat secrets for lobby grace seats the engine dropped. */
+  public startGameWithBots(): void {
+    this.engine.startGameWithBots();
+    this.pruneOrphanPlayerSeats();
+  }
+
   public dispose(): void {
     for (const id of this.graceTimers.keys()) this.clearGrace(id);
   }

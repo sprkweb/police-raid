@@ -341,7 +341,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       returnToCheckIn,
       startGame: () => sendAction({ type: 'START_GAME' }),
       startGameWithBots: () => {
-        hostRoomRef.current?.engine.startGameWithBots();
+        hostRoomRef.current?.startGameWithBots();
       },
       setTimersEnabled: (enabled) => {
         hostRoomRef.current?.engine.setTimersEnabled(enabled);

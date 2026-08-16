@@ -123,6 +123,18 @@ describe('HostRoom seating', () => {
     expect(room.seats.bySeatId(ghost.seatId)).toBeUndefined();
     expect(room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret })).toBeNull();
   });
+
+  it('drops a disconnected lobby seat when the host starts with bots', () => {
+    const room = createHost();
+    const ghost = room.handleJoinRequest('peer-ghost', 'Ghost')!;
+    room.handleDisconnect('peer-ghost');
+    room.startGameWithBots();
+
+    expect(room.engine.getState().phase).toBe(GamePhase.Discussion);
+    expect(room.engine.getState().players.map((p) => p.id)).not.toContain(ghost.seatId);
+    expect(room.seats.bySeatId(ghost.seatId)).toBeUndefined();
+    expect(room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret })).toBeNull();
+  });
 });
 
 describe('HostRoom actions', () => {
