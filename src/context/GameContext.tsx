@@ -12,9 +12,9 @@ import {
   clearSeatSession,
   loadSeatSession,
   saveSeatSession,
-  waitForSeatSession,
 } from '../network/seatSession';
-import { announceSeatClaim, claimTakesOverSeat, electJoinLeader, getTabId, subscribeSeatClaims } from '../network/tabPresence';
+import { resolveJoinSeatSession } from '../network/resolveJoinSession';
+import { announceSeatClaim, claimTakesOverSeat, getTabId, subscribeSeatClaims } from '../network/tabPresence';
 import { normalizeRoomCode } from '../network/roomCode';
 
 interface GameContextType {
@@ -226,13 +226,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hadSessionAtStart = Boolean(loadSeatSession(normalized));
     try {
       const callsign = preferredCallsign(myPlayerName);
-      let session = loadSeatSession(normalized);
-      if (!session) {
-        const role = await electJoinLeader({ roomCode: normalized, tabId: tabIdRef.current });
-        if (role === 'follower') {
-          session = await waitForSeatSession(normalized, { timeoutMs: 10_000 });
-        }
-      }
+      const session = await resolveJoinSeatSession(normalized, tabIdRef.current);
       mySeatIdRef.current = session?.seatId ?? null;
       const joined = await enterRoom(network, normalized, {
         name: callsign,
