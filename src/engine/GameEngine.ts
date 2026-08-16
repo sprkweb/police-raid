@@ -265,9 +265,20 @@ export class GameEngine {
     this.departedIds.clear();
   }
 
+  /** Lobby grace seats stay on the roster for reclaim; they cannot start a match. */
+  private liveLobbyPlayers(): Player[] {
+    return this.state.players.filter(
+      (p) => p.connected || isBot(p.id) || p.id === this.state.hostId,
+    );
+  }
+
   /** Pad lobby to MIN_PLAYERS with bots and start (for games with fewer than 5 humans). */
   public startGameWithBots() {
     if (this.state.phase !== GamePhase.Lobby) return;
+    const live = this.liveLobbyPlayers();
+    if (live.length !== this.state.players.length) {
+      this.state.players = live;
+    }
     if (this.state.players.length < MIN_PLAYERS) {
       while (this.state.players.length < MIN_PLAYERS) {
         this.state.players.push(this.nextBotSeat());
@@ -288,6 +299,12 @@ export class GameEngine {
     }
     if (this.state.phase === GamePhase.GameOver) {
       this.replaceDepartedWithBots();
+    } else {
+      const live = this.liveLobbyPlayers();
+      if (live.length !== this.state.players.length) {
+        if (!isSupportedPlayerCount(live.length)) return;
+        this.state.players = live;
+      }
     }
 
     const numPlayers = this.state.players.length;

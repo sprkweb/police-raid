@@ -95,9 +95,9 @@ export const Lobby: React.FC = () => {
   }
 
   if (gameState) {
-    const canStart =
-      gameState.players.length >= MIN_PLAYERS && gameState.players.length <= MAX_PLAYERS;
-    const showStartWithBots = isHost && gameState.players.length < MIN_PLAYERS;
+    const connectedCount = gameState.players.filter((p) => p.connected).length;
+    const canStart = connectedCount >= MIN_PLAYERS && connectedCount <= MAX_PLAYERS;
+    const showStartWithBots = isHost && connectedCount < MIN_PLAYERS;
     const caseUrl = typeof window !== 'undefined' ? window.location.href : '';
 
     return (

@@ -106,6 +106,23 @@ describe('HostRoom seating', () => {
       vi.useRealTimers();
     }
   });
+
+  it('drops a disconnected lobby seat when the host starts with enough live officers', () => {
+    const room = createHost();
+    for (let i = 0; i < MIN_PLAYERS; i++) {
+      room.handleJoinRequest(`peer-${i}`, `P${i}`);
+    }
+    const ghost = room.handleJoinRequest('peer-ghost', 'Ghost')!;
+    expect(room.engine.getState().players).toHaveLength(MIN_PLAYERS + 2);
+
+    room.handleDisconnect('peer-ghost');
+    room.handleAction('host-peer', { type: 'START_GAME' });
+
+    expect(room.engine.getState().phase).toBe(GamePhase.Discussion);
+    expect(room.engine.getState().players.map((p) => p.id)).not.toContain(ghost.seatId);
+    expect(room.seats.bySeatId(ghost.seatId)).toBeUndefined();
+    expect(room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret })).toBeNull();
+  });
 });
 
 describe('HostRoom actions', () => {
