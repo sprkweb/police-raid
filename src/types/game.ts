@@ -12,6 +12,7 @@ export const GamePhase = {
   Discussion: 'Discussion',
   ProposingTeam: 'ProposingTeam',
   VotingOnTeam: 'VotingOnTeam',
+  VoteResult: 'VoteResult',
   Raid: 'Raid',
   RoundEnd: 'RoundEnd',
   GameOver: 'GameOver',

@@ -36,6 +36,10 @@ export interface GameEngineOptions {
   now?: () => number;
   /** Override the lobby default (timers on). */
   timersEnabled?: boolean;
+  /** How long to hold VoteResult. `0` finishes in the same tick (tests). */
+  voteResultDurationMs?: number;
+  /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
+  roundEndDurationMs?: number;
 }
 
 export class GameEngine {
@@ -43,6 +47,8 @@ export class GameEngine {
   private onStateChange: (state: GameState) => void;
   private random: RandomFn;
   private now: () => number;
+  private voteResultDurationMs: number;
+  private roundEndDurationMs: number;
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
   /** Humans who left after the lobby; rematch replaces them with bots. */
@@ -59,6 +65,8 @@ export class GameEngine {
     this.onStateChange = onStateChange;
     this.random = options.random ?? Math.random;
     this.now = options.now ?? Date.now;
+    this.voteResultDurationMs = options.voteResultDurationMs ?? PHASE_DURATION_MS.VoteResult;
+    this.roundEndDurationMs = options.roundEndDurationMs ?? PHASE_DURATION_MS.RoundEnd;
     this.state = createInitialState(hostId, hostName);
     if (options.timersEnabled != null) {
       this.state.timersEnabled = options.timersEnabled;
@@ -174,9 +182,9 @@ export class GameEngine {
     this.state.phaseEndsAt = null;
   }
 
-  private armPhaseTimer(durationMs: number) {
+  private armPhaseTimer(durationMs: number, options?: { always?: boolean }) {
     this.disarmPhaseTimer();
-    if (!this.state.timersEnabled) return;
+    if (!options?.always && !this.state.timersEnabled) return;
 
     const generation = this.phaseTimerGeneration;
     this.state.phaseEndsAt = this.now() + durationMs;
@@ -187,10 +195,38 @@ export class GameEngine {
   }
 
   /**
+   * Hold a result overlay. Always arms a deadline (`phaseEndsAt`), including
+   * when lobby timers are off. Duration `0` finishes in the same tick.
+   */
+  private beginInterstitial(
+    phase: typeof GamePhase.VoteResult | typeof GamePhase.RoundEnd,
+    durationMs: number,
+    finish: () => void,
+  ) {
+    this.state.phase = phase;
+    if (durationMs <= 0) {
+      this.disarmPhaseTimer();
+      this.notify();
+      finish();
+      return;
+    }
+    this.armPhaseTimer(durationMs, { always: true });
+    this.notify();
+  }
+
+  /**
    * When a phase timer expires, finish unfinished actions the way a bot would
    * (or end Discussion and move to proposing).
    */
   private handlePhaseTimeout() {
+    if (this.state.phase === GamePhase.VoteResult) {
+      this.finishVoteResult();
+      return;
+    }
+    if (this.state.phase === GamePhase.RoundEnd) {
+      this.finishRoundEnd();
+      return;
+    }
     if (!this.state.timersEnabled) return;
 
     if (this.state.phase === GamePhase.Discussion) {
@@ -446,17 +482,39 @@ export class GameEngine {
 
     if (isTeamApproved(approves, this.state.players.length)) {
       this.state.consecutiveRejections = 0;
+      this.beginInterstitial(
+        GamePhase.VoteResult,
+        this.voteResultDurationMs,
+        () => this.finishVoteResult(),
+      );
+      return;
+    }
+
+    this.state.consecutiveRejections++;
+    if (molesWinByRejectionLimit(this.state.consecutiveRejections, this.state.players.length)) {
+      this.endGame(Role.Mole);
+      this.notify();
+      return;
+    }
+
+    this.beginInterstitial(
+      GamePhase.VoteResult,
+      this.voteResultDurationMs,
+      () => this.finishVoteResult(),
+    );
+  }
+
+  private finishVoteResult() {
+    if (this.state.phase !== GamePhase.VoteResult) return;
+
+    const approves = countApproves(this.state.teamVotes);
+    if (isTeamApproved(approves, this.state.players.length)) {
       this.state.phase = GamePhase.Raid;
       this.state.raidActions = {};
       this.armPhaseTimer(PHASE_DURATION_MS.Raid);
     } else {
-      this.state.consecutiveRejections++;
-      if (molesWinByRejectionLimit(this.state.consecutiveRejections, this.state.players.length)) {
-        this.endGame(Role.Mole);
-      } else {
-        this.nextProposer();
-        this.armPhaseTimer(PHASE_DURATION_MS.ProposingTeam);
-      }
+      this.nextProposer();
+      this.armPhaseTimer(PHASE_DURATION_MS.ProposingTeam);
     }
     this.notify();
     this.playBots();
@@ -509,14 +567,29 @@ export class GameEngine {
     const winner = winnerFromScores(this.state.scores);
     if (winner === 'Police') {
       this.endGame(Role.Police);
-    } else if (winner === 'Moles') {
-      this.endGame(Role.Mole);
-    } else {
-      this.state.currentRound++;
-      this.nextProposer();
-      this.state.phase = GamePhase.Discussion;
-      this.armPhaseTimer(PHASE_DURATION_MS.Discussion);
+      this.notify();
+      return;
     }
+    if (winner === 'Moles') {
+      this.endGame(Role.Mole);
+      this.notify();
+      return;
+    }
+
+    this.beginInterstitial(
+      GamePhase.RoundEnd,
+      this.roundEndDurationMs,
+      () => this.finishRoundEnd(),
+    );
+  }
+
+  private finishRoundEnd() {
+    if (this.state.phase !== GamePhase.RoundEnd) return;
+
+    this.state.currentRound++;
+    this.nextProposer();
+    this.state.phase = GamePhase.Discussion;
+    this.armPhaseTimer(PHASE_DURATION_MS.Discussion);
     this.notify();
     this.playBots();
   }

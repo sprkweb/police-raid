@@ -1,18 +1,25 @@
 import type { GameState, PlayerId, RaidAction, Vote } from '../types/game';
 import { GamePhase, Role } from '../types/game';
 
+/** Approve/Reject values are public after voting closes, including during the raid. */
+export function teamVotesArePublic(phase: GamePhase): boolean {
+  return phase === GamePhase.VoteResult || phase === GamePhase.Raid;
+}
+
 /**
  * Build the view of authoritative game state that `viewerId` is allowed to see.
  *
  * Visibility matches the UI:
  * - Own role always; moles see fellow moles; everyone sees all roles on GameOver.
  * - Mid-vote: who has cast a ballot (key present); only own Approve/Reject value.
- * - Mid-raid: who has submitted (key present); action values are never shown.
+ * - After voting (VoteResult, Raid): every Approve/Reject value.
+ * - Raid actions: who has submitted (key present); values are never shown.
  */
 export function projectForPlayer(state: GameState, viewerId: PlayerId): GameState {
   const viewer = state.players.find((p) => p.id === viewerId);
   const viewerRole = viewer?.role ?? null;
   const revealAllRoles = state.phase === GamePhase.GameOver;
+  const revealVotes = teamVotesArePublic(state.phase);
 
   const players = state.players.map((p) => {
     if (revealAllRoles || p.id === viewerId) {
@@ -26,10 +33,10 @@ export function projectForPlayer(state: GameState, viewerId: PlayerId): GameStat
 
   const teamVotes: Record<PlayerId, Vote | null> = {};
   for (const [id, vote] of Object.entries(state.teamVotes)) {
-    teamVotes[id] = id === viewerId ? vote : null;
+    teamVotes[id] = revealVotes || id === viewerId ? vote : null;
   }
 
-  // UI only uses key presence ("report sent" / waiting marks), never Support/Sabotage.
+  // Values stay hidden. Key presence is only for the viewer's own "report sent".
   const raidActions: Record<PlayerId, RaidAction | null> = {};
   for (const id of Object.keys(state.raidActions)) {
     raidActions[id] = null;

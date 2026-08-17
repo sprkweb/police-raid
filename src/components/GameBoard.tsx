@@ -5,8 +5,9 @@ import { GamePhase, Role } from '../types/game';
 import type { PlayerId } from '../types/game';
 import { MAX_ROUNDS, WINS_NEEDED } from '../engine/constants';
 import { getTeamSize, needsTwoSabotages, proposingTurnId } from '../engine/selectors';
+import { countApproves, isTeamApproved } from '../engine/rules';
 import { OperativeRing } from './OperativeRing';
-import type { SeatView } from './OperativeRing';
+import type { SeatAccent, SeatGlyph, SeatView } from './OperativeRing';
 import { ActionButtons, PhaseConsole } from './PhaseConsole';
 import type { ActionView, ConsoleView } from './PhaseConsole';
 import { usePhaseCountdown } from '../hooks/usePhaseCountdown';
@@ -57,7 +58,9 @@ export const GameBoard: React.FC = () => {
   const iAmOnTeam = currentProposedTeam.includes(myPlayerId);
   const isProposing = phase === GamePhase.ProposingTeam;
   const isVoting = phase === GamePhase.VotingOnTeam;
+  const isVoteResult = phase === GamePhase.VoteResult;
   const isRaid = phase === GamePhase.Raid;
+  const isRoundEnd = phase === GamePhase.RoundEnd;
   const isOver = phase === GamePhase.GameOver;
 
   // Пока идёт формирование, круг подсвечивает выбор инициатора, дальше — утверждённый наряд.
@@ -74,20 +77,31 @@ export const GameBoard: React.FC = () => {
   const seats: SeatView[] = players.map(player => {
     const onTeam = !isOver && phase !== GamePhase.Discussion && highlighted.includes(player.id);
     const isAlly = isMole && !isOver && player.id !== myPlayerId && player.role === Role.Mole;
-    const isLead = !isOver && (isProposing || isVoting) && player.id === lead?.id;
-    const reveal = isOver ? (player.role === Role.Mole ? 'mole' : 'police') : undefined;
+    const isLead = !isOver && (isProposing || isVoting || isVoteResult) && player.id === lead?.id;
+    const isMe = player.id === myPlayerId;
 
     let flag: string | undefined;
     if (!player.connected) flag = t('game.flagOffline');
     else if (isOver) flag = player.role === Role.Mole ? t('game.mole') : t('game.policeOfficer');
-    else if (player.id === myPlayerId) flag = t('game.flagYou');
+    else if (isMe) flag = t('game.flagYou');
     else if (isAlly) flag = t('game.flagAlly');
     else if (isLead) flag = t('game.flagLead');
     else if (onTeam) flag = t('game.flagOnTeam');
 
-    let mark: SeatView['mark'];
-    if (isVoting) mark = Object.hasOwn(teamVotes, player.id) ? 'done' : 'waiting';
-    else if (isRaid && onTeam) mark = Object.hasOwn(raidActions, player.id) ? 'done' : 'waiting';
+    let accent: SeatAccent | undefined;
+    if (isOver) accent = player.role === Role.Mole ? 'reveal-mole' : 'reveal-police';
+    else if (onTeam) accent = 'team';
+    else if (isMe) accent = isMole ? 'mole' : 'me';
+    else if (isAlly) accent = 'mole';
+    else if (isLead) accent = 'lead';
+
+    let glyph: SeatGlyph | undefined;
+    if (isVoting && Object.hasOwn(teamVotes, player.id)) {
+      glyph = 'signed';
+    } else if (isVoteResult || isRaid) {
+      if (teamVotes[player.id] === 'Approve') glyph = 'approve';
+      else if (teamVotes[player.id] === 'Reject') glyph = 'reject';
+    }
 
     // Roles arrive already projected: null means hidden from this viewer.
     const iconTone = player.role === Role.Mole
@@ -100,15 +114,11 @@ export const GameBoard: React.FC = () => {
       id: player.id,
       name: player.name,
       flag,
-      isMe: player.id === myPlayerId,
-      onTeam,
-      isLead,
-      isAlly,
+      accent,
+      glyph,
       dimmed: (isRaid && !onTeam) || !player.connected,
       offline: !player.connected,
-      reveal,
       iconTone,
-      mark,
     };
   });
 
@@ -205,17 +215,50 @@ export const GameBoard: React.FC = () => {
     }
   }
 
+  if (isVoteResult) {
+    const approves = countApproves(teamVotes);
+    const accepted = isTeamApproved(approves, players.length);
+    stage.kicker = t('game.kickerVoteResult');
+    stage.title = t('game.titleVoteResult');
+    stage.text = t('game.textVoteResult');
+    consoleView.title = t('game.consoleVoteResult');
+    consoleView.verdict = accepted ? t('game.voteAccepted') : t('game.voteRejected');
+    consoleView.verdictTone = accepted ? 'approve' : 'reject';
+    consoleView.stat = t('game.voteTally', { yes: approves, no: players.length - approves });
+    consoleView.result = true;
+  }
+
+  if (isRoundEnd) {
+    const lastRaid = gameState.raidResults.at(-1);
+    const clean = lastRaid?.success === true;
+    stage.kicker = t('game.kickerRoundEnd');
+    stage.title = t('game.titleRoundEnd');
+    stage.text = t('game.textRoundEnd');
+    consoleView.title = t('game.consoleRoundEnd');
+    consoleView.verdict = clean ? t('game.raidResultClean') : t('game.raidResultBlown');
+    consoleView.verdictTone = clean ? 'clean' : 'blown';
+    consoleView.stat = t('game.raidResultSabotage', { count: lastRaid?.sabotageCount ?? 0 });
+    consoleView.result = true;
+  }
+
   if (isOver) {
     const policeWon = gameState.winner === 'Police';
+    const byRejections = !policeWon && gameState.consecutiveRejections >= players.length;
+    const lastRaid = gameState.raidResults.at(-1);
     stage.kicker = t('game.kickerClosed');
     stage.title = t('game.titleClosed');
     stage.text = t('game.textClosed');
     consoleView.title = t('game.caseClosed');
     consoleView.verdict = policeWon ? t('game.policeWon') : t('game.molesWon');
     consoleView.verdictTone = policeWon ? 'police' : 'moles';
-    consoleView.stat = !policeWon && gameState.consecutiveRejections >= players.length
-      ? t('game.wonByRejections')
-      : t('game.wonByRaids', { raids: policeWon ? gameState.scores.police : gameState.scores.moles });
+    if (byRejections) {
+      consoleView.note = t('game.wonByRejections');
+    } else if (lastRaid) {
+      const outcome = lastRaid.success ? t('game.raidResultClean') : t('game.raidResultBlown');
+      consoleView.note = `${outcome} · ${t('game.raidResultSabotage', { count: lastRaid.sabotageCount })}`;
+    } else {
+      consoleView.note = t('game.wonByRaids', { raids: policeWon ? gameState.scores.police : gameState.scores.moles });
+    }
     if (isHost) {
       actions.push({
         key: 'new-game',
@@ -224,7 +267,7 @@ export const GameBoard: React.FC = () => {
         onClick: startGame,
       });
     } else {
-      consoleView.note = t('game.waitingNewGame');
+      consoleView.stat = t('game.waitingNewGame');
     }
   }
 
@@ -335,7 +378,7 @@ export const GameBoard: React.FC = () => {
 
           <div className="pr-board">
             <OperativeRing seats={seats} onSelect={isProposing && iAmLead ? toggleSelection : undefined}>
-              <PhaseConsole view={consoleView} />
+              <PhaseConsole key={phase} view={consoleView} />
               {!compact && <ActionButtons actions={actions} />}
             </OperativeRing>
           </div>

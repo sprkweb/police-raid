@@ -1,20 +1,19 @@
 import React from 'react';
 import type { PlayerId } from '../types/game';
 
+export type SeatAccent = 'me' | 'mole' | 'team' | 'lead' | 'reveal-police' | 'reveal-mole';
+export type SeatGlyph = 'signed' | 'approve' | 'reject';
+
 export interface SeatView {
   id: PlayerId;
   name: string;
   flag?: string;
-  isMe: boolean;
-  onTeam: boolean;
-  isLead: boolean;
-  isAlly: boolean;
+  accent?: SeatAccent;
+  glyph?: SeatGlyph;
   dimmed: boolean;
   offline?: boolean;
-  reveal?: 'police' | 'mole';
   /** Цвет иконки по роли, если зрителю она известна (своя / кроту / конец игры). */
   iconTone?: 'police' | 'mole';
-  mark?: 'done' | 'waiting';
 }
 
 interface Props {
@@ -27,14 +26,17 @@ const SEAT_RADIUS = 38;
 
 const angleOf = (index: number, total: number) => (-90 + (360 / total) * index) * Math.PI / 180;
 
+const glyphLabel: Record<SeatGlyph, string> = {
+  signed: 'signed',
+  approve: 'approved',
+  reject: 'rejected',
+};
+
 const seatClassName = (seat: SeatView, selectable: boolean) => {
   const classes = ['pr-seat'];
-  if (seat.reveal) classes.push(seat.reveal === 'mole' ? 'pr-reveal-mole' : 'pr-reveal-police');
-  if (seat.iconTone) classes.push(seat.iconTone === 'mole' ? 'pr-icon-mole' : 'pr-icon-police');
-  if (seat.onTeam) classes.push('pr-on-team');
-  if (seat.isAlly) classes.push('pr-ally');
-  if (seat.isMe) classes.push('pr-me');
-  if (seat.isLead) classes.push('pr-lead');
+  if (seat.accent) classes.push(`pr-accent-${seat.accent}`);
+  if (seat.glyph) classes.push(`pr-glyph-${seat.glyph}`);
+  else if (seat.iconTone) classes.push(seat.iconTone === 'mole' ? 'pr-icon-mole' : 'pr-icon-police');
   if (seat.dimmed) classes.push('pr-dim');
   if (seat.offline) classes.push('pr-offline');
   if (seat.flag) classes.push('pr-has-flag');
@@ -61,6 +63,7 @@ export const OperativeRing: React.FC<Props> = ({ seats, onSelect, children }) =>
           }}
           onClick={onSelect ? () => onSelect(seat.id) : undefined}
           disabled={!onSelect}
+          aria-label={seat.glyph ? `${seat.name}, ${glyphLabel[seat.glyph]}` : undefined}
         >
           {seat.flag && <span className="pr-seat-flag">{seat.flag}</span>}
           <span className="pr-seat-ava" aria-hidden="true">
@@ -68,14 +71,6 @@ export const OperativeRing: React.FC<Props> = ({ seats, onSelect, children }) =>
           </span>
           <span className="pr-seat-nm">{seat.name}</span>
           <span className="pr-seat-bd">#{seat.id.slice(-4).toUpperCase()}</span>
-          {seat.mark && (
-            <span
-              className={`pr-seat-mark pr-${seat.mark}`}
-              aria-label={seat.mark === 'done' ? 'submitted' : 'pending'}
-            >
-              {seat.mark === 'done' ? '●' : '○'}
-            </span>
-          )}
         </button>
       );
     })}
