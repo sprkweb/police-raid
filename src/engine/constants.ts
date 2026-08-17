@@ -37,7 +37,7 @@ export const PHASE_DURATION_MS = {
   Discussion: 90_000,
   ProposingTeam: 20_000,
   VotingOnTeam: 20_000,
-  VoteResult: 2_000,
+  VoteResult: 5_000,
   Raid: 20_000,
-  RoundEnd: 3_000,
+  RoundEnd: 5_000,
 } as const;
