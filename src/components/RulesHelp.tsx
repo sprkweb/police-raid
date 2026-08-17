@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRulesMarkdown } from '../rules/loadRules';
-import { renderMarkdown } from '../rules/renderMarkdown';
+import { RulesMarkdown } from '../rules/RulesMarkdown';
 
 export const RulesHelp: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -33,7 +33,7 @@ export const RulesHelp: React.FC = () => {
     triggerRef.current?.focus();
   };
 
-  const rulesHtml = renderMarkdown(getRulesMarkdown(i18n.language));
+  const rulesMarkdown = getRulesMarkdown(i18n.language);
 
   return (
     <>
@@ -78,10 +78,9 @@ export const RulesHelp: React.FC = () => {
                 {t('app.helpClose')}
               </button>
             </div>
-            <div
-              className="pr-rules-body"
-              dangerouslySetInnerHTML={{ __html: rulesHtml }}
-            />
+            <div className="pr-rules-body">
+              <RulesMarkdown source={rulesMarkdown} />
+            </div>
           </div>
         </div>
       )}
