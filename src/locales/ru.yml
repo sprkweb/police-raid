@@ -1,6 +1,9 @@
 app:
   title: "Police Raid"
   language: "Язык"
+  help: "Справка"
+  helpTitle: "Устав операции"
+  helpClose: "Закрыть"
 
 lobby:
   kicker: "Фаза 00 · сбор на выезд"

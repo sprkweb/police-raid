@@ -4,6 +4,7 @@ import { GameBoard } from './components/GameBoard';
 import { GamePhase } from './types/game';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { OperationStats } from './components/OperationStats';
+import { RulesHelp } from './components/RulesHelp';
 import { useTranslation } from 'react-i18next';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <div className="pr-spacer" />
 
           {inGame && <OperationStats />}
+          <RulesHelp />
           <LanguageSwitcher />
         </header>
 
