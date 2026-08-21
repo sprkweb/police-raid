@@ -1,6 +1,9 @@
 app:
   title: "Police Raid"
   language: "Lang"
+  help: "Briefing"
+  helpTitle: "Standing orders"
+  helpClose: "Close"
 
 lobby:
   kicker: "Phase 00 · mustering out"

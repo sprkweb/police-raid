@@ -1,4 +1,4 @@
-/** Balance configurations based on README.md game rules. */
+/** Balance configurations based on RULES.en.md / RULES.ru.md. */
 
 export interface BalanceConfig {
   moles: number;
