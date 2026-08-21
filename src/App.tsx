@@ -5,6 +5,7 @@ import { GamePhase } from './types/game';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { OperationStats } from './components/OperationStats';
 import { RulesHelp } from './components/RulesHelp';
+import { SiteFooter } from './components/SiteFooter';
 import { useTranslation } from 'react-i18next';
 
 function App() {
@@ -37,7 +38,12 @@ function App() {
           </div>
         </header>
 
-        {inGame ? <GameBoard /> : <Lobby />}
+        {inGame ? <GameBoard /> : (
+          <>
+            <Lobby />
+            <SiteFooter />
+          </>
+        )}
       </div>
 
       {hostGone && (
