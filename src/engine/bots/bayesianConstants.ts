@@ -1,6 +1,4 @@
-/**
- * Named knobs for the Bayesian bot. See `ALGORITHM.md`.
- */
+/** Named knobs for the Bayesian bot. */
 
 /** P(a mole plays Sabotage) in the raid *observation* model only. */
 export const SABOTAGE_PRIOR = 0.85;

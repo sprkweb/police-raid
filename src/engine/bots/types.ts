@@ -6,7 +6,7 @@ export type BotBrainId = 'heuristic' | 'bayesian';
 
 /**
  * Host-only public timeline used by Bayesian bots.
- * Not part of projected `GameState`. See `ALGORITHM.md`.
+ * Not part of projected `GameState`.
  */
 export type BotObservation =
   | {
@@ -57,10 +57,7 @@ export interface BotRaidContext extends BotMatchContext {
   trueMoleIds: readonly PlayerId[];
 }
 
-/**
- * Pluggable bot decision surface. `GameEngine` must not import a concrete policy.
- * Full Bayesian spec: `ALGORITHM.md`.
- */
+/** Pluggable bot decision surface. `GameEngine` must not import a concrete policy. */
 export interface BotBrain {
   readonly id: BotBrainId;
   chooseProposedTeam(ctx: BotProposeContext): PlayerId[];

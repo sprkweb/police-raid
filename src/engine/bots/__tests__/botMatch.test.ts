@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GamePhase } from '../../../types/game';
 import { createBotBrain } from '../createBotBrain';
-import { createAllBotEngine, driveAllBotMatchToGameOver } from '../simulateAllBotMatches';
+import { createAllBotEngine, driveAllBotMatchToGameOver } from '../bench/simulateAllBotMatches';
 
 describe('all-bot matches', () => {
   it.each(['bayesian', 'heuristic'] as const)(

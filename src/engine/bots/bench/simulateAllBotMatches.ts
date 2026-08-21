@@ -1,9 +1,9 @@
-import { GamePhase } from '../../types/game';
-import { WINS_NEEDED } from '../constants';
-import { GameEngine, type GameEngineOptions } from '../GameEngine';
-import { createSeededRandom } from '../rng';
-import { createBotBrain } from './createBotBrain';
-import type { BotBrain, BotBrainId } from './types';
+import { GamePhase } from '../../../types/game';
+import { WINS_NEEDED } from '../../constants';
+import { GameEngine, type GameEngineOptions } from '../../GameEngine';
+import { createSeededRandom } from '../../rng';
+import { createBotBrain } from '../createBotBrain';
+import type { BotBrain, BotBrainId } from '../types';
 
 export function createAllBotEngine(playerCount: number, options: GameEngineOptions = {}): GameEngine {
   const engine = new GameEngine('bot-1', 'Bot 1', () => {}, {

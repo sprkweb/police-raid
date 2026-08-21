@@ -1,6 +1,6 @@
 /**
  * Active bot: Bayesian worlds + level-1 ToM for propose/vote; sabotage convention on raid.
- * Mole propose/vote uses the cop policy (camouflage). See `ALGORITHM.md`.
+ * Mole propose/vote uses the cop policy (camouflage).
  */
 import type { PlayerId, RaidAction, Vote } from '../../types/game';
 import { Role } from '../../types/game';

@@ -9,11 +9,6 @@ Game rules live in their own files and are also shown in-game from the briefing 
 - [English](RULES.en.md)
 - [Русский](RULES.ru.md)
 
-Bot decision logic (Bayesian worlds + theory of mind) is documented next to the code:
-
-- [English](src/engine/bots/ALGORITHM.md)
-- [Русский](src/engine/bots/ALGORITHM.ru.md)
-
 ## Development
 
 ```bash

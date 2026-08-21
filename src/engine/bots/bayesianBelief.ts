@@ -1,6 +1,6 @@
 /**
  * World-space beliefs and nested (level-0) cop/mole policies.
- * Nested actors use raid-only beliefs so ToM does not recurse. See `ALGORITHM.md`.
+ * Nested actors use raid-only beliefs so ToM does not recurse.
  */
 import type { PlayerId, Vote } from '../../types/game';
 import type { RandomFn } from '../rng';
@@ -292,7 +292,7 @@ function raidBeliefsFor(
 
 /**
  * Level-1 posterior for observer `observerId`: raids plus others' actions scored
- * against a nested level-0 brain. See `ALGORITHM.md`.
+ * against a nested level-0 brain.
  */
 export function level1BeliefsFromHistory(
   playerIds: readonly PlayerId[],
