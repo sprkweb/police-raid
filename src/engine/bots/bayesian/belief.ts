@@ -2,8 +2,8 @@
  * World-space beliefs and nested (level-0) cop/mole policies.
  * Nested actors use raid-only beliefs so ToM does not recurse.
  */
-import type { PlayerId, Vote } from '../../types/game';
-import type { RandomFn } from '../rng';
+import type { PlayerId, Vote } from '../../../types/game';
+import type { RandomFn } from '../../rng';
 import {
   CLEAN_VOTE_THRESHOLD,
   CLEAN_ZERO_EPS,
@@ -12,9 +12,9 @@ import {
   MOLE_ACTION_MATCH,
   MOLE_ACTION_MISMATCH,
   SABOTAGE_PRIOR,
-} from './bayesianConstants';
+} from './constants';
 import { binomialCoefficient, combinations } from './combinations';
-import type { BotObservation, WorldBelief } from './types';
+import type { BotObservation, WorldBelief } from '../types';
 
 export function enumerateWorlds(
   playerIds: readonly PlayerId[],

@@ -1,5 +1,5 @@
 /**
- * @deprecated Import heuristics from `./bots/heuristicBrain` or `./bots`.
+ * @deprecated Import heuristics from `./bots/heuristic/brain` or `./bots`.
  * Re-exports the original bot helpers so existing tests keep compiling.
  */
 export {
@@ -11,4 +11,4 @@ export {
   chooseTeamVote,
   type ChooseRaidActionInput,
   type ChooseTeamVoteInput,
-} from './bots/heuristicBrain';
+} from './bots/heuristic/brain';

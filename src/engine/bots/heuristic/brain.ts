@@ -1,7 +1,7 @@
-import type { Player, PlayerId, RaidAction, Role, Vote } from '../../types/game';
-import { Role as Roles } from '../../types/game';
-import { shuffle, type RandomFn } from '../rng';
-import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from './types';
+import type { Player, PlayerId, RaidAction, Role, Vote } from '../../../types/game';
+import { Role as Roles } from '../../../types/game';
+import { shuffle, type RandomFn } from '../../rng';
+import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
 
 /**
  * Original selfish heuristics. Bots vote for themselves and barely use history.

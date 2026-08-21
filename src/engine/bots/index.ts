@@ -1,4 +1,4 @@
-export { createBayesianBrain } from './bayesianBrain';
+export { createBayesianBrain } from './bayesian/brain';
 export {
   CLEAN_VOTE_THRESHOLD,
   CLEAN_ZERO_EPS,
@@ -7,7 +7,7 @@ export {
   MOLE_ACTION_MATCH,
   MOLE_ACTION_MISMATCH,
   SABOTAGE_PRIOR,
-} from './bayesianConstants';
+} from './bayesian/constants';
 export {
   argmaxTeams,
   beliefsFromRaids,
@@ -23,10 +23,10 @@ export {
   raidLikelihood,
   teamsIncludingActor,
   updateFromRaid,
-} from './bayesianBelief';
-export { binomialCoefficient, combinations } from './combinations';
+} from './bayesian/belief';
+export { binomialCoefficient, combinations } from './bayesian/combinations';
 export { createBotBrain } from './createBotBrain';
-export { designateSaboteurs, priorSaboteursFromHistory } from './designateSaboteurs';
+export { designateSaboteurs, priorSaboteursFromHistory } from './bayesian/designateSaboteurs';
 export {
   BOT_LIKELY_CHANCE,
   BOT_RANDOM_CHANCE,
@@ -35,7 +35,7 @@ export {
   chooseRaidAction,
   chooseTeamVote,
   createHeuristicBrain,
-} from './heuristicBrain';
+} from './heuristic/brain';
 export type {
   BotBrain,
   BotBrainId,

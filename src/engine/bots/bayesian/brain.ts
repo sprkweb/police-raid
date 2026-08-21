@@ -2,16 +2,16 @@
  * Active bot: Bayesian worlds + level-1 ToM for propose/vote; sabotage convention on raid.
  * Mole propose/vote uses the cop policy (camouflage).
  */
-import type { PlayerId, RaidAction, Vote } from '../../types/game';
-import { Role } from '../../types/game';
+import type { PlayerId, RaidAction, Vote } from '../../../types/game';
+import { Role } from '../../../types/game';
 import {
   level1BeliefsFromHistory,
   nestedCopProposeTeams,
   nestedCopVote,
   pickTiedTeam,
-} from './bayesianBelief';
+} from './belief';
 import { designateSaboteurs, priorSaboteursFromHistory } from './designateSaboteurs';
-import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from './types';
+import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
 
 export function createBayesianBrain(): BotBrain {
   return {

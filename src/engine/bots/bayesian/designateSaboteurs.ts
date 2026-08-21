@@ -2,9 +2,9 @@
  * Community sabotage convention: who among the moles on this raid should fail it.
  * Reconstructs “already sabotaged” from public k + the same convention, not hidden cards.
  */
-import { isSupportedPlayerCount, requiredSabotagesForRound } from '../rules';
-import type { BotObservation } from './types';
-import type { PlayerId } from '../../types/game';
+import { isSupportedPlayerCount, requiredSabotagesForRound } from '../../rules';
+import type { BotObservation } from '../types';
+import type { PlayerId } from '../../../types/game';
 
 export interface DesignateSaboteursInput {
   team: readonly PlayerId[];

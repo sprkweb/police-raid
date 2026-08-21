@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { designateSaboteurs, priorSaboteursFromHistory } from '../designateSaboteurs';
+import { designateSaboteurs, priorSaboteursFromHistory } from './designateSaboteurs';
 import type { BotObservation } from '../types';
 
 const seats = ['p0', 'p1', 'p2', 'p3', 'p4'] as const;
