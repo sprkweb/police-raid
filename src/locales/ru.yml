@@ -5,6 +5,10 @@ app:
   helpTitle: "Устав операции"
   helpClose: "Закрыть"
 
+footer:
+  madeBy: "Сделал Вадим Сапрыкин"
+  viewOnGitHub: "Посмотреть на GitHub"
+
 lobby:
   kicker: "Фаза 00 · сбор на выезд"
   title: "Допуск в отдел"

@@ -5,6 +5,10 @@ app:
   helpTitle: "Standing orders"
   helpClose: "Close"
 
+footer:
+  madeBy: "Made by Vadim Saprykin"
+  viewOnGitHub: "View on GitHub"
+
 lobby:
   kicker: "Phase 00 · mustering out"
   title: "Department check-in"
