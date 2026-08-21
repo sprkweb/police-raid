@@ -151,8 +151,6 @@ body {
   align-items: stretch;
   gap: var(--pr-hud-gap);
   flex: none;
-  position: relative;
-  z-index: 41;
 }
 
 .pr-tool {
@@ -176,6 +174,8 @@ body {
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
+  position: relative;
+  z-index: 41;
 }
 .pr-tool:hover { color: var(--pr-txt); border-color: var(--pr-txt-3); }
 .pr-tool:focus-visible,
