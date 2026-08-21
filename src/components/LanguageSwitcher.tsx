@@ -8,11 +8,18 @@ export const LanguageSwitcher: React.FC = () => {
     i18n.changeLanguage(e.target.value);
   };
 
+  const lang = i18n.language.split('-')[0] === 'ru' ? 'ru' : 'en';
+
   return (
-    <label className="pr-stat pr-lang">
-      <span className="pr-stat-k">{t('app.language')}</span>
+    <label className="pr-tool pr-lang">
+      <span className="pr-lang-code" aria-hidden="true">
+        {lang.toUpperCase()}
+      </span>
+      <span className="material-icons pr-lang-chevron" aria-hidden="true">
+        expand_more
+      </span>
       <select
-        value={i18n.language.split('-')[0]} // Handle e.g., 'en-US' by getting 'en'
+        value={lang}
         onChange={handleLanguageChange}
         aria-label={t('app.language')}
         className="pr-lang-select"

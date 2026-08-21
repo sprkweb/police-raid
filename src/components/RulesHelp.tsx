@@ -40,16 +40,14 @@ export const RulesHelp: React.FC = () => {
       <button
         ref={triggerRef}
         type="button"
-        className="pr-stat pr-help"
+        className="pr-tool pr-help"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? dialogId : undefined}
         onClick={() => setOpen(true)}
       >
-        <span className="pr-stat-k">{t('app.help')}</span>
-        <span className="pr-help-ico material-icons" aria-hidden="true">
-          menu_book
-        </span>
+        <span className="material-icons" aria-hidden="true">info_outline</span>
+        {t('app.help')}
       </button>
 
       {open && (

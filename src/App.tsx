@@ -16,21 +16,25 @@ function App() {
     <div className="pr-app">
       <div className="pr-shell">
         <header className="pr-topbar">
-          <div className="pr-op">
-            <div className="pr-brand">
-              <span className="pr-logo" aria-hidden="true" />
+          <div className="pr-brand">
+            <span className="pr-logo" aria-hidden="true" />
+            <div className="pr-op">
               <h1>{t('app.title')}</h1>
+              {gameState && roomCode && (
+                <div className="pr-case">{t('game.caseNo', { code: roomCode })}</div>
+              )}
             </div>
-            {gameState && roomCode && (
-              <div className="pr-case">{t('game.caseNo', { code: roomCode })}</div>
-            )}
           </div>
 
           <div className="pr-spacer" />
 
-          {inGame && <OperationStats />}
-          <RulesHelp />
-          <LanguageSwitcher />
+          <div className="pr-hud">
+            {inGame && <OperationStats />}
+            <div className="pr-tools">
+              <RulesHelp />
+              <LanguageSwitcher />
+            </div>
+          </div>
         </header>
 
         {inGame ? <GameBoard /> : <Lobby />}
