@@ -152,7 +152,11 @@ describe('vote and raid result overlays', () => {
 
     vi.advanceTimersByTime(1);
     expect(ctx.getState().phase).not.toBe(GamePhase.VoteResult);
-    expect([GamePhase.Raid, GamePhase.ProposingTeam]).toContain(ctx.getState().phase);
+    // Rejected ballots pass the proposer to a bot, who proposes immediately
+    // (VotingOnTeam). Approved ballots enter Raid.
+    expect([GamePhase.Raid, GamePhase.ProposingTeam, GamePhase.VotingOnTeam]).toContain(
+      ctx.getState().phase,
+    );
   });
 });
 

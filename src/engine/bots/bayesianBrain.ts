@@ -5,7 +5,6 @@
 import type { PlayerId, RaidAction, Vote } from '../../types/game';
 import { Role } from '../../types/game';
 import {
-  cleanProbability,
   level1BeliefsFromHistory,
   nestedCopProposeTeams,
   nestedCopVote,

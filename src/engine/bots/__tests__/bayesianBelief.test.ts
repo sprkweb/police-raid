@@ -68,9 +68,9 @@ describe('nested cop vote', () => {
   });
 
   it('Rejects an on-team proposal with P_clean == 0', () => {
-    const beliefs = beliefsFromRaids(players, 2, 'A', [raid(['A', 'B'], 2)]);
-    expect(cleanProbability(beliefs, ['A', 'B'])).toBeCloseTo(0);
-    expect(nestedCopVote('A', ['A', 'B'], beliefs, 0, 5)).toBe('Reject');
+    const beliefs = beliefsFromRaids(players, 2, observer, [raid(['A', 'B'], 2)]);
+    expect(cleanProbability(beliefs, ['C', 'A'])).toBeCloseTo(0);
+    expect(nestedCopVote(observer, ['C', 'A'], beliefs, 0, 5)).toBe('Reject');
   });
 
   it('Rejects off-team when P_clean is below the threshold', () => {

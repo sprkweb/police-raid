@@ -4,6 +4,7 @@ import type { BotBrainId } from '../types';
 
 const GAMES = 40;
 const SEED = 20260821;
+const runBench = process.env.BOT_BENCH === '1';
 
 function pct(n: number, total: number): string {
   return `${((n / total) * 100).toFixed(1)}%`;
@@ -22,7 +23,7 @@ function row(id: BotBrainId, playerCount: number, stats: BotMatchStats): string 
   ].join('  ');
 }
 
-describe('bot implementation bench', () => {
+describe.skipIf(!runBench)('bot implementation bench', () => {
   it(
     'prints winrate and games/sec for heuristic vs bayesian',
     () => {

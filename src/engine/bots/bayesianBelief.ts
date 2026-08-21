@@ -32,13 +32,14 @@ export function uniformBeliefs(worlds: readonly (readonly PlayerId[])[]): WorldB
 }
 
 export function normalizeBeliefs(beliefs: WorldBelief[]): WorldBelief[] {
-  const sum = beliefs.reduce((acc, b) => acc + b.probability, 0);
   if (beliefs.length === 0) return [];
-  if (sum <= CLEAN_ZERO_EPS) {
+  const alive = beliefs.filter((b) => b.probability > CLEAN_ZERO_EPS);
+  if (alive.length === 0) {
     const probability = 1 / beliefs.length;
     return beliefs.map((b) => ({ moles: b.moles, probability }));
   }
-  return beliefs.map((b) => ({ moles: b.moles, probability: b.probability / sum }));
+  const sum = alive.reduce((acc, b) => acc + b.probability, 0);
+  return alive.map((b) => ({ moles: b.moles, probability: b.probability / sum }));
 }
 
 export function molesOnTeam(team: readonly PlayerId[], moles: readonly PlayerId[]): number {
@@ -208,67 +209,37 @@ export function nestedMoleVote(team: readonly PlayerId[], worldMoles: readonly P
   return teamIntersectsMoles(team, worldMoles) ? 'Approve' : 'Reject';
 }
 
-function proposalLikelihood(
+function proposalLikelihoodForWorld(
   proposerId: PlayerId,
   team: readonly PlayerId[],
   world: WorldBelief,
-  nestedBeliefs: readonly WorldBelief[],
-  playerIds: readonly PlayerId[],
+  copBest: readonly PlayerId[][],
 ): number {
-  const teamSize = team.length;
-  const proposerIsMole = world.moles.includes(proposerId);
-  if (!proposerIsMole) {
-    const copBest = nestedCopProposeTeams(proposerId, playerIds, teamSize, nestedBeliefs);
-    return teamInList(team, copBest) ? COP_ACTION_MATCH : COP_ACTION_MISMATCH;
+  const matchesCop = teamInList(team, copBest);
+  // Self-including mole proposals use the same argmax as the nested cop.
+  if (world.moles.includes(proposerId)) {
+    return matchesCop ? MOLE_ACTION_MATCH : MOLE_ACTION_MISMATCH;
   }
-  const moleBest = nestedMoleProposeTeams(
-    proposerId,
-    playerIds,
-    teamSize,
-    nestedBeliefs,
-    world.moles,
-  );
-  return teamInList(team, moleBest) ? MOLE_ACTION_MATCH : MOLE_ACTION_MISMATCH;
-}
-
-function voteLikelihood(
-  voterId: PlayerId,
-  vote: Vote,
-  team: readonly PlayerId[],
-  world: WorldBelief,
-  nestedBeliefs: readonly WorldBelief[],
-  consecutiveRejections: number,
-  playerCount: number,
-): number {
-  const voterIsMole = world.moles.includes(voterId);
-  if (!voterIsMole) {
-    const expected = nestedCopVote(
-      voterId,
-      team,
-      nestedBeliefs,
-      consecutiveRejections,
-      playerCount,
-    );
-    return vote === expected ? COP_ACTION_MATCH : COP_ACTION_MISMATCH;
-  }
-  const expected = nestedMoleVote(team, world.moles);
-  return vote === expected ? MOLE_ACTION_MATCH : MOLE_ACTION_MISMATCH;
+  return matchesCop ? COP_ACTION_MATCH : COP_ACTION_MISMATCH;
 }
 
 function updateFromProposal(
   beliefs: readonly WorldBelief[],
   event: Extract<BotObservation, { kind: 'proposal' }>,
   playerIds: readonly PlayerId[],
-  moleCount: number,
-  historyBefore: readonly BotObservation[],
+  nestedBeliefs: readonly WorldBelief[],
 ): WorldBelief[] {
-  const nestedBeliefs = beliefsFromRaids(playerIds, moleCount, event.proposerId, historyBefore);
+  const copBest = nestedCopProposeTeams(
+    event.proposerId,
+    playerIds,
+    event.team.length,
+    nestedBeliefs,
+  );
   return normalizeBeliefs(
     beliefs.map((world) => ({
       moles: world.moles,
       probability:
-        world.probability *
-        proposalLikelihood(event.proposerId, event.team, world, nestedBeliefs, playerIds),
+        world.probability * proposalLikelihoodForWorld(event.proposerId, event.team, world, copBest),
     })),
   );
 }
@@ -276,34 +247,47 @@ function updateFromProposal(
 function updateFromVotes(
   beliefs: readonly WorldBelief[],
   event: Extract<BotObservation, { kind: 'votes' }>,
-  playerIds: readonly PlayerId[],
-  moleCount: number,
-  historyBefore: readonly BotObservation[],
+  nestedByVoter: ReadonlyMap<PlayerId, readonly WorldBelief[]>,
+  playerCount: number,
 ): WorldBelief[] {
-  const playerCount = playerIds.length;
-  const nestedByVoter = new Map<PlayerId, WorldBelief[]>();
+  const copVoteByVoter = new Map<PlayerId, Vote>();
   for (const voterId of Object.keys(event.votes)) {
-    nestedByVoter.set(voterId, beliefsFromRaids(playerIds, moleCount, voterId, historyBefore));
+    const nested = nestedByVoter.get(voterId) ?? [];
+    copVoteByVoter.set(
+      voterId,
+      nestedCopVote(voterId, event.team, nested, event.consecutiveRejections, playerCount),
+    );
   }
 
   return normalizeBeliefs(
     beliefs.map((world) => {
       let probability = world.probability;
       for (const [voterId, vote] of Object.entries(event.votes)) {
-        const nested = nestedByVoter.get(voterId) ?? [];
-        probability *= voteLikelihood(
-          voterId,
-          vote,
-          event.team,
-          world,
-          nested,
-          event.consecutiveRejections,
-          playerCount,
-        );
+        const voterIsMole = world.moles.includes(voterId);
+        const expected = voterIsMole
+          ? nestedMoleVote(event.team, world.moles)
+          : (copVoteByVoter.get(voterId) ?? 'Reject');
+        const match = voterIsMole ? MOLE_ACTION_MATCH : COP_ACTION_MATCH;
+        const mismatch = voterIsMole ? MOLE_ACTION_MISMATCH : COP_ACTION_MISMATCH;
+        probability *= vote === expected ? match : mismatch;
       }
       return { moles: world.moles, probability };
     }),
   );
+}
+
+function raidBeliefsFor(
+  cache: Map<PlayerId, WorldBelief[]>,
+  playerIds: readonly PlayerId[],
+  moleCount: number,
+  observerId: PlayerId,
+  raidHistory: readonly BotObservation[],
+): WorldBelief[] {
+  const cached = cache.get(observerId);
+  if (cached) return cached;
+  const beliefs = beliefsFromRaids(playerIds, moleCount, observerId, raidHistory);
+  cache.set(observerId, beliefs);
+  return beliefs;
 }
 
 /**
@@ -317,15 +301,32 @@ export function level1BeliefsFromHistory(
   history: readonly BotObservation[],
 ): WorldBelief[] {
   let beliefs = uniformBeliefs(enumerateWorlds(playerIds, moleCount, observerId));
-  for (let i = 0; i < history.length; i++) {
-    const event = history[i]!;
-    const historyBefore = history.slice(0, i);
+  const raidHistory: BotObservation[] = [];
+  const raidBeliefCache = new Map<PlayerId, WorldBelief[]>();
+
+  for (const event of history) {
     if (event.kind === 'raid') {
       beliefs = updateFromRaid(beliefs, event.team, event.sabotageCount);
+      raidHistory.push(event);
+      raidBeliefCache.clear();
     } else if (event.kind === 'proposal') {
-      beliefs = updateFromProposal(beliefs, event, playerIds, moleCount, historyBefore);
+      const nested = raidBeliefsFor(
+        raidBeliefCache,
+        playerIds,
+        moleCount,
+        event.proposerId,
+        raidHistory,
+      );
+      beliefs = updateFromProposal(beliefs, event, playerIds, nested);
     } else {
-      beliefs = updateFromVotes(beliefs, event, playerIds, moleCount, historyBefore);
+      const nestedByVoter = new Map<PlayerId, WorldBelief[]>();
+      for (const voterId of Object.keys(event.votes)) {
+        nestedByVoter.set(
+          voterId,
+          raidBeliefsFor(raidBeliefCache, playerIds, moleCount, voterId, raidHistory),
+        );
+      }
+      beliefs = updateFromVotes(beliefs, event, nestedByVoter, playerIds.length);
     }
   }
   return beliefs;
