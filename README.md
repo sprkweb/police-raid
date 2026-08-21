@@ -9,13 +9,19 @@ Game rules live in their own files and are also shown in-game from the briefing 
 - [English](RULES.en.md)
 - [Русский](RULES.ru.md)
 
+Bot decision logic (Bayesian worlds + theory of mind) is documented next to the code:
+
+- [English](src/engine/bots/ALGORITHM.md)
+- [Русский](src/engine/bots/ALGORITHM.ru.md)
+
 ## Development
 
 ```bash
 cp .env.example .env   # fill environment variables
 npm install
-npm run dev      # http://localhost:5173/
-npm test         # Vitest unit tests (game engine / rules)
+npm run dev        # http://localhost:5173/
+npm test           # Vitest unit tests (game engine / rules / bots)
+npm run bench:bots # All-bot winrate: heuristic vs bayesian (not CI)
 npm run lint
 npm run build
 ```
