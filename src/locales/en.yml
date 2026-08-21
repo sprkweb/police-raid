@@ -6,8 +6,8 @@ app:
   helpClose: "Close"
 
 footer:
-  madeBy: "Made by Vadim Saprykin"
-  viewOnGitHub: "View on GitHub"
+  madeBy: "Filed by Vadim Saprykin"
+  viewOnGitHub: "Open the case files"
 
 lobby:
   kicker: "Phase 00 · mustering out"

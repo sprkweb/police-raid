@@ -1177,6 +1177,7 @@ body {
 
 @media (max-width: 720px) {
   .pr-shell { padding: 0 12px 96px; }
+  .pr-shell:has(.pr-footer) { padding-bottom: 40px; }
 
   .pr-rules-overlay { padding: 12px; align-items: stretch; }
   .pr-rules-panel { max-height: 100%; width: 100%; }
