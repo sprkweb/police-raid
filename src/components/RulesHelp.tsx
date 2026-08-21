@@ -11,11 +11,16 @@ export const RulesHelp: React.FC = () => {
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const close = () => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
   useEffect(() => {
     if (!open) return;
 
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') close();
     };
     document.addEventListener('keydown', onKey);
     const previousOverflow = document.body.style.overflow;
@@ -27,11 +32,6 @@ export const RulesHelp: React.FC = () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
-
-  const close = () => {
-    setOpen(false);
-    triggerRef.current?.focus();
-  };
 
   const rulesMarkdown = getRulesMarkdown(i18n.language);
 

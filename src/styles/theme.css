@@ -151,8 +151,6 @@ body {
   align-items: stretch;
   gap: var(--pr-hud-gap);
   flex: none;
-  position: relative;
-  z-index: 41;
 }
 
 .pr-tool {
@@ -176,6 +174,8 @@ body {
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
+  position: relative;
+  z-index: 41;
 }
 .pr-tool:hover { color: var(--pr-txt); border-color: var(--pr-txt-3); }
 .pr-tool:focus-visible,
@@ -1167,4 +1167,18 @@ body {
   .pr-role { font-size: 16px; margin: 0 0 2px; }
   .pr-task { font-size: 12px; line-height: 1.35; }
   .pr-allies { margin-top: 6px; padding: 5px 8px; font-size: 11px; }
+
+  .pr-raids { flex-direction: row; overflow-x: auto; }
+  .pr-raid {
+    flex: none;
+    width: 210px;
+    border-bottom: 0;
+    border-left: 0;
+    border-right: 1px solid var(--pr-line);
+    border-top: 3px solid transparent;
+  }
+  .pr-raid.pr-clean { border-top-color: var(--pr-blue); }
+  .pr-raid.pr-failed { border-top-color: var(--pr-red); }
+  .pr-raid.pr-current { border-top-color: var(--pr-amber); }
+  .pr-raid-req { display: none; }
 }
