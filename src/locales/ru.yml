@@ -6,8 +6,8 @@ app:
   helpClose: "Закрыть"
 
 footer:
-  madeBy: "Сделал Вадим Сапрыкин"
-  viewOnGitHub: "Посмотреть на GitHub"
+  madeBy: "Оформил Вадим Сапрыкин"
+  viewOnGitHub: "Открыть материалы дела"
 
 lobby:
   kicker: "Фаза 00 · сбор на выезд"
