@@ -6,7 +6,7 @@ app:
   helpClose: "Закрыть"
 
 footer:
-  madeBy: "Оформил Вадим Сапрыкин"
+  madeBy: "Сделал Вадим Сапрыкин"
   viewOnGitHub: "Открыть материалы дела"
 
 lobby:
