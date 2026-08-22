@@ -1,8 +1,10 @@
 import type { GameState, Player, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
-import { chooseProposedTeam, chooseRaidAction, chooseTeamVote } from './botBehavior';
+import { createBotBrain } from './bots/createBotBrain';
+import type { BotBrain, BotObservation } from './bots/types';
 import { uniquifyCallsign, normalizeCallsign } from './callsigns';
 import {
+  BALANCE,
   BOT_ID_PREFIX,
   MAX_PLAYERS,
   MIN_PLAYERS,
@@ -40,6 +42,8 @@ export interface GameEngineOptions {
   voteResultDurationMs?: number;
   /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
   roundEndDurationMs?: number;
+  /** Bot policy. Defaults to Bayesian. */
+  botBrain?: BotBrain;
 }
 
 export class GameEngine {
@@ -51,6 +55,9 @@ export class GameEngine {
   private roundEndDurationMs: number;
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
+  private botBrain: BotBrain;
+  /** Host-only timeline for Bayesian ToM; reset each match. */
+  private observationLog: BotObservation[] = [];
   /** Humans who left after the lobby; rematch replaces them with bots. */
   private departedIds = new Set<PlayerId>();
   private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -67,6 +74,7 @@ export class GameEngine {
     this.now = options.now ?? Date.now;
     this.voteResultDurationMs = options.voteResultDurationMs ?? PHASE_DURATION_MS.VoteResult;
     this.roundEndDurationMs = options.roundEndDurationMs ?? PHASE_DURATION_MS.RoundEnd;
+    this.botBrain = options.botBrain ?? createBotBrain();
     this.state = createInitialState(hostId, hostName);
     if (options.timersEnabled != null) {
       this.state.timersEnabled = options.timersEnabled;
@@ -239,8 +247,7 @@ export class GameEngine {
       if (!proposer) return;
       const numPlayers = this.state.players.length;
       if (!isSupportedPlayerCount(numPlayers)) return;
-      const size = requiredTeamSize(numPlayers, this.state.currentRound);
-      const team = chooseProposedTeam(proposer.id, this.state.players, size, this.random);
+      const team = this.botChooseProposedTeam(proposer.id);
       this.proposeTeam(proposer.id, team);
       return;
     }
@@ -248,16 +255,7 @@ export class GameEngine {
     if (this.state.phase === GamePhase.VotingOnTeam) {
       for (const p of this.state.players) {
         if (!this.state.teamVotes[p.id]) {
-          this.state.teamVotes[p.id] = chooseTeamVote(
-            {
-              botId: p.id,
-              proposedTeam: this.state.currentProposedTeam,
-              currentRound: this.state.currentRound,
-              consecutiveRejections: this.state.consecutiveRejections,
-              playerCount: this.state.players.length,
-            },
-            this.random,
-          );
+          this.state.teamVotes[p.id] = this.botChooseTeamVote(p.id);
         }
       }
       this.resolveVoting();
@@ -267,11 +265,7 @@ export class GameEngine {
     if (this.state.phase === GamePhase.Raid) {
       for (const id of this.state.currentProposedTeam) {
         if (!this.state.raidActions[id]) {
-          const player = this.state.players.find((p) => p.id === id);
-          this.state.raidActions[id] = chooseRaidAction(
-            { role: player?.role, currentRound: this.state.currentRound },
-            this.random,
-          );
+          this.state.raidActions[id] = this.botChooseRaidAction(id);
         }
       }
       this.resolveRaid();
@@ -346,6 +340,9 @@ export class GameEngine {
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return;
 
+    this.observationLog = [];
+    this.botsEnabled = this.botsEnabled || this.state.players.some((p) => isBot(p.id));
+
     Object.assign(this.state, createMatchProgress());
 
     const roles = assignRoles(numPlayers, this.random);
@@ -370,11 +367,7 @@ export class GameEngine {
     if (this.state.phase === GamePhase.ProposingTeam) {
       const proposer = this.state.players[this.state.proposerIndex];
       if (proposer && isBot(proposer.id)) {
-        const size = requiredTeamSize(
-          this.state.players.length as PlayerCount,
-          this.state.currentRound,
-        );
-        const team = chooseProposedTeam(proposer.id, this.state.players, size, this.random);
+        const team = this.botChooseProposedTeam(proposer.id);
         this.proposeTeam(proposer.id, team);
         return;
       }
@@ -384,16 +377,7 @@ export class GameEngine {
       let filled = false;
       for (const p of this.state.players) {
         if (isBot(p.id) && !this.state.teamVotes[p.id]) {
-          this.state.teamVotes[p.id] = chooseTeamVote(
-            {
-              botId: p.id,
-              proposedTeam: this.state.currentProposedTeam,
-              currentRound: this.state.currentRound,
-              consecutiveRejections: this.state.consecutiveRejections,
-              playerCount: this.state.players.length,
-            },
-            this.random,
-          );
+          this.state.teamVotes[p.id] = this.botChooseTeamVote(p.id);
           filled = true;
         }
       }
@@ -411,11 +395,7 @@ export class GameEngine {
       let filled = false;
       for (const id of this.state.currentProposedTeam) {
         if (isBot(id) && !this.state.raidActions[id]) {
-          const player = this.state.players.find((p) => p.id === id);
-          this.state.raidActions[id] = chooseRaidAction(
-            { role: player?.role, currentRound: this.state.currentRound },
-            this.random,
-          );
+          this.state.raidActions[id] = this.botChooseRaidAction(id);
           filled = true;
         }
       }
@@ -447,6 +427,11 @@ export class GameEngine {
 
     this.state.currentProposedTeam = team;
     this.state.teamVotes = {};
+    this.observationLog.push({
+      kind: 'proposal',
+      proposerId: playerId,
+      team: [...team],
+    });
     this.state.phase = GamePhase.VotingOnTeam;
     this.armPhaseTimer(PHASE_DURATION_MS.VotingOnTeam);
     this.notify();
@@ -477,7 +462,69 @@ export class GameEngine {
     }
   }
 
+  private recordedVotes(): Record<PlayerId, Vote> {
+    const votes: Record<PlayerId, Vote> = {};
+    for (const player of this.state.players) {
+      const vote = this.state.teamVotes[player.id];
+      if (vote) votes[player.id] = vote;
+    }
+    return votes;
+  }
+
+  private botMatchFields(actorId: PlayerId) {
+    const numPlayers = this.state.players.length;
+    return {
+      actorId,
+      playerIds: this.state.players.map((p) => p.id),
+      moleCount: isSupportedPlayerCount(numPlayers) ? BALANCE[numPlayers].moles : 0,
+      currentRound: this.state.currentRound,
+      consecutiveRejections: this.state.consecutiveRejections,
+      history: this.observationLog,
+      random: this.random,
+    };
+  }
+
+  private botChooseProposedTeam(actorId: PlayerId): PlayerId[] {
+    const numPlayers = this.state.players.length;
+    const teamSize = isSupportedPlayerCount(numPlayers)
+      ? requiredTeamSize(numPlayers, this.state.currentRound)
+      : 0;
+    return this.botBrain.chooseProposedTeam({
+      ...this.botMatchFields(actorId),
+      teamSize,
+    });
+  }
+
+  private botChooseTeamVote(actorId: PlayerId): Vote {
+    return this.botBrain.chooseTeamVote({
+      ...this.botMatchFields(actorId),
+      proposedTeam: this.state.currentProposedTeam,
+    });
+  }
+
+  private botChooseRaidAction(actorId: PlayerId): RaidAction {
+    const numPlayers = this.state.players.length;
+    const proposer = this.state.players[this.state.proposerIndex];
+    return this.botBrain.chooseRaidAction({
+      ...this.botMatchFields(actorId),
+      role: this.state.players.find((p) => p.id === actorId)?.role,
+      proposedTeam: this.state.currentProposedTeam,
+      proposerId: proposer?.id ?? actorId,
+      requiredSabotages: isSupportedPlayerCount(numPlayers)
+        ? requiredSabotagesForRound(numPlayers, this.state.currentRound)
+        : 1,
+      scores: { ...this.state.scores },
+      trueMoleIds: this.state.players.filter((p) => p.role === Role.Mole).map((p) => p.id),
+    });
+  }
+
   private resolveVoting() {
+    this.observationLog.push({
+      kind: 'votes',
+      team: [...this.state.currentProposedTeam],
+      votes: this.recordedVotes(),
+      consecutiveRejections: this.state.consecutiveRejections,
+    });
     const approves = countApproves(this.state.teamVotes);
 
     if (isTeamApproved(approves, this.state.players.length)) {
@@ -550,6 +597,15 @@ export class GameEngine {
     const numPlayers = this.state.players.length as PlayerCount;
     const requiredSabotages = requiredSabotagesForRound(numPlayers, this.state.currentRound);
     const success = isRaidSuccessful(sabotages, requiredSabotages);
+    const proposer = this.state.players[this.state.proposerIndex];
+
+    this.observationLog.push({
+      kind: 'raid',
+      team: [...this.state.currentProposedTeam],
+      sabotageCount: sabotages,
+      proposerId: proposer?.id ?? '',
+      round: this.state.currentRound,
+    });
 
     this.state.raidResults.push({
       round: this.state.currentRound,

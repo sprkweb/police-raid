@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench:bots": "BOT_BENCH=1 vitest run src/engine/bots/bench/runBotBench.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
