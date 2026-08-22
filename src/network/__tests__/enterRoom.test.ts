@@ -26,6 +26,7 @@ function lobbyState(playerIds: PlayerId[], spectators: PlayerId[] = [], seq = 1)
     raidActions: {},
     winner: null,
     timersEnabled: false,
+    advancedBotsEnabled: true,
     phaseEndsAt: null,
   };
 }

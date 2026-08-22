@@ -49,6 +49,7 @@ export function createInitialState(hostId: PlayerId, hostName: string): GameStat
     hostId,
     stateSeq: 0,
     timersEnabled: true,
+    advancedBotsEnabled: true,
     ...createMatchProgress(),
   };
 }

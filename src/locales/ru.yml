@@ -48,6 +48,7 @@ lobby:
   waitingForHostStart: "Ждём сигнала старшего..."
   startWithBots: "Вызвать резерв и начать"
   enableTimers: "Жёсткий график"
+  enableAdvancedBots: "Опытный резерв"
   errorEnterName: "Укажите позывной"
   errorEnterRoomCode: "Введите номер дела"
   errorNoHostResponse: "Из дела {{code}} никто не ответил. Проверьте номер или попросите старшего открыть дело заново."

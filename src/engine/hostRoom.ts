@@ -45,6 +45,10 @@ export class HostRoom {
       random: options.random,
       now: options.now,
       timersEnabled: options.timersEnabled,
+      advancedBotsEnabled: options.advancedBotsEnabled,
+      botBrain: options.botBrain,
+      voteResultDurationMs: options.voteResultDurationMs,
+      roundEndDurationMs: options.roundEndDurationMs,
     };
     this.engine = new GameEngine(this.hostSeatId, hostName, onStateChange, engineOptions);
 

@@ -30,6 +30,7 @@ function MaterialIcon({
 export const Lobby: React.FC = () => {
   const {
     createRoom, joinRoom, gameState, startGame, startGameWithBots, setTimersEnabled,
+    setAdvancedBotsEnabled,
     isHost, playerId: myPlayerId, roomCode: activeRoomCode, renamePlayer,
     connecting, connectErrorCode, playerName,
   } = useGame();
@@ -244,6 +245,15 @@ export const Lobby: React.FC = () => {
                   onChange={(e) => setTimersEnabled(e.target.checked)}
                 />
                 <span>{t('lobby.enableTimers')}</span>
+              </label>
+              <label className="pr-check">
+                <input
+                  type="checkbox"
+                  checked={gameState.advancedBotsEnabled}
+                  disabled={!isHost}
+                  onChange={(e) => setAdvancedBotsEnabled(e.target.checked)}
+                />
+                <span>{t('lobby.enableAdvancedBots')}</span>
               </label>
             </div>
             <div className="pr-lobby-launch">
