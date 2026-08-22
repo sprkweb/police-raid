@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { GamePhase, Role } from '../../types/game';
+import { createBotBrain } from '../bots/createBotBrain';
+import type { BotBrain } from '../bots/types';
 import { BOT_ID_PREFIX, MAX_PLAYERS, MIN_PLAYERS, WINS_NEEDED } from '../constants';
+import { GameEngine } from '../GameEngine';
 import { createSeededRandom, createSequenceRandom } from '../rng';
 import {
   allRaid,
@@ -16,13 +19,19 @@ import {
   teamOfSize,
 } from './helpers';
 
+function activeBrainId(engine: GameEngine): BotBrain['id'] {
+  return (engine as unknown as { botBrain: BotBrain }).botBrain.id;
+}
+
 describe('GameEngine lobby', () => {
   it('initializes with the host in Lobby', () => {
-    const { getState } = createTestEngine('host', 'Ada');
+    const { engine, getState } = createTestEngine('host', 'Ada');
     const state = getState();
     expect(state.phase).toBe(GamePhase.Lobby);
     expect(state.players).toHaveLength(1);
     expect(state.players[0]).toMatchObject({ id: 'host', name: 'Ada', role: null });
+    expect(state.advancedBotsEnabled).toBe(true);
+    expect(activeBrainId(engine)).toBe('bayesian');
   });
 
   it('adds unique players up to MAX_PLAYERS', () => {
@@ -390,6 +399,47 @@ describe('GameEngine startGameWithBots', () => {
   });
 });
 
+describe('GameEngine advanced bots toggle', () => {
+  it('switches to the original heuristic brain in Lobby', () => {
+    const { engine, getState } = createTestEngine();
+    engine.setAdvancedBotsEnabled(false);
+    expect(getState().advancedBotsEnabled).toBe(false);
+    expect(activeBrainId(engine)).toBe('heuristic');
+
+    engine.setAdvancedBotsEnabled(true);
+    expect(getState().advancedBotsEnabled).toBe(true);
+    expect(activeBrainId(engine)).toBe('bayesian');
+  });
+
+  it('honors an injected heuristic brain', () => {
+    const { engine, getState } = createTestEngine('host', 'Host', {
+      botBrain: createBotBrain('heuristic'),
+    });
+    expect(getState().advancedBotsEnabled).toBe(false);
+    expect(activeBrainId(engine)).toBe('heuristic');
+  });
+
+  it('ignores the toggle after the match has started', () => {
+    const ctx = startWithPlayers(5);
+    expect(ctx.getState().advancedBotsEnabled).toBe(true);
+    ctx.engine.setAdvancedBotsEnabled(false);
+    expect(ctx.getState().advancedBotsEnabled).toBe(true);
+    expect(activeBrainId(ctx.engine)).toBe('bayesian');
+  });
+
+  it('ignores the toggle after startGameWithBots', () => {
+    const { engine, getState } = createTestEngine('host', 'Host', {
+      random: createSeededRandom(1),
+    });
+    engine.setAdvancedBotsEnabled(false);
+    engine.startGameWithBots();
+    expect(getState().phase).toBe(GamePhase.Discussion);
+    engine.setAdvancedBotsEnabled(true);
+    expect(getState().advancedBotsEnabled).toBe(false);
+    expect(activeBrainId(engine)).toBe('heuristic');
+  });
+});
+
 describe('GameEngine rematch', () => {
   it('ignores startGame while a match is in progress', () => {
     const ctx = startWithPlayers(5);
@@ -421,6 +471,22 @@ describe('GameEngine rematch', () => {
     expect(state.currentProposedTeam).toEqual([]);
     expect(state.hostId).toBe('host');
     expect(state.timersEnabled).toBe(false);
+    expect(state.advancedBotsEnabled).toBe(true);
+  });
+
+  it('keeps the heuristic brain across rematch', () => {
+    const ctx = startWithPlayers(5, {
+      advancedBotsEnabled: false,
+      random: createSequenceRandom([0, 0, 0, 0, 0]),
+    });
+    expect(ctx.getState().advancedBotsEnabled).toBe(false);
+    expect(activeBrainId(ctx.engine)).toBe('heuristic');
+    for (let i = 0; i < WINS_NEEDED; i++) {
+      passSuccessfulRaid(ctx);
+    }
+    ctx.engine.startGame();
+    expect(ctx.getState().advancedBotsEnabled).toBe(false);
+    expect(activeBrainId(ctx.engine)).toBe('heuristic');
   });
 
   it('keeps departed players on the GameOver roster, then replaces them with bots on rematch', () => {

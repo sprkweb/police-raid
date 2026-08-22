@@ -42,6 +42,8 @@ interface GameContextType {
   startGameWithBots: () => void;
   /** Host-only lobby toggle for phase time limits. */
   setTimersEnabled: (enabled: boolean) => void;
+  /** Host-only lobby toggle for Bayesian vs original bot tactics. */
+  setAdvancedBotsEnabled: (enabled: boolean) => void;
   endDiscussion: () => void;
   proposeTeam: (team: PlayerId[]) => void;
   skipProposal: () => void;
@@ -345,6 +347,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       setTimersEnabled: (enabled) => {
         hostRoomRef.current?.engine.setTimersEnabled(enabled);
+      },
+      setAdvancedBotsEnabled: (enabled) => {
+        hostRoomRef.current?.engine.setAdvancedBotsEnabled(enabled);
       },
       endDiscussion: () => {
         hostRoomRef.current?.engine.endDiscussion();

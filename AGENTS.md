@@ -19,7 +19,7 @@ Host-authoritative multiplayer over a swappable transport (historically WebRTC/P
 ## High-level Components
 - **NetworkService:** Transport only.
 - **HostRoom (host-only):** Seating, reclaim, lobby disconnect grace, routing actions by current peer. Wraps `GameEngine`.
-- **GameEngine (host-only):** Phases Lobby → Discussion → Proposing → Voting → Raid → Round End / Game Over. Pure rules in `src/engine/rules.ts`; inject `random` via `GameEngineOptions` for tests. Bot seats auto-act through `BotBrain` (default `createBotBrain('bayesian')`; old heuristics remain as `'heuristic'`).
+- **GameEngine (host-only):** Phases Lobby → Discussion → Proposing → Voting → Raid → Round End / Game Over. Pure rules in `src/engine/rules.ts`; inject `random` via `GameEngineOptions` for tests. Bot seats auto-act through `BotBrain`.
 - **Store/Context:** UI sees projected state only (host React state is projected too).
 - **UI:** Check-in / staging lobby, game board, action areas (team, vote, raid).
 

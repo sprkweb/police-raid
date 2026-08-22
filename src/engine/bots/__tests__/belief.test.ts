@@ -7,8 +7,8 @@ import {
   nestedCopProposeTeams,
   nestedCopVote,
   nestedMoleVote,
-} from './belief';
-import { CLEAN_VOTE_THRESHOLD, SABOTAGE_PRIOR } from './constants';
+} from '../bayesian/belief';
+import { CLEAN_VOTE_THRESHOLD, SABOTAGE_PRIOR } from '../bayesian/constants';
 import type { BotObservation } from '../types';
 
 const players = ['A', 'B', 'C', 'D', 'E'] as const;

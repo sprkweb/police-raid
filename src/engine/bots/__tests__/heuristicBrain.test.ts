@@ -7,7 +7,7 @@ import {
   chooseProposedTeam,
   chooseRaidAction,
   chooseTeamVote,
-} from './brain';
+} from '../heuristic/brain';
 import { createSequenceRandom } from '../../rng';
 
 const players = [

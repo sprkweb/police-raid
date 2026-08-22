@@ -967,6 +967,9 @@ body {
 .pr-input:focus { outline: none; border-color: var(--pr-blue); }
 .pr-field { display: flex; flex-direction: column; gap: 6px; }
 .pr-lobby-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 2px 0 2px;
 }
 .pr-lobby-launch {

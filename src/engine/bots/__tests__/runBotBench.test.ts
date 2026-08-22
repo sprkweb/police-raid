@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simulateAllBotMatches, type BotMatchStats } from './simulateAllBotMatches';
+import { simulateAllBotMatches, type BotMatchStats } from '../bench/simulateAllBotMatches';
 import type { BotBrainId } from '../types';
 
 const GAMES = 40;

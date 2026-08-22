@@ -28,6 +28,7 @@ function state(
     raidActions: extras.raidActions ?? {},
     winner: extras.winner ?? null,
     timersEnabled: extras.timersEnabled ?? false,
+    advancedBotsEnabled: extras.advancedBotsEnabled ?? true,
     phaseEndsAt: extras.phaseEndsAt ?? null,
   };
 }

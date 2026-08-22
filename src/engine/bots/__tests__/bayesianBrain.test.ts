@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Role } from '../../../types/game';
-import { createBayesianBrain } from './brain';
+import { createBayesianBrain } from '../bayesian/brain';
 import type { BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
 
 const brain = createBayesianBrain();

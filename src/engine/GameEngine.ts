@@ -38,6 +38,8 @@ export interface GameEngineOptions {
   now?: () => number;
   /** Override the lobby default (timers on). */
   timersEnabled?: boolean;
+  /** Override the lobby default (seasoned/Bayesian bots on). */
+  advancedBotsEnabled?: boolean;
   /** How long to hold VoteResult. `0` finishes in the same tick (tests). */
   voteResultDurationMs?: number;
   /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
@@ -74,10 +76,17 @@ export class GameEngine {
     this.now = options.now ?? Date.now;
     this.voteResultDurationMs = options.voteResultDurationMs ?? PHASE_DURATION_MS.VoteResult;
     this.roundEndDurationMs = options.roundEndDurationMs ?? PHASE_DURATION_MS.RoundEnd;
-    this.botBrain = options.botBrain ?? createBotBrain();
     this.state = createInitialState(hostId, hostName);
     if (options.timersEnabled != null) {
       this.state.timersEnabled = options.timersEnabled;
+    }
+    if (options.botBrain) {
+      this.botBrain = options.botBrain;
+      this.state.advancedBotsEnabled = options.botBrain.id === 'bayesian';
+    } else {
+      const advanced = options.advancedBotsEnabled ?? true;
+      this.state.advancedBotsEnabled = advanced;
+      this.botBrain = createBotBrain(advanced ? 'bayesian' : 'heuristic');
     }
     this.notify();
   }
@@ -178,6 +187,18 @@ export class GameEngine {
     if (this.state.phase !== GamePhase.Lobby) return;
     if (this.state.timersEnabled === enabled) return;
     this.state.timersEnabled = enabled;
+    this.notify();
+  }
+
+  /**
+   * Host-only lobby setting: Bayesian bots when true, original heuristics
+   * when false. Swaps the live `BotBrain` used by reserve seats and auto-fills.
+   */
+  public setAdvancedBotsEnabled(enabled: boolean) {
+    if (this.state.phase !== GamePhase.Lobby) return;
+    if (this.state.advancedBotsEnabled === enabled) return;
+    this.state.advancedBotsEnabled = enabled;
+    this.botBrain = createBotBrain(enabled ? 'bayesian' : 'heuristic');
     this.notify();
   }
 

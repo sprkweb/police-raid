@@ -48,6 +48,7 @@ lobby:
   waitingForHostStart: "Waiting for the senior's signal..."
   startWithBots: "Call in reserves and start"
   enableTimers: "Strict timetable"
+  enableAdvancedBots: "Seasoned reserves"
   errorEnterName: "Enter your callsign"
   errorEnterRoomCode: "Enter the case number"
   errorNoHostResponse: "Nobody answered from case {{code}}. Check the number, or ask the senior to open the case again."
