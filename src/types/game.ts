@@ -81,6 +81,11 @@ export interface GameState {
   /** Host lobby toggle: timed phases with auto-actions on expiry. */
   timersEnabled: boolean;
   /**
+   * Host lobby toggle: Bayesian bot tactics when true, original selfish
+   * heuristics when false. Applies to reserve bots and timer auto-fills.
+   */
+  advancedBotsEnabled: boolean;
+  /**
    * Absolute timestamp (ms since epoch) when the current timed phase ends.
    * `null` when timers are off or the phase has no deadline.
    */

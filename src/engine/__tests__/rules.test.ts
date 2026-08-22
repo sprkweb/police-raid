@@ -37,6 +37,7 @@ describe('createInitialState', () => {
     expect(state.scores).toEqual({ police: 0, moles: 0 });
     expect(state.winner).toBeNull();
     expect(state.timersEnabled).toBe(true);
+    expect(state.advancedBotsEnabled).toBe(true);
     expect(state.phaseEndsAt).toBeNull();
   });
 });
@@ -52,6 +53,7 @@ describe('createMatchProgress', () => {
     expect(progress).not.toHaveProperty('players');
     expect(progress).not.toHaveProperty('hostId');
     expect(progress).not.toHaveProperty('timersEnabled');
+    expect(progress).not.toHaveProperty('advancedBotsEnabled');
   });
 });
 
