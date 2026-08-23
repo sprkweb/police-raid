@@ -28,6 +28,11 @@ export { binomialCoefficient, combinations } from './bayesian/combinations';
 export { createBotBrain } from './createBotBrain';
 export { designateSaboteurs, priorSaboteursFromHistory } from './bayesian/designateSaboteurs';
 export {
+  buildBayesianBeliefsDebugSnapshot,
+  type BayesianBeliefsDebugSnapshot,
+  type BayesianObserverDebug,
+} from './bayesian/debugSnapshot';
+export {
   BOT_LIKELY_CHANCE,
   BOT_RANDOM_CHANCE,
   BOT_UNLIKELY_CHANCE,

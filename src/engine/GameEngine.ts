@@ -1,6 +1,10 @@
 import type { GameState, Player, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
 import { createBotBrain } from './bots/createBotBrain';
+import {
+  buildBayesianBeliefsDebugSnapshot,
+  type BayesianBeliefsDebugSnapshot,
+} from './bots/bayesian/debugSnapshot';
 import type { BotBrain, BotObservation } from './bots/types';
 import { uniquifyCallsign, normalizeCallsign } from './callsigns';
 import {
@@ -93,6 +97,29 @@ export class GameEngine {
 
   public getState(): GameState {
     return this.state;
+  }
+
+  /**
+   * Host DevTools: each Bayesian bot's current posterior. `null` in lobby,
+   * without bot seats, or when the original heuristic brain is active.
+   */
+  public debugBayesianBeliefs(): BayesianBeliefsDebugSnapshot | null {
+    if (this.botBrain.id !== 'bayesian') return null;
+    if (this.state.phase === GamePhase.Lobby) return null;
+    const bots = this.state.players.filter((p) => isBot(p.id));
+    if (bots.length === 0) return null;
+    const numPlayers = this.state.players.length;
+    if (!isSupportedPlayerCount(numPlayers)) return null;
+
+    return buildBayesianBeliefsDebugSnapshot({
+      players: this.state.players,
+      moleCount: BALANCE[numPlayers].moles,
+      observerIds: bots.map((p) => p.id),
+      history: this.observationLog,
+      proposedTeam: this.state.currentProposedTeam,
+      phase: this.state.phase,
+      currentRound: this.state.currentRound,
+    });
   }
 
   private notify() {

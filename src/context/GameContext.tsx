@@ -16,6 +16,7 @@ import {
 import { resolveJoinSeatSession } from '../network/resolveJoinSession';
 import { announceSeatClaim, claimTakesOverSeat, getTabId, subscribeSeatClaims } from '../network/tabPresence';
 import { normalizeRoomCode } from '../network/roomCode';
+import type { BayesianBeliefsDebugSnapshot } from '../engine/bots/bayesian/debugSnapshot';
 
 interface GameContextType {
   gameState: GameState | null;
@@ -86,6 +87,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const tabIdRef = useRef(getTabId());
   const yieldToOtherTabRef = useRef<() => Promise<void>>(async () => {});
   const joinRoomRef = useRef<(code: string, name?: string) => Promise<void>>(async () => {});
+  const lastBeliefLogKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const code = roomCodeFromLocation();
@@ -94,7 +96,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __PR_GAME_STATE__?: typeof gameState }).__PR_GAME_STATE__ = gameState;
+    const w = window as unknown as {
+      __PR_GAME_STATE__?: typeof gameState;
+      __PR_BOT_BELIEFS__?: BayesianBeliefsDebugSnapshot | null;
+    };
+    w.__PR_GAME_STATE__ = gameState;
+    const snapshot = hostRoomRef.current?.engine.debugBayesianBeliefs() ?? null;
+    w.__PR_BOT_BELIEFS__ = snapshot;
+    const logKey = snapshot ? String(snapshot.observationCount) : null;
+    if (logKey !== lastBeliefLogKeyRef.current) {
+      lastBeliefLogKeyRef.current = logKey;
+      if (snapshot) {
+        console.log(
+          '[police-raid] Bayesian bot P(mole) — also window.__PR_BOT_BELIEFS__',
+          snapshot,
+        );
+        console.table(snapshot.byObserver);
+        if (Object.keys(snapshot.pCleanProposed).length > 0) {
+          console.log('[police-raid] Bayesian P(proposed team is clean)');
+          console.table(snapshot.pCleanProposed);
+        }
+      }
+    }
   }, [gameState]);
 
   const yieldToOtherTab = async () => {

@@ -399,6 +399,32 @@ describe('GameEngine startGameWithBots', () => {
   });
 });
 
+describe('GameEngine.debugBayesianBeliefs', () => {
+  it('is null in lobby and when the heuristic brain is active', () => {
+    const { engine } = createTestEngine('host', 'Host');
+    expect(engine.debugBayesianBeliefs()).toBeNull();
+
+    engine.setAdvancedBotsEnabled(false);
+    engine.startGameWithBots();
+    expect(engine.debugBayesianBeliefs()).toBeNull();
+  });
+
+  it('returns each bot posterior once a Bayesian match with bots is running', () => {
+    const { engine, getState } = createTestEngine('host', 'Host', {
+      random: createSeededRandom(1),
+    });
+    engine.startGameWithBots();
+    const snap = engine.debugBayesianBeliefs();
+    expect(snap?.brain).toBe('bayesian');
+    expect(snap?.phase).toBe(GamePhase.Discussion);
+    expect(Object.keys(snap!.byObserver)).toHaveLength(MIN_PLAYERS - 1);
+    const bot1 = snap!.observers.find((o) => o.observerName === 'Bot 1');
+    expect(bot1?.moleP.Host).toBe(0.5);
+    expect(bot1?.moleP['Bot 1']).toBe(0);
+    expect(getState().players.some((p) => p.id.startsWith(BOT_ID_PREFIX))).toBe(true);
+  });
+});
+
 describe('GameEngine advanced bots toggle', () => {
   it('switches to the original heuristic brain in Lobby', () => {
     const { engine, getState } = createTestEngine();
