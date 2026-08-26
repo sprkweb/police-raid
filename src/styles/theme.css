@@ -53,8 +53,8 @@ body {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74, 168, 255, .10), transparent 70%),
-    radial-gradient(ellipse 80% 50% at 85% -10%, rgba(255, 82, 71, .07), transparent 70%);
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74, 168, 255, .16), transparent 70%),
+    radial-gradient(ellipse 80% 50% at 85% -10%, rgba(255, 82, 71, .14), transparent 70%);
   z-index: 0;
 }
 
@@ -79,6 +79,18 @@ body {
   gap: 18px;
   padding: 16px 0 14px;
   border-bottom: 1px solid var(--pr-line);
+}
+
+.pr-hazard {
+  height: 8px;
+  margin-top: -1px;
+  flex: none;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 190, 61, .85) 0 14px,
+    rgba(10, 12, 15, .9) 14px 28px
+  );
+  opacity: .45;
 }
 
 .pr-brand {

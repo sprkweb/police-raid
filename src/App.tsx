@@ -37,6 +37,7 @@ function App() {
             </div>
           </div>
         </header>
+        <div className="pr-hazard" aria-hidden="true" />
 
         {inGame ? <GameBoard /> : (
           <>
