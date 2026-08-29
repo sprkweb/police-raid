@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { designateSaboteurs, priorSaboteursFromHistory } from '../bayesian/designateSaboteurs';
-import type { BotObservation } from '../types';
+import { designateSaboteurs, priorSaboteursFromHistory } from '../designateSaboteurs';
+import type { GameEvent } from '../../../../types/game';
 
 const seats = ['p0', 'p1', 'p2', 'p3', 'p4'] as const;
 const moles = ['p2', 'p4'] as const;
@@ -61,7 +61,7 @@ describe('designateSaboteurs', () => {
 
 describe('priorSaboteursFromHistory', () => {
   it('credits designated moles when public k > 0', () => {
-    const history: BotObservation[] = [
+    const history: GameEvent[] = [
       {
         kind: 'raid',
         team: ['p0', 'p2'],
@@ -74,7 +74,7 @@ describe('priorSaboteursFromHistory', () => {
   });
 
   it('credits nobody when k = 0', () => {
-    const history: BotObservation[] = [
+    const history: GameEvent[] = [
       {
         kind: 'raid',
         team: ['p0', 'p2'],

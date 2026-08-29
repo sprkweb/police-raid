@@ -21,6 +21,7 @@ function state(
     currentRound: extras.currentRound ?? 1,
     scores: extras.scores ?? { police: 0, moles: 0 },
     raidResults: extras.raidResults ?? [],
+    history: extras.history ?? [],
     proposerIndex: extras.proposerIndex ?? 0,
     consecutiveRejections: extras.consecutiveRejections ?? 0,
     currentProposedTeam: extras.currentProposedTeam ?? [],

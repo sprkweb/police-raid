@@ -2,7 +2,7 @@
  * World-space beliefs and nested (level-0) cop/mole policies.
  * Nested actors use raid-only beliefs so ToM does not recurse.
  */
-import type { PlayerId, Vote } from '../../../types/game';
+import type { GameEvent, PlayerId, Vote } from '../../../types/game';
 import type { RandomFn } from '../../rng';
 import {
   CLEAN_VOTE_THRESHOLD,
@@ -14,7 +14,11 @@ import {
   SABOTAGE_PRIOR,
 } from './constants';
 import { binomialCoefficient, combinations } from './combinations';
-import type { BotObservation, WorldBelief } from '../types';
+
+export interface WorldBelief {
+  moles: readonly PlayerId[];
+  probability: number;
+}
 
 export function enumerateWorlds(
   playerIds: readonly PlayerId[],
@@ -104,7 +108,7 @@ export function beliefsFromRaids(
   playerIds: readonly PlayerId[],
   moleCount: number,
   observerId: PlayerId,
-  history: readonly BotObservation[],
+  history: readonly GameEvent[],
 ): WorldBelief[] {
   let beliefs = uniformBeliefs(enumerateWorlds(playerIds, moleCount, observerId));
   for (const event of history) {
@@ -225,7 +229,7 @@ function proposalLikelihoodForWorld(
 
 function updateFromProposal(
   beliefs: readonly WorldBelief[],
-  event: Extract<BotObservation, { kind: 'proposal' }>,
+  event: Extract<GameEvent, { kind: 'proposal' }>,
   playerIds: readonly PlayerId[],
   nestedBeliefs: readonly WorldBelief[],
 ): WorldBelief[] {
@@ -246,7 +250,7 @@ function updateFromProposal(
 
 function updateFromVotes(
   beliefs: readonly WorldBelief[],
-  event: Extract<BotObservation, { kind: 'votes' }>,
+  event: Extract<GameEvent, { kind: 'votes' }>,
   nestedByVoter: ReadonlyMap<PlayerId, readonly WorldBelief[]>,
   playerCount: number,
 ): WorldBelief[] {
@@ -281,7 +285,7 @@ function raidBeliefsFor(
   playerIds: readonly PlayerId[],
   moleCount: number,
   observerId: PlayerId,
-  raidHistory: readonly BotObservation[],
+  raidHistory: readonly GameEvent[],
 ): WorldBelief[] {
   const cached = cache.get(observerId);
   if (cached) return cached;
@@ -298,10 +302,10 @@ export function level1BeliefsFromHistory(
   playerIds: readonly PlayerId[],
   moleCount: number,
   observerId: PlayerId,
-  history: readonly BotObservation[],
+  history: readonly GameEvent[],
 ): WorldBelief[] {
   let beliefs = uniformBeliefs(enumerateWorlds(playerIds, moleCount, observerId));
-  const raidHistory: BotObservation[] = [];
+  const raidHistory: GameEvent[] = [];
   const raidBeliefCache = new Map<PlayerId, WorldBelief[]>();
 
   for (const event of history) {

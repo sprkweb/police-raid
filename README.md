@@ -16,7 +16,7 @@ cp .env.example .env   # fill environment variables
 npm install
 npm run dev        # http://localhost:5173/
 npm test           # Vitest unit tests (game engine / rules / bots)
-npm run bench:bots # All-bot winrate: heuristic vs bayesian (not CI)
+npm run bench:bots # All-bot winrate: heuristic vs bayesian vs random (not CI)
 npm run lint
 npm run build
 ```

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Role } from '../../../types/game';
+import { Role } from '../../../../types/game';
 import {
   BOT_LIKELY_CHANCE,
   BOT_RANDOM_CHANCE,
@@ -7,8 +7,8 @@ import {
   chooseProposedTeam,
   chooseRaidAction,
   chooseTeamVote,
-} from '../heuristic/brain';
-import { createSequenceRandom } from '../../rng';
+} from '../brain';
+import { createSequenceRandom } from '../../../rng';
 
 const players = [
   { id: 'bot-1', name: 'Bot 1', role: null, connected: true },

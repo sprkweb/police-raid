@@ -38,6 +38,7 @@ describe('createInitialState', () => {
     expect(state.winner).toBeNull();
     expect(state.timersEnabled).toBe(true);
     expect(state.advancedBotsEnabled).toBe(true);
+    expect(state.history).toEqual([]);
     expect(state.phaseEndsAt).toBeNull();
   });
 });
@@ -48,6 +49,7 @@ describe('createMatchProgress', () => {
     expect(progress.currentRound).toBe(1);
     expect(progress.scores).toEqual({ police: 0, moles: 0 });
     expect(progress.raidResults).toEqual([]);
+    expect(progress.history).toEqual([]);
     expect(progress.winner).toBeNull();
     expect(progress.phaseEndsAt).toBeNull();
     expect(progress).not.toHaveProperty('players');

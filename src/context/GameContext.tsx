@@ -16,7 +16,7 @@ import {
 import { resolveJoinSeatSession } from '../network/resolveJoinSession';
 import { announceSeatClaim, claimTakesOverSeat, getTabId, subscribeSeatClaims } from '../network/tabPresence';
 import { normalizeRoomCode } from '../network/roomCode';
-import type { BayesianBeliefsDebugSnapshot } from '../engine/bots/bayesian/debugSnapshot';
+import type { BayesianBeliefsDebugSnapshot } from '../engine/bots/bayesian';
 
 interface GameContextType {
   gameState: GameState | null;

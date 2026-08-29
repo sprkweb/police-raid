@@ -1,33 +1,11 @@
-import type { PlayerId, RaidAction, Role, Vote } from '../../types/game';
+import type { GameEvent, PlayerId, RaidAction, Role, Vote } from '../../types/game';
 import type { RandomFn } from '../rng';
 
-/** Which `BotBrain` implementation is active. Default in production is `bayesian`. */
-export type BotBrainId = 'heuristic' | 'bayesian';
+/** Brains the live game can select (`createBotBrain` / lobby toggle). */
+export type ProductionBotBrainId = 'heuristic' | 'bayesian';
 
-/**
- * Host-only public timeline used by Bayesian bots.
- * Not part of projected `GameState`.
- */
-export type BotObservation =
-  | {
-      kind: 'proposal';
-      proposerId: PlayerId;
-      team: readonly PlayerId[];
-    }
-  | {
-      kind: 'votes';
-      team: readonly PlayerId[];
-      votes: Readonly<Record<PlayerId, Vote>>;
-      /** Streak before this ballot resolves; nested cop hammer uses this. */
-      consecutiveRejections: number;
-    }
-  | {
-      kind: 'raid';
-      team: readonly PlayerId[];
-      sabotageCount: number;
-      proposerId: PlayerId;
-      round: number;
-    };
+/** Every shipped `BotBrain.id`, including bench-only policies. */
+export type BotBrainId = ProductionBotBrainId | 'random';
 
 export interface BotMatchContext {
   actorId: PlayerId;
@@ -35,7 +13,7 @@ export interface BotMatchContext {
   moleCount: number;
   currentRound: number;
   consecutiveRejections: number;
-  history: readonly BotObservation[];
+  history: readonly GameEvent[];
   random: RandomFn;
 }
 
@@ -63,9 +41,4 @@ export interface BotBrain {
   chooseProposedTeam(ctx: BotProposeContext): PlayerId[];
   chooseTeamVote(ctx: BotVoteContext): Vote;
   chooseRaidAction(ctx: BotRaidContext): RaidAction;
-}
-
-export interface WorldBelief {
-  moles: readonly PlayerId[];
-  probability: number;
 }

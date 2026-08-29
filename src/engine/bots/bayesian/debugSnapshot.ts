@@ -3,9 +3,13 @@
  * Nested actors still use raid-only beliefs; this snapshot is the level-1
  * posterior the bot itself uses for propose/vote (and camouflage if it is a mole).
  */
-import type { GamePhase, PlayerId } from '../../../types/game';
-import { cleanProbability, level1BeliefsFromHistory, moleProbability } from './belief';
-import type { BotObservation, WorldBelief } from '../types';
+import type { GameEvent, GamePhase, PlayerId } from '../../../types/game';
+import {
+  cleanProbability,
+  level1BeliefsFromHistory,
+  moleProbability,
+  type WorldBelief,
+} from './belief';
 
 const DISPLAY_PROB_DECIMALS = 4;
 
@@ -66,7 +70,7 @@ export function buildBayesianBeliefsDebugSnapshot(input: {
   players: readonly { id: PlayerId; name: string }[];
   moleCount: number;
   observerIds: readonly PlayerId[];
-  history: readonly BotObservation[];
+  history: readonly GameEvent[];
   proposedTeam: readonly PlayerId[];
   phase: GamePhase;
   currentRound: number;

@@ -1,9 +1,32 @@
-import type { GameState, PlayerId, RaidAction, Vote } from '../types/game';
+import type { GameEvent, GameState, PlayerId, RaidAction, Vote } from '../types/game';
 import { GamePhase, Role } from '../types/game';
 
 /** Approve/Reject values are public after voting closes, including during the raid. */
 export function teamVotesArePublic(phase: GamePhase): boolean {
   return phase === GamePhase.VoteResult || phase === GamePhase.Raid;
+}
+
+function cloneHistory(history: readonly GameEvent[]): GameEvent[] {
+  return history.map((event) => {
+    if (event.kind === 'proposal') {
+      return { kind: 'proposal', proposerId: event.proposerId, team: [...event.team] };
+    }
+    if (event.kind === 'votes') {
+      return {
+        kind: 'votes',
+        team: [...event.team],
+        votes: { ...event.votes },
+        consecutiveRejections: event.consecutiveRejections,
+      };
+    }
+    return {
+      kind: 'raid',
+      team: [...event.team],
+      sabotageCount: event.sabotageCount,
+      proposerId: event.proposerId,
+      round: event.round,
+    };
+  });
 }
 
 /**
@@ -48,6 +71,7 @@ export function projectForPlayer(state: GameState, viewerId: PlayerId): GameStat
     spectators: state.spectators.map((s) => ({ ...s })),
     scores: { ...state.scores },
     raidResults: state.raidResults.map((r) => ({ ...r, team: [...r.team] })),
+    history: cloneHistory(state.history),
     currentProposedTeam: [...state.currentProposedTeam],
     teamVotes,
     raidActions,

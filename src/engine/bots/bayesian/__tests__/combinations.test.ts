@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { binomialCoefficient, combinations } from '../bayesian/combinations';
+import { binomialCoefficient, combinations } from '../combinations';
 
 describe('combinations', () => {
   it('returns all k-subsets in index order', () => {

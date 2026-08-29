@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GamePhase } from '../../../types/game';
-import { buildBayesianBeliefsDebugSnapshot } from '../bayesian/debugSnapshot';
-import type { BotObservation } from '../types';
+import { GamePhase, type GameEvent } from '../../../../types/game';
+import { buildBayesianBeliefsDebugSnapshot } from '../debugSnapshot';
 
 const seats = [
   { id: 'A', name: 'Ada' },
@@ -36,7 +35,7 @@ describe('buildBayesianBeliefsDebugSnapshot', () => {
   });
 
   it('collapses after a 2-sabotage pair and reports P(clean) for a proposed team', () => {
-    const history: BotObservation[] = [
+    const history: GameEvent[] = [
       { kind: 'raid', team: ['A', 'B'], sabotageCount: 2, proposerId: 'A', round: 1 },
     ];
     const snap = buildBayesianBeliefsDebugSnapshot({

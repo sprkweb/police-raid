@@ -3,8 +3,7 @@
  * Reconstructs “already sabotaged” from public k + the same convention, not hidden cards.
  */
 import { isSupportedPlayerCount, requiredSabotagesForRound } from '../../rules';
-import type { BotObservation } from '../types';
-import type { PlayerId } from '../../../types/game';
+import type { GameEvent, PlayerId } from '../../../types/game';
 
 export interface DesignateSaboteursInput {
   team: readonly PlayerId[];
@@ -73,7 +72,7 @@ export function designateSaboteurs(input: DesignateSaboteursInput): PlayerId[] {
 export function priorSaboteursFromHistory(
   moleIds: readonly PlayerId[],
   seatingOrder: readonly PlayerId[],
-  history: readonly BotObservation[],
+  history: readonly GameEvent[],
 ): PlayerId[] {
   const playerCount = seatingOrder.length;
   const prior: PlayerId[] = [];

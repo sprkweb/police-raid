@@ -7,9 +7,9 @@ import {
   nestedCopProposeTeams,
   nestedCopVote,
   nestedMoleVote,
-} from '../bayesian/belief';
-import { CLEAN_VOTE_THRESHOLD, SABOTAGE_PRIOR } from '../bayesian/constants';
-import type { BotObservation } from '../types';
+} from '../belief';
+import { CLEAN_VOTE_THRESHOLD, SABOTAGE_PRIOR } from '../constants';
+import type { GameEvent } from '../../../../types/game';
 
 const players = ['A', 'B', 'C', 'D', 'E'] as const;
 const observer = 'C';
@@ -18,7 +18,7 @@ function raid(
   team: readonly string[],
   sabotageCount: number,
   proposerId = 'A',
-): BotObservation {
+): GameEvent {
   return { kind: 'raid', team, sabotageCount, proposerId, round: 1 };
 }
 

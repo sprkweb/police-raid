@@ -140,4 +140,47 @@ describe('projectForPlayer', () => {
     );
     expect(over.players.every((p) => p.role !== null)).toBe(true);
   });
+
+  it('clones history so mutating the view cannot rewrite the log', () => {
+    const state = baseState({
+      history: [
+        { kind: 'proposal', proposerId: 'host', team: ['host', 'mole1'] },
+        {
+          kind: 'votes',
+          team: ['host', 'mole1'],
+          votes: { host: 'Approve', mole1: 'Reject' },
+          consecutiveRejections: 0,
+        },
+        {
+          kind: 'raid',
+          team: ['host', 'mole1'],
+          sabotageCount: 1,
+          proposerId: 'host',
+          round: 1,
+        },
+      ],
+    });
+    const view = projectForPlayer(state, 'cop2');
+    const proposal = view.history[0];
+    const votes = view.history[1];
+    if (proposal?.kind !== 'proposal' || votes?.kind !== 'votes') {
+      throw new Error('expected proposal then votes');
+    }
+    (proposal.team as PlayerId[]).push('cop2');
+    (votes.votes as Record<string, string>).cop2 = 'Approve';
+    view.history.push({ kind: 'proposal', proposerId: 'cop2', team: ['cop2'] });
+
+    expect(state.history).toHaveLength(3);
+    expect(state.history[0]).toEqual({
+      kind: 'proposal',
+      proposerId: 'host',
+      team: ['host', 'mole1'],
+    });
+    expect(state.history[1]).toEqual({
+      kind: 'votes',
+      team: ['host', 'mole1'],
+      votes: { host: 'Approve', mole1: 'Reject' },
+      consecutiveRejections: 0,
+    });
+  });
 });

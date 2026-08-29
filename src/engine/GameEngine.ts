@@ -4,8 +4,8 @@ import { createBotBrain } from './bots/createBotBrain';
 import {
   buildBayesianBeliefsDebugSnapshot,
   type BayesianBeliefsDebugSnapshot,
-} from './bots/bayesian/debugSnapshot';
-import type { BotBrain, BotObservation } from './bots/types';
+} from './bots/bayesian';
+import type { BotBrain } from './bots/types';
 import { uniquifyCallsign, normalizeCallsign } from './callsigns';
 import {
   BALANCE,
@@ -48,7 +48,7 @@ export interface GameEngineOptions {
   voteResultDurationMs?: number;
   /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
   roundEndDurationMs?: number;
-  /** Bot policy. Defaults to Bayesian. */
+  /** Bot policy. Defaults to Bayesian. Live game only uses heuristic | bayesian. */
   botBrain?: BotBrain;
 }
 
@@ -62,8 +62,6 @@ export class GameEngine {
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
   private botBrain: BotBrain;
-  /** Host-only timeline for Bayesian ToM; reset each match. */
-  private observationLog: BotObservation[] = [];
   /** Humans who left after the lobby; rematch replaces them with bots. */
   private departedIds = new Set<PlayerId>();
   private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -115,7 +113,7 @@ export class GameEngine {
       players: this.state.players,
       moleCount: BALANCE[numPlayers].moles,
       observerIds: bots.map((p) => p.id),
-      history: this.observationLog,
+      history: this.state.history,
       proposedTeam: this.state.currentProposedTeam,
       phase: this.state.phase,
       currentRound: this.state.currentRound,
@@ -388,7 +386,6 @@ export class GameEngine {
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return;
 
-    this.observationLog = [];
     this.botsEnabled = this.botsEnabled || this.state.players.some((p) => isBot(p.id));
 
     Object.assign(this.state, createMatchProgress());
@@ -475,7 +472,7 @@ export class GameEngine {
 
     this.state.currentProposedTeam = team;
     this.state.teamVotes = {};
-    this.observationLog.push({
+    this.state.history.push({
       kind: 'proposal',
       proposerId: playerId,
       team: [...team],
@@ -527,7 +524,7 @@ export class GameEngine {
       moleCount: isSupportedPlayerCount(numPlayers) ? BALANCE[numPlayers].moles : 0,
       currentRound: this.state.currentRound,
       consecutiveRejections: this.state.consecutiveRejections,
-      history: this.observationLog,
+      history: this.state.history,
       random: this.random,
     };
   }
@@ -567,7 +564,7 @@ export class GameEngine {
   }
 
   private resolveVoting() {
-    this.observationLog.push({
+    this.state.history.push({
       kind: 'votes',
       team: [...this.state.currentProposedTeam],
       votes: this.recordedVotes(),
@@ -647,7 +644,7 @@ export class GameEngine {
     const success = isRaidSuccessful(sabotages, requiredSabotages);
     const proposer = this.state.players[this.state.proposerIndex];
 
-    this.observationLog.push({
+    this.state.history.push({
       kind: 'raid',
       team: [...this.state.currentProposedTeam],
       sabotageCount: sabotages,

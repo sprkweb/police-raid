@@ -19,6 +19,7 @@ export function createMatchProgress(): Pick<
   | 'currentRound'
   | 'scores'
   | 'raidResults'
+  | 'history'
   | 'proposerIndex'
   | 'consecutiveRejections'
   | 'currentProposedTeam'
@@ -31,6 +32,7 @@ export function createMatchProgress(): Pick<
     currentRound: 1,
     scores: { police: 0, moles: 0 },
     raidResults: [],
+    history: [],
     proposerIndex: 0,
     consecutiveRejections: 0,
     currentProposedTeam: [],
