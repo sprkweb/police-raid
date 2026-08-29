@@ -45,7 +45,8 @@ export interface GameEngineOptions {
   voteResultDurationMs?: number;
   /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
   roundEndDurationMs?: number;
-  botBrain?: BotBrain;
+  /** One policy for every bot seat, or a per-seat resolver (bench matchups). */
+  botBrain?: BotBrain | ((actorId: PlayerId) => BotBrain);
 }
 
 export class GameEngine {
@@ -58,6 +59,7 @@ export class GameEngine {
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
   private botBrain: BotBrain;
+  private resolveBrain: (actorId: PlayerId) => BotBrain;
   /** Humans who left after the lobby; rematch replaces them with bots. */
   private departedIds = new Set<PlayerId>();
   private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -81,9 +83,15 @@ export class GameEngine {
     if (options.advancedBotsEnabled != null) {
       this.state.advancedBotsEnabled = options.advancedBotsEnabled;
     }
-    this.botBrain =
-      options.botBrain ??
-      createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
+    if (typeof options.botBrain === 'function') {
+      this.resolveBrain = options.botBrain;
+      this.botBrain = createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
+    } else {
+      this.botBrain =
+        options.botBrain ??
+        createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
+      this.resolveBrain = () => this.botBrain;
+    }
     this.notify();
   }
 
@@ -98,21 +106,25 @@ export class GameEngine {
    */
   public debugBayesianBeliefs(): BayesianBeliefsDebugSnapshot | null {
     if (this.state.phase === GamePhase.Lobby) return null;
-    if (!this.botBrain.debugBeliefs) return null;
     const bots = this.state.players.filter((p) => isBot(p.id));
-    if (bots.length === 0) return null;
+    const observers = bots.filter((p) => this.brainFor(p.id).debugBeliefs);
+    if (observers.length === 0) return null;
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return null;
 
-    return this.botBrain.debugBeliefs({
+    return this.brainFor(observers[0]!.id).debugBeliefs!({
       players: this.state.players,
       moleCount: BALANCE[numPlayers].moles,
-      observerIds: bots.map((p) => p.id),
+      observerIds: observers.map((p) => p.id),
       history: this.state.history,
       proposedTeam: this.state.currentProposedTeam,
       phase: this.state.phase,
       currentRound: this.state.currentRound,
     }) as BayesianBeliefsDebugSnapshot;
+  }
+
+  private brainFor(actorId: PlayerId): BotBrain {
+    return this.resolveBrain(actorId);
   }
 
   private notify() {
@@ -219,6 +231,7 @@ export class GameEngine {
     if (this.state.advancedBotsEnabled === enabled) return;
     this.state.advancedBotsEnabled = enabled;
     this.botBrain = createBotBrain(enabled ? 'bayesian' : 'heuristic');
+    this.resolveBrain = () => this.botBrain;
     this.notify();
   }
 
@@ -529,14 +542,14 @@ export class GameEngine {
     const teamSize = isSupportedPlayerCount(numPlayers)
       ? requiredTeamSize(numPlayers, this.state.currentRound)
       : 0;
-    return this.botBrain.chooseProposedTeam({
+    return this.brainFor(actorId).chooseProposedTeam({
       ...this.botMatchFields(actorId),
       teamSize,
     });
   }
 
   private botChooseTeamVote(actorId: PlayerId): Vote {
-    return this.botBrain.chooseTeamVote({
+    return this.brainFor(actorId).chooseTeamVote({
       ...this.botMatchFields(actorId),
       proposedTeam: this.state.currentProposedTeam,
     });
@@ -545,7 +558,7 @@ export class GameEngine {
   private botChooseRaidAction(actorId: PlayerId): RaidAction {
     const numPlayers = this.state.players.length;
     const proposer = this.state.players[this.state.proposerIndex];
-    return this.botBrain.chooseRaidAction({
+    return this.brainFor(actorId).chooseRaidAction({
       ...this.botMatchFields(actorId),
       role: this.state.players.find((p) => p.id === actorId)?.role,
       proposedTeam: this.state.currentProposedTeam,
