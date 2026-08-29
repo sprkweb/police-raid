@@ -20,7 +20,7 @@ import {
 } from './helpers';
 
 function activeBrainId(engine: GameEngine): BotBrain['id'] {
-  return (engine as unknown as { botBrain: BotBrain }).botBrain.id;
+  return (engine as unknown as { brainFor: (id: string) => BotBrain }).brainFor('any').id;
 }
 
 describe('GameEngine lobby', () => {
@@ -183,6 +183,52 @@ describe('GameEngine discussion / proposing', () => {
     expect(ctx.getState().proposerIndex).toBe((before + 1) % 5);
     expect(ctx.getState().consecutiveRejections).toBe(0);
     expect(ctx.getState().phase).toBe(GamePhase.ProposingTeam);
+  });
+});
+
+describe('GameEngine history', () => {
+  it('starts empty and does not record a skipped proposal', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    expect(ctx.getState().history).toEqual([]);
+    beginProposing(ctx);
+    ctx.engine.skipProposal(currentProposerId(ctx.getState()));
+    expect(ctx.getState().history).toEqual([]);
+  });
+
+  it('appends proposal, votes, then raid', () => {
+    const ctx = startWithPlayers(5, { random: createSequenceRandom([0, 0, 0, 0, 0]) });
+    beginProposing(ctx);
+    proposeValidTeam(ctx);
+
+    const afterPropose = ctx.getState();
+    expect(afterPropose.history).toHaveLength(1);
+    expect(afterPropose.history[0]).toEqual({
+      kind: 'proposal',
+      proposerId: currentProposerId(afterPropose),
+      team: afterPropose.currentProposedTeam,
+    });
+
+    const team = [...afterPropose.currentProposedTeam];
+    const proposerId = currentProposerId(afterPropose);
+    allVote(ctx, 'Approve');
+
+    const afterVote = ctx.getState();
+    expect(afterVote.history).toHaveLength(2);
+    expect(afterVote.history[1]?.kind).toBe('votes');
+    if (afterVote.history[1]?.kind !== 'votes') throw new Error('expected votes');
+    expect(afterVote.history[1].team).toEqual(team);
+    expect(afterVote.history[1].consecutiveRejections).toBe(0);
+    expect(Object.keys(afterVote.history[1].votes)).toHaveLength(5);
+
+    allRaid(ctx, () => 'Support');
+    const afterRaid = ctx.getState();
+    expect(afterRaid.history.at(-1)).toEqual({
+      kind: 'raid',
+      team,
+      sabotageCount: 0,
+      proposerId,
+      round: 1,
+    });
   });
 });
 
@@ -409,6 +455,15 @@ describe('GameEngine.debugBayesianBeliefs', () => {
     expect(engine.debugBayesianBeliefs()).toBeNull();
   });
 
+  it('is null when the random brain is active', () => {
+    const randomBrain = createBotBrain('random');
+    const { engine } = createTestEngine('host', 'Host', {
+      botBrain: () => randomBrain,
+    });
+    engine.startGameWithBots();
+    expect(engine.debugBayesianBeliefs()).toBeNull();
+  });
+
   it('returns each bot posterior once a Bayesian match with bots is running', () => {
     const { engine, getState } = createTestEngine('host', 'Host', {
       random: createSeededRandom(1),
@@ -437,12 +492,22 @@ describe('GameEngine advanced bots toggle', () => {
     expect(activeBrainId(engine)).toBe('bayesian');
   });
 
-  it('honors an injected heuristic brain', () => {
+  it('honors an injected brain without inferring the lobby toggle from its id', () => {
+    const heuristic = createBotBrain('heuristic');
     const { engine, getState } = createTestEngine('host', 'Host', {
-      botBrain: createBotBrain('heuristic'),
+      botBrain: () => heuristic,
     });
-    expect(getState().advancedBotsEnabled).toBe(false);
+    expect(getState().advancedBotsEnabled).toBe(true);
     expect(activeBrainId(engine)).toBe('heuristic');
+  });
+
+  it('honors an injected random brain without flipping the lobby toggle', () => {
+    const randomBrain = createBotBrain('random');
+    const { engine, getState } = createTestEngine('host', 'Host', {
+      botBrain: () => randomBrain,
+    });
+    expect(getState().advancedBotsEnabled).toBe(true);
+    expect(activeBrainId(engine)).toBe('random');
   });
 
   it('ignores the toggle after the match has started', () => {
@@ -491,6 +556,7 @@ describe('GameEngine rematch', () => {
     expect(state.players.every((p) => p.role !== null)).toBe(true);
     expect(state.scores).toEqual({ police: 0, moles: 0 });
     expect(state.raidResults).toEqual([]);
+    expect(state.history).toEqual([]);
     expect(state.winner).toBeNull();
     expect(state.currentRound).toBe(1);
     expect(state.consecutiveRejections).toBe(0);

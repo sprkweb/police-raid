@@ -1,11 +1,8 @@
 import type { GameState, Player, PlayerId, Vote, RaidAction } from '../types/game';
 import { GamePhase, Role } from '../types/game';
 import { createBotBrain } from './bots/createBotBrain';
-import {
-  buildBayesianBeliefsDebugSnapshot,
-  type BayesianBeliefsDebugSnapshot,
-} from './bots/bayesian/debugSnapshot';
-import type { BotBrain, BotObservation } from './bots/types';
+import type { BayesianBeliefsDebugSnapshot } from './bots/bayesian';
+import type { BotBrainForSeat } from './bots/types';
 import { uniquifyCallsign, normalizeCallsign } from './callsigns';
 import {
   BALANCE,
@@ -48,8 +45,8 @@ export interface GameEngineOptions {
   voteResultDurationMs?: number;
   /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
   roundEndDurationMs?: number;
-  /** Bot policy. Defaults to Bayesian. */
-  botBrain?: BotBrain;
+  /** Per-seat policy. Omit to use one Bayesian or heuristic brain for every seat. */
+  botBrain?: BotBrainForSeat;
 }
 
 export class GameEngine {
@@ -61,9 +58,7 @@ export class GameEngine {
   private roundEndDurationMs: number;
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
-  private botBrain: BotBrain;
-  /** Host-only timeline for Bayesian ToM; reset each match. */
-  private observationLog: BotObservation[] = [];
+  private brainFor: BotBrainForSeat;
   /** Humans who left after the lobby; rematch replaces them with bots. */
   private departedIds = new Set<PlayerId>();
   private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -84,13 +79,14 @@ export class GameEngine {
     if (options.timersEnabled != null) {
       this.state.timersEnabled = options.timersEnabled;
     }
+    if (options.advancedBotsEnabled != null) {
+      this.state.advancedBotsEnabled = options.advancedBotsEnabled;
+    }
     if (options.botBrain) {
-      this.botBrain = options.botBrain;
-      this.state.advancedBotsEnabled = options.botBrain.id === 'bayesian';
+      this.brainFor = options.botBrain;
     } else {
-      const advanced = options.advancedBotsEnabled ?? true;
-      this.state.advancedBotsEnabled = advanced;
-      this.botBrain = createBotBrain(advanced ? 'bayesian' : 'heuristic');
+      const brain = createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
+      this.brainFor = () => brain;
     }
     this.notify();
   }
@@ -100,26 +96,27 @@ export class GameEngine {
   }
 
   /**
-   * Host DevTools: each Bayesian bot's current posterior. `null` in lobby,
-   * without bot seats, or when the original heuristic brain is active.
+   * Host DevTools: each bot's current posterior, if the active brain
+   * implements `debugBeliefs`. `null` in lobby, without bot seats, or when
+   * the brain has no debug hook.
    */
   public debugBayesianBeliefs(): BayesianBeliefsDebugSnapshot | null {
-    if (this.botBrain.id !== 'bayesian') return null;
     if (this.state.phase === GamePhase.Lobby) return null;
     const bots = this.state.players.filter((p) => isBot(p.id));
-    if (bots.length === 0) return null;
+    const observers = bots.filter((p) => this.brainFor(p.id).debugBeliefs);
+    if (observers.length === 0) return null;
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return null;
 
-    return buildBayesianBeliefsDebugSnapshot({
+    return this.brainFor(observers[0]!.id).debugBeliefs!({
       players: this.state.players,
       moleCount: BALANCE[numPlayers].moles,
-      observerIds: bots.map((p) => p.id),
-      history: this.observationLog,
+      observerIds: observers.map((p) => p.id),
+      history: this.state.history,
       proposedTeam: this.state.currentProposedTeam,
       phase: this.state.phase,
       currentRound: this.state.currentRound,
-    });
+    }) as BayesianBeliefsDebugSnapshot;
   }
 
   private notify() {
@@ -225,7 +222,8 @@ export class GameEngine {
     if (this.state.phase !== GamePhase.Lobby) return;
     if (this.state.advancedBotsEnabled === enabled) return;
     this.state.advancedBotsEnabled = enabled;
-    this.botBrain = createBotBrain(enabled ? 'bayesian' : 'heuristic');
+    const brain = createBotBrain(enabled ? 'bayesian' : 'heuristic');
+    this.brainFor = () => brain;
     this.notify();
   }
 
@@ -388,7 +386,6 @@ export class GameEngine {
     const numPlayers = this.state.players.length;
     if (!isSupportedPlayerCount(numPlayers)) return;
 
-    this.observationLog = [];
     this.botsEnabled = this.botsEnabled || this.state.players.some((p) => isBot(p.id));
 
     Object.assign(this.state, createMatchProgress());
@@ -475,7 +472,7 @@ export class GameEngine {
 
     this.state.currentProposedTeam = team;
     this.state.teamVotes = {};
-    this.observationLog.push({
+    this.state.history.push({
       kind: 'proposal',
       proposerId: playerId,
       team: [...team],
@@ -527,7 +524,7 @@ export class GameEngine {
       moleCount: isSupportedPlayerCount(numPlayers) ? BALANCE[numPlayers].moles : 0,
       currentRound: this.state.currentRound,
       consecutiveRejections: this.state.consecutiveRejections,
-      history: this.observationLog,
+      history: this.state.history,
       random: this.random,
     };
   }
@@ -537,14 +534,14 @@ export class GameEngine {
     const teamSize = isSupportedPlayerCount(numPlayers)
       ? requiredTeamSize(numPlayers, this.state.currentRound)
       : 0;
-    return this.botBrain.chooseProposedTeam({
+    return this.brainFor(actorId).chooseProposedTeam({
       ...this.botMatchFields(actorId),
       teamSize,
     });
   }
 
   private botChooseTeamVote(actorId: PlayerId): Vote {
-    return this.botBrain.chooseTeamVote({
+    return this.brainFor(actorId).chooseTeamVote({
       ...this.botMatchFields(actorId),
       proposedTeam: this.state.currentProposedTeam,
     });
@@ -553,7 +550,7 @@ export class GameEngine {
   private botChooseRaidAction(actorId: PlayerId): RaidAction {
     const numPlayers = this.state.players.length;
     const proposer = this.state.players[this.state.proposerIndex];
-    return this.botBrain.chooseRaidAction({
+    return this.brainFor(actorId).chooseRaidAction({
       ...this.botMatchFields(actorId),
       role: this.state.players.find((p) => p.id === actorId)?.role,
       proposedTeam: this.state.currentProposedTeam,
@@ -567,7 +564,7 @@ export class GameEngine {
   }
 
   private resolveVoting() {
-    this.observationLog.push({
+    this.state.history.push({
       kind: 'votes',
       team: [...this.state.currentProposedTeam],
       votes: this.recordedVotes(),
@@ -647,7 +644,7 @@ export class GameEngine {
     const success = isRaidSuccessful(sabotages, requiredSabotages);
     const proposer = this.state.players[this.state.proposerIndex];
 
-    this.observationLog.push({
+    this.state.history.push({
       kind: 'raid',
       team: [...this.state.currentProposedTeam],
       sabotageCount: sabotages,

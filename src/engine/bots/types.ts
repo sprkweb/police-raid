@@ -1,33 +1,7 @@
-import type { PlayerId, RaidAction, Role, Vote } from '../../types/game';
+import type { GameEvent, GamePhase, PlayerId, RaidAction, Role, Vote } from '../../types/game';
 import type { RandomFn } from '../rng';
 
-/** Which `BotBrain` implementation is active. Default in production is `bayesian`. */
-export type BotBrainId = 'heuristic' | 'bayesian';
-
-/**
- * Host-only public timeline used by Bayesian bots.
- * Not part of projected `GameState`.
- */
-export type BotObservation =
-  | {
-      kind: 'proposal';
-      proposerId: PlayerId;
-      team: readonly PlayerId[];
-    }
-  | {
-      kind: 'votes';
-      team: readonly PlayerId[];
-      votes: Readonly<Record<PlayerId, Vote>>;
-      /** Streak before this ballot resolves; nested cop hammer uses this. */
-      consecutiveRejections: number;
-    }
-  | {
-      kind: 'raid';
-      team: readonly PlayerId[];
-      sabotageCount: number;
-      proposerId: PlayerId;
-      round: number;
-    };
+export type BotBrainId = 'heuristic' | 'bayesian' | 'random';
 
 export interface BotMatchContext {
   actorId: PlayerId;
@@ -35,7 +9,7 @@ export interface BotMatchContext {
   moleCount: number;
   currentRound: number;
   consecutiveRejections: number;
-  history: readonly BotObservation[];
+  history: readonly GameEvent[];
   random: RandomFn;
 }
 
@@ -57,15 +31,24 @@ export interface BotRaidContext extends BotMatchContext {
   trueMoleIds: readonly PlayerId[];
 }
 
+export interface BotDebugContext {
+  players: readonly { id: PlayerId; name: string }[];
+  moleCount: number;
+  observerIds: readonly PlayerId[];
+  history: readonly GameEvent[];
+  proposedTeam: readonly PlayerId[];
+  phase: GamePhase;
+  currentRound: number;
+}
+
 /** Pluggable bot decision surface. `GameEngine` must not import a concrete policy. */
 export interface BotBrain {
   readonly id: BotBrainId;
   chooseProposedTeam(ctx: BotProposeContext): PlayerId[];
   chooseTeamVote(ctx: BotVoteContext): Vote;
   chooseRaidAction(ctx: BotRaidContext): RaidAction;
+  debugBeliefs?(ctx: BotDebugContext): unknown;
 }
 
-export interface WorldBelief {
-  moles: readonly PlayerId[];
-  probability: number;
-}
+/** Per-seat policy. A single live brain is `() => brain` for every actor. */
+export type BotBrainForSeat = (actorId: PlayerId) => BotBrain;

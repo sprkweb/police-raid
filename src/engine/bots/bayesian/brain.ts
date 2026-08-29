@@ -11,6 +11,7 @@ import {
   pickTiedTeam,
 } from './belief';
 import { designateSaboteurs, priorSaboteursFromHistory } from './designateSaboteurs';
+import { buildBayesianBeliefsDebugSnapshot } from './debugSnapshot';
 import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
 
 export function createBayesianBrain(): BotBrain {
@@ -57,6 +58,9 @@ export function createBayesianBrain(): BotBrain {
         requiredSabotages: ctx.requiredSabotages,
       });
       return designated.includes(ctx.actorId) ? 'Sabotage' : 'Support';
+    },
+    debugBeliefs(ctx) {
+      return buildBayesianBeliefsDebugSnapshot(ctx);
     },
   };
 }

@@ -19,6 +19,7 @@ function lobbyState(playerIds: PlayerId[], spectators: PlayerId[] = [], seq = 1)
     currentRound: 1,
     scores: { police: 0, moles: 0 },
     raidResults: [],
+    history: [],
     proposerIndex: 0,
     consecutiveRejections: 0,
     currentProposedTeam: [],

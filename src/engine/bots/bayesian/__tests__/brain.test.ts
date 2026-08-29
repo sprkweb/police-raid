@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Role } from '../../../types/game';
-import { createBayesianBrain } from '../bayesian/brain';
-import type { BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
+import { Role } from '../../../../types/game';
+import { createBayesianBrain } from '../brain';
+import type { BotProposeContext, BotRaidContext, BotVoteContext } from '../../types';
 
 const brain = createBayesianBrain();
 const playerIds = ['A', 'B', 'C', 'D', 'E'] as const;

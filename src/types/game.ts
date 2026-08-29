@@ -43,6 +43,32 @@ export interface RaidResult {
   success: boolean;
 }
 
+/**
+ * Public match timeline: proposals, resolved ballots, and raids.
+ * Overlaps `GameState.raidResults` on completed raids (`success` lives only on
+ * `RaidResult`; `proposerId` lives only on the raid event).
+ */
+export type GameEvent =
+  | {
+      kind: 'proposal';
+      proposerId: PlayerId;
+      team: readonly PlayerId[];
+    }
+  | {
+      kind: 'votes';
+      team: readonly PlayerId[];
+      votes: Readonly<Record<PlayerId, Vote>>;
+      /** Streak before this ballot resolves; nested cop hammer uses this. */
+      consecutiveRejections: number;
+    }
+  | {
+      kind: 'raid';
+      team: readonly PlayerId[];
+      sabotageCount: number;
+      proposerId: PlayerId;
+      round: number;
+    };
+
 export interface GameState {
   phase: GamePhase;
   players: Player[];
@@ -60,6 +86,8 @@ export interface GameState {
     moles: number;
   };
   raidResults: RaidResult[];
+  /** Proposals, ballots, and raids this match. Cleared on rematch. */
+  history: GameEvent[];
 
   proposerIndex: number;
   consecutiveRejections: number;

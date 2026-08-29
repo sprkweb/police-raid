@@ -54,7 +54,7 @@ export function simulateAllBotMatches(input: {
 
   for (let g = 0; g < input.games; g++) {
     const engine = createAllBotEngine(input.playerCount, {
-      botBrain: brain,
+      botBrain: () => brain,
       random: createSeededRandom(input.seed + g),
     });
     driveAllBotMatchToGameOver(engine);
