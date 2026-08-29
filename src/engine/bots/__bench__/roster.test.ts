@@ -9,7 +9,7 @@ describe('rotateRoster', () => {
 });
 
 describe('mixedRoster', () => {
-  it('cycles kinds then rotates by game index', () => {
+  it('cycles kinds and shifts the leftover seat with the game index', () => {
     expect(mixedRoster(5, 0, ['bayesian', 'heuristic', 'random'])).toEqual([
       'bayesian',
       'heuristic',
@@ -22,26 +22,26 @@ describe('mixedRoster', () => {
       'random',
       'bayesian',
       'heuristic',
-      'bayesian',
+      'random',
     ]);
   });
 });
 
 describe('pairwiseRoster', () => {
-  it('gives the extra seat to the left brain, then rotates', () => {
+  it('alternates the two brains and swaps the extra seat each game', () => {
     expect(pairwiseRoster(5, 0, 'bayesian', 'heuristic')).toEqual([
       'bayesian',
-      'bayesian',
+      'heuristic',
       'bayesian',
       'heuristic',
-      'heuristic',
+      'bayesian',
     ]);
     expect(pairwiseRoster(5, 1, 'bayesian', 'heuristic')).toEqual([
-      'bayesian',
-      'bayesian',
-      'heuristic',
       'heuristic',
       'bayesian',
+      'heuristic',
+      'bayesian',
+      'heuristic',
     ]);
   });
 });

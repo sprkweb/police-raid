@@ -13,28 +13,27 @@ export function rotateRoster<T>(items: readonly T[], offset: number): T[] {
   return [...items.slice(shift), ...items.slice(0, shift)];
 }
 
-/** Cycle `kinds` around the table, then rotate by `gameIndex` so seats mix. */
+/** Cycle `kinds` around the table; `gameIndex` shifts who sits where and the leftover seats. */
 export function mixedRoster(
   playerCount: number,
   gameIndex: number,
   kinds: readonly BotBrainId[] = BENCH_BRAIN_IDS,
 ): BotBrainId[] {
-  const cycled = Array.from({ length: playerCount }, (_, i) => kinds[i % kinds.length]!);
-  return rotateRoster(cycled, gameIndex);
+  return Array.from(
+    { length: playerCount },
+    (_, i) => kinds[(i + gameIndex) % kinds.length]!,
+  );
 }
 
-/** Split the table as evenly as possible between two brains, then rotate seats. */
+/** Alternate the two brains around the table; `gameIndex` swaps who gets the extra seat. */
 export function pairwiseRoster(
   playerCount: number,
   gameIndex: number,
   left: BotBrainId,
   right: BotBrainId,
 ): BotBrainId[] {
-  const leftCount = Math.ceil(playerCount / 2);
-  const split: BotBrainId[] = Array.from({ length: playerCount }, (_, i) =>
-    i < leftCount ? left : right,
-  );
-  return rotateRoster(split, gameIndex);
+  const pair = [left, right] as const;
+  return Array.from({ length: playerCount }, (_, i) => pair[(i + gameIndex) % 2]!);
 }
 
 export function seatIds(playerCount: number): string[] {
