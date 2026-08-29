@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createRandomBrain } from '../random';
 import { simulateAllBotMatches, type BotMatchStats } from './simulateAllBotMatches';
-import type { BotBrain, BotBrainId, ProductionBotBrainId } from '../types';
+import type { BotBrainId } from '../types';
 
 const GAMES = 40;
 const SEED = 20260821;
 const runBench = process.env.BOT_BENCH === '1';
-
-const CASES: Array<{ id: BotBrainId; brain: BotBrain | ProductionBotBrainId }> = [
-  { id: 'heuristic', brain: 'heuristic' },
-  { id: 'bayesian', brain: 'bayesian' },
-  { id: 'random', brain: createRandomBrain() },
-];
 
 function pct(n: number, total: number): string {
   return `${((n / total) * 100).toFixed(1)}%`;
@@ -47,9 +40,9 @@ describe.skipIf(!runBench)('bot implementation bench', () => {
       console.log(`\nAll-bot matches × ${GAMES} (seed ${SEED})\n${header}`);
 
       for (const playerCount of [5, 8] as const) {
-        for (const { id, brain } of CASES) {
+        for (const id of ['heuristic', 'bayesian', 'random'] as const) {
           const stats = simulateAllBotMatches({
-            brain,
+            brain: id,
             playerCount,
             games: GAMES,
             seed: SEED,

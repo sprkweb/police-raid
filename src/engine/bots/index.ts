@@ -5,9 +5,9 @@ export { createBotBrain } from './createBotBrain';
 export type {
   BotBrain,
   BotBrainId,
+  BotDebugContext,
   BotMatchContext,
   BotProposeContext,
   BotRaidContext,
   BotVoteContext,
-  ProductionBotBrainId,
 } from './types';

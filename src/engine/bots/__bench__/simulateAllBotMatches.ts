@@ -3,7 +3,7 @@ import { WINS_NEEDED } from '../../constants';
 import { GameEngine, type GameEngineOptions } from '../../GameEngine';
 import { createSeededRandom } from '../../rng';
 import { createBotBrain } from '../createBotBrain';
-import type { BotBrain, ProductionBotBrainId } from '../types';
+import type { BotBrain, BotBrainId } from '../types';
 
 export function createAllBotEngine(playerCount: number, options: GameEngineOptions = {}): GameEngine {
   const engine = new GameEngine('bot-1', 'Bot 1', () => {}, {
@@ -41,7 +41,7 @@ export interface BotMatchStats {
 }
 
 export function simulateAllBotMatches(input: {
-  brain: BotBrain | ProductionBotBrainId;
+  brain: BotBrain | BotBrainId;
   playerCount: number;
   games: number;
   seed: number;

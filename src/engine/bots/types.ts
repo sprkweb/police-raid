@@ -1,11 +1,7 @@
-import type { GameEvent, PlayerId, RaidAction, Role, Vote } from '../../types/game';
+import type { GameEvent, GamePhase, PlayerId, RaidAction, Role, Vote } from '../../types/game';
 import type { RandomFn } from '../rng';
 
-/** Brains the live game can select (`createBotBrain` / lobby toggle). */
-export type ProductionBotBrainId = 'heuristic' | 'bayesian';
-
-/** Every shipped `BotBrain.id`, including bench-only policies. */
-export type BotBrainId = ProductionBotBrainId | 'random';
+export type BotBrainId = 'heuristic' | 'bayesian' | 'random';
 
 export interface BotMatchContext {
   actorId: PlayerId;
@@ -35,10 +31,21 @@ export interface BotRaidContext extends BotMatchContext {
   trueMoleIds: readonly PlayerId[];
 }
 
+export interface BotDebugContext {
+  players: readonly { id: PlayerId; name: string }[];
+  moleCount: number;
+  observerIds: readonly PlayerId[];
+  history: readonly GameEvent[];
+  proposedTeam: readonly PlayerId[];
+  phase: GamePhase;
+  currentRound: number;
+}
+
 /** Pluggable bot decision surface. `GameEngine` must not import a concrete policy. */
 export interface BotBrain {
   readonly id: BotBrainId;
   chooseProposedTeam(ctx: BotProposeContext): PlayerId[];
   chooseTeamVote(ctx: BotVoteContext): Vote;
   chooseRaidAction(ctx: BotRaidContext): RaidAction;
+  debugBeliefs?(ctx: BotDebugContext): unknown;
 }

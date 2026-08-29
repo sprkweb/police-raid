@@ -453,6 +453,12 @@ describe('GameEngine.debugBayesianBeliefs', () => {
     engine.setAdvancedBotsEnabled(false);
     engine.startGameWithBots();
     expect(engine.debugBayesianBeliefs()).toBeNull();
+
+    const random = createTestEngine('host', 'Host', {
+      botBrain: createBotBrain('random'),
+    });
+    random.engine.startGameWithBots();
+    expect(random.engine.debugBayesianBeliefs()).toBeNull();
   });
 
   it('returns each bot posterior once a Bayesian match with bots is running', () => {
@@ -483,12 +489,18 @@ describe('GameEngine advanced bots toggle', () => {
     expect(activeBrainId(engine)).toBe('bayesian');
   });
 
-  it('honors an injected heuristic brain', () => {
+  it('honors an injected brain without inferring the lobby toggle from its id', () => {
     const { engine, getState } = createTestEngine('host', 'Host', {
       botBrain: createBotBrain('heuristic'),
     });
-    expect(getState().advancedBotsEnabled).toBe(false);
+    expect(getState().advancedBotsEnabled).toBe(true);
     expect(activeBrainId(engine)).toBe('heuristic');
+
+    const random = createTestEngine('host', 'Host', {
+      botBrain: createBotBrain('random'),
+    });
+    expect(random.getState().advancedBotsEnabled).toBe(true);
+    expect(activeBrainId(random.engine)).toBe('random');
   });
 
   it('ignores the toggle after the match has started', () => {

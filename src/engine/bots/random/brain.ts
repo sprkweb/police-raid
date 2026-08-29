@@ -3,7 +3,7 @@ import { Role } from '../../../types/game';
 import { shuffle } from '../../rng';
 import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
 
-/** Uniform random among legal moves. Bench-only; not selectable in the live game. */
+/** Uniform random among legal moves. The lobby toggle does not select this brain. */
 export function createRandomBrain(): BotBrain {
   return {
     id: 'random',

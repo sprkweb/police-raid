@@ -6,8 +6,9 @@ describe('createBotBrain', () => {
     expect(createBotBrain().id).toBe('bayesian');
   });
 
-  it('returns the requested production brain', () => {
+  it('returns the requested brain', () => {
     expect(createBotBrain('heuristic').id).toBe('heuristic');
     expect(createBotBrain('bayesian').id).toBe('bayesian');
+    expect(createBotBrain('random').id).toBe('random');
   });
 });
