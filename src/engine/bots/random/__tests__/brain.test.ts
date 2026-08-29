@@ -51,7 +51,8 @@ describe('createRandomBrain', () => {
     const team = brain.chooseProposedTeam(proposeCtx());
     expect(team).toHaveLength(3);
     expect(new Set(team).size).toBe(3);
-    expect(team.every((id) => playerIds.includes(id))).toBe(true);
+    const seated = new Set<string>(playerIds);
+    expect(team.every((id) => seated.has(id))).toBe(true);
   });
 
   it('does not force the actor onto the team', () => {
