@@ -2,7 +2,7 @@ import { Role } from '../../../types/game';
 import { WINS_NEEDED } from '../../constants';
 import { createSeededRandom } from '../../rng';
 import { createBotBrain } from '../createBotBrain';
-import type { BotBrain, BotBrainId } from '../types';
+import type { BotBrain, BotBrainForSeat, BotBrainId } from '../types';
 import { createAllBotEngine, driveAllBotMatchToGameOver } from './simulateAllBotMatches';
 
 export const BENCH_BRAIN_IDS: readonly BotBrainId[] = ['heuristic', 'bayesian', 'random'];
@@ -40,7 +40,10 @@ export function seatIds(playerCount: number): string[] {
   return Array.from({ length: playerCount }, (_, i) => `bot-${i + 1}`);
 }
 
-export function resolverForRoster(roster: readonly BotBrainId[], playerIds: readonly string[]) {
+export function resolverForRoster(
+  roster: readonly BotBrainId[],
+  playerIds: readonly string[],
+): BotBrainForSeat {
   const instances = new Map<BotBrainId, BotBrain>();
   const bySeat = new Map<string, BotBrainId>();
   playerIds.forEach((id, i) => {

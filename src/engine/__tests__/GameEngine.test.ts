@@ -20,7 +20,7 @@ import {
 } from './helpers';
 
 function activeBrainId(engine: GameEngine): BotBrain['id'] {
-  return (engine as unknown as { botBrain: BotBrain }).botBrain.id;
+  return (engine as unknown as { brainFor: (id: string) => BotBrain }).brainFor('any').id;
 }
 
 describe('GameEngine lobby', () => {
@@ -454,8 +454,9 @@ describe('GameEngine.debugBayesianBeliefs', () => {
     engine.startGameWithBots();
     expect(engine.debugBayesianBeliefs()).toBeNull();
 
+    const randomBrain = createBotBrain('random');
     const random = createTestEngine('host', 'Host', {
-      botBrain: createBotBrain('random'),
+      botBrain: () => randomBrain,
     });
     random.engine.startGameWithBots();
     expect(random.engine.debugBayesianBeliefs()).toBeNull();
@@ -490,14 +491,16 @@ describe('GameEngine advanced bots toggle', () => {
   });
 
   it('honors an injected brain without inferring the lobby toggle from its id', () => {
+    const heuristic = createBotBrain('heuristic');
     const { engine, getState } = createTestEngine('host', 'Host', {
-      botBrain: createBotBrain('heuristic'),
+      botBrain: () => heuristic,
     });
     expect(getState().advancedBotsEnabled).toBe(true);
     expect(activeBrainId(engine)).toBe('heuristic');
 
+    const randomBrain = createBotBrain('random');
     const random = createTestEngine('host', 'Host', {
-      botBrain: createBotBrain('random'),
+      botBrain: () => randomBrain,
     });
     expect(random.getState().advancedBotsEnabled).toBe(true);
     expect(activeBrainId(random.engine)).toBe('random');

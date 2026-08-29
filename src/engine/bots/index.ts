@@ -4,6 +4,7 @@ export { createRandomBrain } from './random';
 export { createBotBrain } from './createBotBrain';
 export type {
   BotBrain,
+  BotBrainForSeat,
   BotBrainId,
   BotDebugContext,
   BotMatchContext,

@@ -2,7 +2,7 @@ import type { GameState, Player, PlayerId, Vote, RaidAction } from '../types/gam
 import { GamePhase, Role } from '../types/game';
 import { createBotBrain } from './bots/createBotBrain';
 import type { BayesianBeliefsDebugSnapshot } from './bots/bayesian';
-import type { BotBrain } from './bots/types';
+import type { BotBrainForSeat } from './bots/types';
 import { uniquifyCallsign, normalizeCallsign } from './callsigns';
 import {
   BALANCE,
@@ -45,8 +45,8 @@ export interface GameEngineOptions {
   voteResultDurationMs?: number;
   /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
   roundEndDurationMs?: number;
-  /** One policy for every bot seat, or a per-seat resolver (bench matchups). */
-  botBrain?: BotBrain | ((actorId: PlayerId) => BotBrain);
+  /** Per-seat policy. Omit to use one Bayesian or heuristic brain for every seat. */
+  botBrain?: BotBrainForSeat;
 }
 
 export class GameEngine {
@@ -58,8 +58,7 @@ export class GameEngine {
   private roundEndDurationMs: number;
   /** When true, bot players auto-act on propose / vote / raid. */
   private botsEnabled = false;
-  private botBrain: BotBrain;
-  private resolveBrain: (actorId: PlayerId) => BotBrain;
+  private brainFor: BotBrainForSeat;
   /** Humans who left after the lobby; rematch replaces them with bots. */
   private departedIds = new Set<PlayerId>();
   private phaseTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -83,14 +82,11 @@ export class GameEngine {
     if (options.advancedBotsEnabled != null) {
       this.state.advancedBotsEnabled = options.advancedBotsEnabled;
     }
-    if (typeof options.botBrain === 'function') {
-      this.resolveBrain = options.botBrain;
-      this.botBrain = createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
+    if (options.botBrain) {
+      this.brainFor = options.botBrain;
     } else {
-      this.botBrain =
-        options.botBrain ??
-        createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
-      this.resolveBrain = () => this.botBrain;
+      const brain = createBotBrain(this.state.advancedBotsEnabled ? 'bayesian' : 'heuristic');
+      this.brainFor = () => brain;
     }
     this.notify();
   }
@@ -121,10 +117,6 @@ export class GameEngine {
       phase: this.state.phase,
       currentRound: this.state.currentRound,
     }) as BayesianBeliefsDebugSnapshot;
-  }
-
-  private brainFor(actorId: PlayerId): BotBrain {
-    return this.resolveBrain(actorId);
   }
 
   private notify() {
@@ -230,8 +222,8 @@ export class GameEngine {
     if (this.state.phase !== GamePhase.Lobby) return;
     if (this.state.advancedBotsEnabled === enabled) return;
     this.state.advancedBotsEnabled = enabled;
-    this.botBrain = createBotBrain(enabled ? 'bayesian' : 'heuristic');
-    this.resolveBrain = () => this.botBrain;
+    const brain = createBotBrain(enabled ? 'bayesian' : 'heuristic');
+    this.brainFor = () => brain;
     this.notify();
   }
 

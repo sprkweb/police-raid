@@ -13,7 +13,8 @@ describe('all-bot matches', () => {
   it.each(['bayesian', 'heuristic', 'random'] as const)(
     '%s 5-player match reaches GameOver',
     (id) => {
-      const engine = createAllBotEngine(5, { botBrain: createBotBrain(id) });
+      const brain = createBotBrain(id);
+      const engine = createAllBotEngine(5, { botBrain: () => brain });
       expect(engine.getState().phase).toBe(GamePhase.Discussion);
       expect(engine.getState().players).toHaveLength(5);
       driveAllBotMatchToGameOver(engine);

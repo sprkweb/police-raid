@@ -49,3 +49,6 @@ export interface BotBrain {
   chooseRaidAction(ctx: BotRaidContext): RaidAction;
   debugBeliefs?(ctx: BotDebugContext): unknown;
 }
+
+/** Per-seat policy. A single live brain is `() => brain` for every actor. */
+export type BotBrainForSeat = (actorId: PlayerId) => BotBrain;
