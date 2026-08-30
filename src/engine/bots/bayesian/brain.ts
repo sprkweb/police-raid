@@ -1,16 +1,17 @@
 /**
- * Active bot: Bayesian worlds + level-1 ToM for propose/vote; sabotage convention on raid.
- * Mole propose/vote uses the cop policy (camouflage).
+ * Active bot: Bayesian worlds + level-1 ToM for propose/vote; raid sabotage
+ * follows a seating coordination rule.
+ * Mole propose/vote copies the cop policy.
  */
 import type { PlayerId, RaidAction, Vote } from '../../../types/game';
 import { Role } from '../../../types/game';
 import {
+  copProposeTeams,
+  copVote,
   level1BeliefsFromHistory,
-  nestedCopProposeTeams,
-  nestedCopVote,
   pickTiedTeam,
 } from './belief';
-import { designateSaboteurs, priorSaboteursFromHistory } from './designateSaboteurs';
+import { designateSaboteurs, previousSaboteursFromHistory } from './designateSaboteurs';
 import { buildBayesianBeliefsDebugSnapshot } from './debugSnapshot';
 import type { BotBrain, BotProposeContext, BotRaidContext, BotVoteContext } from '../types';
 
@@ -24,7 +25,7 @@ export function createBayesianBrain(): BotBrain {
         ctx.actorId,
         ctx.history,
       );
-      const best = nestedCopProposeTeams(ctx.actorId, ctx.playerIds, ctx.teamSize, beliefs);
+      const best = copProposeTeams(ctx.actorId, ctx.playerIds, ctx.teamSize, beliefs);
       return pickTiedTeam(best, ctx.random);
     },
     chooseTeamVote(ctx: BotVoteContext): Vote {
@@ -34,7 +35,7 @@ export function createBayesianBrain(): BotBrain {
         ctx.actorId,
         ctx.history,
       );
-      return nestedCopVote(
+      return copVote(
         ctx.actorId,
         ctx.proposedTeam,
         beliefs,
@@ -44,7 +45,7 @@ export function createBayesianBrain(): BotBrain {
     },
     chooseRaidAction(ctx: BotRaidContext): RaidAction {
       if (ctx.role !== Role.Mole) return 'Support';
-      const priorSaboteurs = priorSaboteursFromHistory(
+      const previousSaboteurs = previousSaboteursFromHistory(
         ctx.trueMoleIds,
         ctx.playerIds,
         ctx.history,
@@ -54,7 +55,7 @@ export function createBayesianBrain(): BotBrain {
         moleIds: ctx.trueMoleIds,
         proposerId: ctx.proposerId,
         seatingOrder: ctx.playerIds,
-        priorSaboteurs,
+        previousSaboteurs,
         requiredSabotages: ctx.requiredSabotages,
       });
       return designated.includes(ctx.actorId) ? 'Sabotage' : 'Support';

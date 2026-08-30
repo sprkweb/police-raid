@@ -112,9 +112,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           snapshot,
         );
         console.table(snapshot.byObserver);
-        if (Object.keys(snapshot.pCleanProposed).length > 0) {
-          console.log('[police-raid] Bayesian P(proposed team is clean)');
-          console.table(snapshot.pCleanProposed);
+        if (Object.keys(snapshot.pNoMolesOnProposed).length > 0) {
+          console.log('[police-raid] Bayesian P(proposed team has no moles)');
+          console.table(snapshot.pNoMolesOnProposed);
         }
       }
     }

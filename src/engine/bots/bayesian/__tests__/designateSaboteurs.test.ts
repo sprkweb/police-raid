@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { designateSaboteurs, priorSaboteursFromHistory } from '../designateSaboteurs';
+import { designateSaboteurs, previousSaboteursFromHistory } from '../designateSaboteurs';
 import type { GameEvent } from '../../../../types/game';
 
 const seats = ['p0', 'p1', 'p2', 'p3', 'p4'] as const;
 const moles = ['p2', 'p4'] as const;
 
 describe('designateSaboteurs', () => {
-  it('picks a prior saboteur on the raid even if another mole proposed', () => {
+  it('picks a mole who already sabotaged even if another mole proposed', () => {
     expect(
       designateSaboteurs({
         team: ['p0', 'p2', 'p4'],
         moleIds: moles,
         proposerId: 'p2',
         seatingOrder: seats,
-        priorSaboteurs: ['p4'],
+        previousSaboteurs: ['p4'],
         requiredSabotages: 1,
       }),
     ).toEqual(['p4']);
@@ -26,7 +26,7 @@ describe('designateSaboteurs', () => {
         moleIds: moles,
         proposerId: 'p2',
         seatingOrder: seats,
-        priorSaboteurs: [],
+        previousSaboteurs: [],
         requiredSabotages: 1,
       }),
     ).toEqual(['p2']);
@@ -39,7 +39,7 @@ describe('designateSaboteurs', () => {
         moleIds: moles,
         proposerId: 'p0',
         seatingOrder: seats,
-        priorSaboteurs: [],
+        previousSaboteurs: [],
         requiredSabotages: 1,
       }),
     ).toEqual(['p2']);
@@ -52,14 +52,14 @@ describe('designateSaboteurs', () => {
         moleIds: moles,
         proposerId: 'p0',
         seatingOrder: seats,
-        priorSaboteurs: [],
+        previousSaboteurs: [],
         requiredSabotages: 2,
       }),
     ).toEqual(['p2', 'p4']);
   });
 });
 
-describe('priorSaboteursFromHistory', () => {
+describe('previousSaboteursFromHistory', () => {
   it('credits designated moles when public k > 0', () => {
     const history: GameEvent[] = [
       {
@@ -70,7 +70,7 @@ describe('priorSaboteursFromHistory', () => {
         round: 1,
       },
     ];
-    expect(priorSaboteursFromHistory(moles, seats, history)).toEqual(['p2']);
+    expect(previousSaboteursFromHistory(moles, seats, history)).toEqual(['p2']);
   });
 
   it('credits nobody when k = 0', () => {
@@ -83,6 +83,6 @@ describe('priorSaboteursFromHistory', () => {
         round: 1,
       },
     ];
-    expect(priorSaboteursFromHistory(moles, seats, history)).toEqual([]);
+    expect(previousSaboteursFromHistory(moles, seats, history)).toEqual([]);
   });
 });
