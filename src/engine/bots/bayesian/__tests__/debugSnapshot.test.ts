@@ -31,10 +31,10 @@ describe('buildBayesianBeliefsDebugSnapshot', () => {
     expect(snap.byObserver.Cy.Di).toBe(0.5);
     expect(snap.byObserver.Cy.Ed).toBe(0.5);
     expect(snap.observers[0]!.worlds).toHaveLength(6);
-    expect(snap.pCleanProposed).toEqual({});
+    expect(snap.pNoMolesOnProposed).toEqual({});
   });
 
-  it('collapses after a 2-sabotage pair and reports P(clean) for a proposed team', () => {
+  it('collapses after a 2-sabotage pair and reports P(no moles) for a proposed team', () => {
     const history: GameEvent[] = [
       { kind: 'raid', team: ['A', 'B'], sabotageCount: 2, proposerId: 'A', round: 1 },
     ];
@@ -51,7 +51,7 @@ describe('buildBayesianBeliefsDebugSnapshot', () => {
     expect(snap.byObserver.Cy.Ada).toBe(1);
     expect(snap.byObserver.Cy.Bea).toBe(1);
     expect(snap.byObserver.Cy.Di).toBe(0);
-    expect(snap.pCleanProposed.Cy).toBe(1);
+    expect(snap.pNoMolesOnProposed.Cy).toBe(1);
     expect(snap.observers[0]!.worlds).toEqual([{ moles: ['Ada', 'Bea'], p: 1 }]);
   });
 });

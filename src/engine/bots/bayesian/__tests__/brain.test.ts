@@ -47,7 +47,7 @@ describe('createBayesianBrain decisions', () => {
     expect(team).toContain('E');
   });
 
-  it('always Approves on hammer', () => {
+  it('always Approves at the rejection limit', () => {
     expect(
       brain.chooseTeamVote(
         voteCtx({
@@ -58,7 +58,7 @@ describe('createBayesianBrain decisions', () => {
     ).toBe('Approve');
   });
 
-  it('Rejects a proven-dirty team when off it', () => {
+  it('Rejects a team proven to contain moles when off it', () => {
     expect(
       brain.chooseTeamVote(
         voteCtx({

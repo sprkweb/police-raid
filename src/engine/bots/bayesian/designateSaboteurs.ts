@@ -1,6 +1,6 @@
 /**
- * Community sabotage convention: who among the moles on this raid should fail it.
- * Reconstructs “already sabotaged” from public k + the same convention, not hidden cards.
+ * Coordination rule: which moles on this raid should sabotage.
+ * Reconstructs who already sabotaged from public k + the same rule, not hidden cards.
  */
 import { isSupportedPlayerCount, requiredSabotagesForRound } from '../../rules';
 import type { GameEvent, PlayerId } from '../../../types/game';
@@ -10,7 +10,7 @@ export interface DesignateSaboteursInput {
   moleIds: readonly PlayerId[];
   proposerId: PlayerId;
   seatingOrder: readonly PlayerId[];
-  priorSaboteurs: readonly PlayerId[];
+  previousSaboteurs: readonly PlayerId[];
   requiredSabotages: number;
 }
 
@@ -37,7 +37,7 @@ export function designateSaboteurs(input: DesignateSaboteursInput): PlayerId[] {
   if (need <= 0) return [];
 
   const onRaidSet = new Set(onRaid);
-  const priorOnRaid = input.priorSaboteurs.filter((id) => onRaidSet.has(id));
+  const previousOnRaid = input.previousSaboteurs.filter((id) => onRaidSet.has(id));
   const chosen: PlayerId[] = [];
   const taken = new Set<PlayerId>();
 
@@ -47,12 +47,12 @@ export function designateSaboteurs(input: DesignateSaboteursInput): PlayerId[] {
     chosen.push(id);
   };
 
-  for (const id of priorOnRaid) {
+  for (const id of previousOnRaid) {
     take(id);
     if (chosen.length >= need) return chosen.slice(0, need);
   }
 
-  if (priorOnRaid.length === 0) {
+  if (previousOnRaid.length === 0) {
     take(input.proposerId);
     if (chosen.length >= need) return chosen.slice(0, need);
   } else if (!taken.has(input.proposerId)) {
@@ -69,13 +69,13 @@ export function designateSaboteurs(input: DesignateSaboteursInput): PlayerId[] {
 }
 
 /** Walk past raids and credit designated saboteurs whenever public k > 0. */
-export function priorSaboteursFromHistory(
+export function previousSaboteursFromHistory(
   moleIds: readonly PlayerId[],
   seatingOrder: readonly PlayerId[],
   history: readonly GameEvent[],
 ): PlayerId[] {
   const playerCount = seatingOrder.length;
-  const prior: PlayerId[] = [];
+  const previous: PlayerId[] = [];
 
   for (const event of history) {
     if (event.kind !== 'raid') continue;
@@ -87,15 +87,15 @@ export function priorSaboteursFromHistory(
       moleIds,
       proposerId: event.proposerId,
       seatingOrder,
-      priorSaboteurs: prior,
+      previousSaboteurs: previous,
       requiredSabotages,
     });
     if (event.sabotageCount <= 0) continue;
     const credited = designated.slice(0, event.sabotageCount);
     for (const id of credited) {
-      if (!prior.includes(id)) prior.push(id);
+      if (!previous.includes(id)) previous.push(id);
     }
   }
 
-  return prior;
+  return previous;
 }

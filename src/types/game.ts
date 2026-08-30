@@ -58,7 +58,7 @@ export type GameEvent =
       kind: 'votes';
       team: readonly PlayerId[];
       votes: Readonly<Record<PlayerId, Vote>>;
-      /** Streak before this ballot resolves; nested cop hammer uses this. */
+      /** Rejections so far this round; cops Approve when this reaches N-1. */
       consecutiveRejections: number;
     }
   | {

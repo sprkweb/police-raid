@@ -1,17 +1,17 @@
 /**
- * World-space beliefs and nested (level-0) cop/mole policies.
- * Nested actors use raid-only beliefs so ToM does not recurse.
+ * Beliefs over mole-set hypotheses, plus cop/mole policies used both for our
+ * action and as the level-0 model of other players (raid-only, so ToM does not recurse).
  */
 import type { GameEvent, PlayerId, Vote } from '../../../types/game';
 import type { RandomFn } from '../../rng';
 import {
-  CLEAN_VOTE_THRESHOLD,
-  CLEAN_ZERO_EPS,
+  NO_MOLES_VOTE_THRESHOLD,
+  ZERO_EPS,
   COP_ACTION_MATCH,
   COP_ACTION_MISMATCH,
   MOLE_ACTION_MATCH,
   MOLE_ACTION_MISMATCH,
-  SABOTAGE_PRIOR,
+  SABOTAGE_RATE,
 } from './constants';
 import { binomialCoefficient, combinations } from './combinations';
 
@@ -37,7 +37,7 @@ export function uniformBeliefs(worlds: readonly (readonly PlayerId[])[]): WorldB
 
 export function normalizeBeliefs(beliefs: WorldBelief[]): WorldBelief[] {
   if (beliefs.length === 0) return [];
-  const alive = beliefs.filter((b) => b.probability > CLEAN_ZERO_EPS);
+  const alive = beliefs.filter((b) => b.probability > ZERO_EPS);
   if (alive.length === 0) {
     const probability = 1 / beliefs.length;
     return beliefs.map((b) => ({ moles: b.moles, probability }));
@@ -70,7 +70,7 @@ export function moleProbability(beliefs: readonly WorldBelief[], playerId: Playe
 }
 
 /** P(team contains no moles) under `beliefs`. */
-export function cleanProbability(beliefs: readonly WorldBelief[], team: readonly PlayerId[]): number {
+export function noMolesOnTeamProbability(beliefs: readonly WorldBelief[], team: readonly PlayerId[]): number {
   let p = 0;
   for (const world of beliefs) {
     if (!teamIntersectsMoles(team, world.moles)) p += world.probability;
@@ -82,8 +82,8 @@ export function raidLikelihood(moleCountOnTeam: number, sabotageCount: number): 
   if (sabotageCount > moleCountOnTeam || sabotageCount < 0) return 0;
   return (
     binomialCoefficient(moleCountOnTeam, sabotageCount) *
-    SABOTAGE_PRIOR ** sabotageCount *
-    (1 - SABOTAGE_PRIOR) ** (moleCountOnTeam - sabotageCount)
+    SABOTAGE_RATE ** sabotageCount *
+    (1 - SABOTAGE_RATE) ** (moleCountOnTeam - sabotageCount)
   );
 }
 
@@ -101,7 +101,7 @@ export function updateFromRaid(
 }
 
 /**
- * Level-0 belief: raid outcomes only. Used as the nested other-player brain.
+ * Level-0 belief: raid outcomes only. Used as the other-player (predicted) brain.
  * Does not interpret proposals or votes (that would be level-2+).
  */
 export function beliefsFromRaids(
@@ -149,11 +149,11 @@ export function argmaxTeams(
   const winners: PlayerId[][] = [];
   for (const team of teams) {
     const s = score(team);
-    if (s > best + CLEAN_ZERO_EPS) {
+    if (s > best + ZERO_EPS) {
       best = s;
       winners.length = 0;
       winners.push(team);
-    } else if (Math.abs(s - best) <= CLEAN_ZERO_EPS) {
+    } else if (Math.abs(s - best) <= ZERO_EPS) {
       winners.push(team);
     }
   }
@@ -167,18 +167,18 @@ export function pickTiedTeam(teams: readonly PlayerId[][], random: RandomFn): Pl
   return [...(teams[index] ?? teams[0]!)];
 }
 
-export function nestedCopProposeTeams(
+export function copProposeTeams(
   actorId: PlayerId,
   playerIds: readonly PlayerId[],
   teamSize: number,
   beliefs: readonly WorldBelief[],
 ): PlayerId[][] {
   return argmaxTeams(teamsIncludingActor(actorId, playerIds, teamSize), (team) =>
-    cleanProbability(beliefs, team),
+    noMolesOnTeamProbability(beliefs, team),
   );
 }
 
-export function nestedMoleProposeTeams(
+export function moleProposeTeams(
   actorId: PlayerId,
   playerIds: readonly PlayerId[],
   teamSize: number,
@@ -189,11 +189,15 @@ export function nestedMoleProposeTeams(
     teamIntersectsMoles(team, worldMoles),
   );
   const pool = infiltrating.length > 0 ? infiltrating : teamsIncludingActor(actorId, playerIds, teamSize);
-  return argmaxTeams(pool, (team) => cleanProbability(beliefs, team));
+  return argmaxTeams(pool, (team) => noMolesOnTeamProbability(beliefs, team));
 }
 
-/** Cop vote policy (hammer / on-team / off-team threshold). Used both nested and for our action. */
-export function nestedCopVote(
+/**
+ * Cop vote policy: Approve at the rejection limit; otherwise on-team unless
+ * P(no moles) is ~0, off-team only if P(no moles) meets the threshold.
+ * Same function is used for our action and as the level-0 prediction of others.
+ */
+export function copVote(
   actorId: PlayerId,
   team: readonly PlayerId[],
   beliefs: readonly WorldBelief[],
@@ -201,15 +205,15 @@ export function nestedCopVote(
   playerCount: number,
 ): Vote {
   if (consecutiveRejections >= playerCount - 1) return 'Approve';
-  const pClean = cleanProbability(beliefs, team);
+  const pNoMoles = noMolesOnTeamProbability(beliefs, team);
   if (team.includes(actorId)) {
-    return pClean <= CLEAN_ZERO_EPS ? 'Reject' : 'Approve';
+    return pNoMoles <= ZERO_EPS ? 'Reject' : 'Approve';
   }
-  return pClean >= CLEAN_VOTE_THRESHOLD ? 'Approve' : 'Reject';
+  return pNoMoles >= NO_MOLES_VOTE_THRESHOLD ? 'Approve' : 'Reject';
 }
 
 /** Mole vote in a candidate world: pass a team that already contains a mole from that world. */
-export function nestedMoleVote(team: readonly PlayerId[], worldMoles: readonly PlayerId[]): Vote {
+export function moleVote(team: readonly PlayerId[], worldMoles: readonly PlayerId[]): Vote {
   return teamIntersectsMoles(team, worldMoles) ? 'Approve' : 'Reject';
 }
 
@@ -220,7 +224,7 @@ function proposalLikelihoodForWorld(
   copBest: readonly PlayerId[][],
 ): number {
   const matchesCop = teamInList(team, copBest);
-  // Self-including mole proposals use the same argmax as the nested cop.
+  // Self-including mole proposals use the same argmax as the cop policy.
   if (world.moles.includes(proposerId)) {
     return matchesCop ? MOLE_ACTION_MATCH : MOLE_ACTION_MISMATCH;
   }
@@ -231,13 +235,13 @@ function updateFromProposal(
   beliefs: readonly WorldBelief[],
   event: Extract<GameEvent, { kind: 'proposal' }>,
   playerIds: readonly PlayerId[],
-  nestedBeliefs: readonly WorldBelief[],
+  level0Beliefs: readonly WorldBelief[],
 ): WorldBelief[] {
-  const copBest = nestedCopProposeTeams(
+  const copBest = copProposeTeams(
     event.proposerId,
     playerIds,
     event.team.length,
-    nestedBeliefs,
+    level0Beliefs,
   );
   return normalizeBeliefs(
     beliefs.map((world) => ({
@@ -251,15 +255,15 @@ function updateFromProposal(
 function updateFromVotes(
   beliefs: readonly WorldBelief[],
   event: Extract<GameEvent, { kind: 'votes' }>,
-  nestedByVoter: ReadonlyMap<PlayerId, readonly WorldBelief[]>,
+  level0ByVoter: ReadonlyMap<PlayerId, readonly WorldBelief[]>,
   playerCount: number,
 ): WorldBelief[] {
   const copVoteByVoter = new Map<PlayerId, Vote>();
   for (const voterId of Object.keys(event.votes)) {
-    const nested = nestedByVoter.get(voterId) ?? [];
+    const level0Beliefs = level0ByVoter.get(voterId) ?? [];
     copVoteByVoter.set(
       voterId,
-      nestedCopVote(voterId, event.team, nested, event.consecutiveRejections, playerCount),
+      copVote(voterId, event.team, level0Beliefs, event.consecutiveRejections, playerCount),
     );
   }
 
@@ -269,7 +273,7 @@ function updateFromVotes(
       for (const [voterId, vote] of Object.entries(event.votes)) {
         const voterIsMole = world.moles.includes(voterId);
         const expected = voterIsMole
-          ? nestedMoleVote(event.team, world.moles)
+          ? moleVote(event.team, world.moles)
           : (copVoteByVoter.get(voterId) ?? 'Reject');
         const match = voterIsMole ? MOLE_ACTION_MATCH : COP_ACTION_MATCH;
         const mismatch = voterIsMole ? MOLE_ACTION_MISMATCH : COP_ACTION_MISMATCH;
@@ -296,7 +300,7 @@ function raidBeliefsFor(
 
 /**
  * Level-1 posterior for observer `observerId`: raids plus others' actions scored
- * against a nested level-0 brain.
+ * against a level-0 (raid-only) model of each other player.
  */
 export function level1BeliefsFromHistory(
   playerIds: readonly PlayerId[],
@@ -314,23 +318,23 @@ export function level1BeliefsFromHistory(
       raidHistory.push(event);
       raidBeliefCache.clear();
     } else if (event.kind === 'proposal') {
-      const nested = raidBeliefsFor(
+      const level0Beliefs = raidBeliefsFor(
         raidBeliefCache,
         playerIds,
         moleCount,
         event.proposerId,
         raidHistory,
       );
-      beliefs = updateFromProposal(beliefs, event, playerIds, nested);
+      beliefs = updateFromProposal(beliefs, event, playerIds, level0Beliefs);
     } else {
-      const nestedByVoter = new Map<PlayerId, WorldBelief[]>();
+      const level0ByVoter = new Map<PlayerId, WorldBelief[]>();
       for (const voterId of Object.keys(event.votes)) {
-        nestedByVoter.set(
+        level0ByVoter.set(
           voterId,
           raidBeliefsFor(raidBeliefCache, playerIds, moleCount, voterId, raidHistory),
         );
       }
-      beliefs = updateFromVotes(beliefs, event, nestedByVoter, playerIds.length);
+      beliefs = updateFromVotes(beliefs, event, level0ByVoter, playerIds.length);
     }
   }
   return beliefs;
