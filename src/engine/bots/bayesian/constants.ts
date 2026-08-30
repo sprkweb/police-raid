@@ -1,9 +1,6 @@
 /** Named knobs for the Bayesian bot. */
 
-/**
- * P(a mole plays Sabotage) in the raid *observation* model only.
- * This is a likelihood parameter, not a prior over worlds.
- */
+/** P(a mole plays Sabotage) in the raid *observation* model only. */
 export const SABOTAGE_RATE = 0.85;
 
 /** Likelihood when a cop's observed action matches the cop policy. */
