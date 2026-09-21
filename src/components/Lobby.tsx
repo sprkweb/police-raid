@@ -10,18 +10,9 @@ import { useTranslation } from 'react-i18next';
 type CopiedField = 'code' | 'link' | null;
 type PendingAction = 'create' | 'join' | null;
 
-function MaterialIcon({
-  name,
-  className,
-}: {
-  name: string;
-  className?: string;
-}) {
+function MaterialIcon({ name, className }: { name: string; className?: string }) {
   return (
-    <span
-      className={`material-icons${className ? ` ${className}` : ''}`}
-      aria-hidden="true"
-    >
+    <span className={`material-icons${className ? ` ${className}` : ''}`} aria-hidden="true">
       {name}
     </span>
   );
@@ -29,10 +20,20 @@ function MaterialIcon({
 
 export const Lobby: React.FC = () => {
   const {
-    createRoom, joinRoom, gameState, startGame, startGameWithBots, setTimersEnabled,
+    createRoom,
+    joinRoom,
+    gameState,
+    startGame,
+    startGameWithBots,
+    setTimersEnabled,
     setAdvancedBotsEnabled,
-    isHost, playerId: myPlayerId, roomCode: activeRoomCode, renamePlayer,
-    connecting, connectErrorCode, playerName,
+    isHost,
+    playerId: myPlayerId,
+    roomCode: activeRoomCode,
+    renamePlayer,
+    connecting,
+    connectErrorCode,
+    playerName,
   } = useGame();
   const { t } = useTranslation();
   const [name, setName] = useState(() => defaultCallsignField());
@@ -63,7 +64,7 @@ export const Lobby: React.FC = () => {
       await navigator.clipboard.writeText(value);
       setCopied(field);
       setError('');
-      window.setTimeout(() => setCopied(current => (current === field ? null : current)), 2000);
+      window.setTimeout(() => setCopied((current) => (current === field ? null : current)), 2000);
     } catch {
       setError(t('lobby.errorCopyLink'));
     }
@@ -109,12 +110,16 @@ export const Lobby: React.FC = () => {
             <h2>{t('lobby.stagingTitle')}</h2>
             {activeRoomCode && (
               <div className="pr-case-line">
-                <span className="pr-case-line-text">{t('game.caseNo', { code: activeRoomCode })}</span>
+                <span className="pr-case-line-text">
+                  {t('game.caseNo', { code: activeRoomCode })}
+                </span>
                 <button
                   type="button"
                   className={`pr-copy-btn pr-copy-btn-inline${copied === 'code' ? ' pr-copied' : ''}`}
                   onClick={() => copyText('code', activeRoomCode)}
-                  aria-label={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
+                  aria-label={
+                    copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')
+                  }
                   title={copied === 'code' ? t('lobby.caseCodeCopied') : t('lobby.copyCaseCode')}
                 >
                   <MaterialIcon name={copied === 'code' ? 'check' : 'content_copy'} />
@@ -138,19 +143,24 @@ export const Lobby: React.FC = () => {
           </div>
 
           <div className="pr-roster">
-            {gameState.players.map(p => {
+            {gameState.players.map((p) => {
               const isMe = p.id === myPlayerId;
               return (
-                <div key={p.id} className={`pr-roster-item${p.connected ? '' : ' pr-roster-offline'}`}>
-                  <span className="pr-avatar" aria-hidden="true"><span className="pr-avatar-ico" /></span>
+                <div
+                  key={p.id}
+                  className={`pr-roster-item${p.connected ? '' : ' pr-roster-offline'}`}
+                >
+                  <span className="pr-avatar" aria-hidden="true">
+                    <span className="pr-avatar-ico" />
+                  </span>
                   {isMe && editingName ? (
                     <input
                       className="pr-input pr-roster-rename"
                       defaultValue={p.name}
                       autoFocus
                       maxLength={24}
-                      onBlur={e => submitCallsign(e.currentTarget.value)}
-                      onKeyDown={e => {
+                      onBlur={(e) => submitCallsign(e.currentTarget.value)}
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           submitCallsign(e.currentTarget.value);
@@ -193,7 +203,7 @@ export const Lobby: React.FC = () => {
                 <h2>{t('lobby.observers', { count: gameState.spectators.length })}</h2>
               </div>
               <ul className="pr-observer-list">
-                {gameState.spectators.map(s => (
+                {gameState.spectators.map((s) => (
                   <li key={s.id}>
                     {s.id === myPlayerId && editingName ? (
                       <input
@@ -201,8 +211,8 @@ export const Lobby: React.FC = () => {
                         defaultValue={s.name}
                         autoFocus
                         maxLength={24}
-                        onBlur={e => submitCallsign(e.currentTarget.value)}
-                        onKeyDown={e => {
+                        onBlur={(e) => submitCallsign(e.currentTarget.value)}
+                        onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             submitCallsign(e.currentTarget.value);
@@ -227,7 +237,9 @@ export const Lobby: React.FC = () => {
                         {s.name}
                       </button>
                     )}
-                    {s.id === myPlayerId ? <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span> : null}
+                    {s.id === myPlayerId ? (
+                      <span className="pr-tag pr-tag-blue">{t('lobby.you')}</span>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -259,7 +271,12 @@ export const Lobby: React.FC = () => {
             <div className="pr-lobby-launch">
               {isHost ? (
                 <>
-                  <button type="button" className="pr-btn pr-blue" onClick={startGame} disabled={!canStart}>
+                  <button
+                    type="button"
+                    className="pr-btn pr-blue"
+                    onClick={startGame}
+                    disabled={!canStart}
+                  >
                     {t('lobby.startGame')}
                   </button>
                   {showStartWithBots && (
@@ -305,7 +322,9 @@ export const Lobby: React.FC = () => {
       setError(
         e instanceof JoinLobbyError
           ? t('lobby.errorNoHostResponse', { code: normalizeRoomCode(roomCodeInput) })
-          : e instanceof Error ? e.message : String(e),
+          : e instanceof Error
+            ? e.message
+            : String(e),
       );
     } finally {
       busyRef.current = false;
@@ -313,9 +332,8 @@ export const Lobby: React.FC = () => {
     }
   };
 
-  const shownError = error || (connectErrorCode
-    ? t('lobby.errorNoHostResponse', { code: connectErrorCode })
-    : '');
+  const shownError =
+    error || (connectErrorCode ? t('lobby.errorNoHostResponse', { code: connectErrorCode }) : '');
 
   return (
     <div className="pr-lobby pr-lobby-checkin">
@@ -330,13 +348,15 @@ export const Lobby: React.FC = () => {
           {shownError && <p className="pr-error">{shownError}</p>}
 
           <div className="pr-field">
-            <label className="pr-label" htmlFor="playerName">{t('lobby.callsignLabel')}</label>
+            <label className="pr-label" htmlFor="playerName">
+              {t('lobby.callsignLabel')}
+            </label>
             <input
               id="playerName"
               type="text"
               className="pr-input"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder={t('lobby.callsignPlaceholder')}
               autoComplete="nickname"
             />
@@ -366,8 +386,8 @@ export const Lobby: React.FC = () => {
                   type="text"
                   className="pr-input"
                   value={roomCodeInput}
-                  onChange={e => setRoomCodeInput(normalizeRoomCode(e.target.value))}
-                  onKeyDown={e => {
+                  onChange={(e) => setRoomCodeInput(normalizeRoomCode(e.target.value))}
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && pending === null) {
                       e.preventDefault();
                       void handleJoin();

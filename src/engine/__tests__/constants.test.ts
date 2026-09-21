@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BALANCE,
-  MAX_PLAYERS,
-  MAX_ROUNDS,
-  MIN_PLAYERS,
-} from '../constants';
+import { BALANCE, MAX_PLAYERS, MAX_ROUNDS, MIN_PLAYERS } from '../constants';
 
 describe('BALANCE / constants', () => {
   it('covers player counts 5–8', () => {

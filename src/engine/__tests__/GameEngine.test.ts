@@ -364,7 +364,10 @@ describe('GameEngine raid', () => {
       if (ctx.getState().phase === GamePhase.Discussion) ctx.engine.endDiscussion();
       const moles = playersWithRole(ctx.getState(), Role.Mole);
       const size = teamOfSize(ctx.getState()).length;
-      let team = ctx.getState().players.map((p) => p.id).slice(0, size);
+      let team = ctx
+        .getState()
+        .players.map((p) => p.id)
+        .slice(0, size);
       if (sabotage) {
         team = [moles[0]!.id, ...ctx.getState().players.map((p) => p.id)]
           .filter((id, i, arr) => arr.indexOf(id) === i)
@@ -377,8 +380,8 @@ describe('GameEngine raid', () => {
       } else {
         const moleOnTeam = ctx
           .getState()
-          .currentProposedTeam.find((id) =>
-            ctx.getState().players.find((p) => p.id === id)?.role === Role.Mole,
+          .currentProposedTeam.find(
+            (id) => ctx.getState().players.find((p) => p.id === id)?.role === Role.Mole,
           )!;
         allRaid(ctx, (id) => (id === moleOnTeam ? 'Sabotage' : 'Support'));
       }
@@ -644,4 +647,3 @@ describe('GameEngine rematch', () => {
     expect(ctx.getState().players.every((p) => p.role !== null)).toBe(true);
   });
 });
-

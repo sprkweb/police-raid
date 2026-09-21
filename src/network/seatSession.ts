@@ -90,9 +90,12 @@ export async function waitForSeatSession(
   const storage = options.storage === undefined ? defaultStorage() : options.storage;
   const timeoutMs = options.timeoutMs ?? 8_000;
   const intervalMs = options.intervalMs ?? 50;
-  const sleep = options.sleep ?? ((ms) => new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  }));
+  const sleep =
+    options.sleep ??
+    ((ms) =>
+      new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      }));
   const now = options.now ?? Date.now;
   const start = now();
   for (;;) {

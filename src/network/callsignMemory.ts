@@ -13,9 +13,7 @@ function defaultStorage(): StorageLike | null {
   }
 }
 
-export function loadLastCallsign(
-  storage: StorageLike | null = defaultStorage(),
-): string | null {
+export function loadLastCallsign(storage: StorageLike | null = defaultStorage()): string | null {
   if (!storage) return null;
   try {
     const raw = storage.getItem(CALLSIGN_STORAGE_KEY);

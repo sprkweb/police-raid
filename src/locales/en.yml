@@ -1,165 +1,165 @@
 app:
-  title: "Police Raid"
-  language: "Lang"
-  help: "Briefing"
-  helpTitle: "Standing orders"
-  helpClose: "Close"
+  title: 'Police Raid'
+  language: 'Lang'
+  help: 'Briefing'
+  helpTitle: 'Standing orders'
+  helpClose: 'Close'
 
 footer:
-  madeBy: "Made by Vadim Saprykin"
-  viewOnGitHub: "Open the case files"
+  madeBy: 'Made by Vadim Saprykin'
+  viewOnGitHub: 'Open the case files'
 
 lobby:
-  kicker: "Phase 00 · mustering out"
-  title: "Department check-in"
-  brief: "Open a new case or enter an active one. You can change the callsign here or later in the staging room."
-  callsignLabel: "Callsign"
-  callsignPlaceholder: "Officer..."
-  openCaseLabel: "Open a new case"
-  openCase: "Open case"
-  opening: "Opening case..."
-  or: "or"
-  orJoin: "or join an open case"
-  joinCaseLabel: "Join a case"
-  caseCodePlaceholder: "Case number"
-  join: "Enter"
-  joining: "Coming online..."
-  players: "Personnel ({{current}}/8)"
-  you: "You"
-  host: "Senior"
-  stagingKicker: "Phase 00 · assembling the detail"
-  stagingTitle: "Staging room"
-  stagingBrief: "Assemble the personnel. The operation starts once 5–8 officers are on the roster."
-  inviteLinkLabel: "Case link"
-  copyCaseCode: "Copy case number"
-  copyInviteLink: "Copy case link"
-  caseCodeCopied: "Case number copied"
-  linkCopied: "Link copied"
-  connectingTitle: "Coming online"
-  connectingBrief: "Raising the senior officer for this case. Hold the line."
-  observers: "Gallery ({{count}})"
-  offline: "No signal"
-  hostGoneTitle: "Senior officer dropped"
-  hostGoneBrief: "The case closed when the host left the channel. Open a new case, or wait for the senior to start again."
-  sessionTakenTitle: "Channel moved"
-  sessionTakenBrief: "This case is live in another window. This terminal has been dropped from the channel."
-  returnToCheckIn: "Return to check-in"
-  startGame: "Start operation (5–8 officers required)"
+  kicker: 'Phase 00 · mustering out'
+  title: 'Department check-in'
+  brief: 'Open a new case or enter an active one. You can change the callsign here or later in the staging room.'
+  callsignLabel: 'Callsign'
+  callsignPlaceholder: 'Officer...'
+  openCaseLabel: 'Open a new case'
+  openCase: 'Open case'
+  opening: 'Opening case...'
+  or: 'or'
+  orJoin: 'or join an open case'
+  joinCaseLabel: 'Join a case'
+  caseCodePlaceholder: 'Case number'
+  join: 'Enter'
+  joining: 'Coming online...'
+  players: 'Personnel ({{current}}/8)'
+  you: 'You'
+  host: 'Senior'
+  stagingKicker: 'Phase 00 · assembling the detail'
+  stagingTitle: 'Staging room'
+  stagingBrief: 'Assemble the personnel. The operation starts once 5–8 officers are on the roster.'
+  inviteLinkLabel: 'Case link'
+  copyCaseCode: 'Copy case number'
+  copyInviteLink: 'Copy case link'
+  caseCodeCopied: 'Case number copied'
+  linkCopied: 'Link copied'
+  connectingTitle: 'Coming online'
+  connectingBrief: 'Raising the senior officer for this case. Hold the line.'
+  observers: 'Gallery ({{count}})'
+  offline: 'No signal'
+  hostGoneTitle: 'Senior officer dropped'
+  hostGoneBrief: 'The case closed when the host left the channel. Open a new case, or wait for the senior to start again.'
+  sessionTakenTitle: 'Channel moved'
+  sessionTakenBrief: 'This case is live in another window. This terminal has been dropped from the channel.'
+  returnToCheckIn: 'Return to check-in'
+  startGame: 'Start operation (5–8 officers required)'
   waitingForHostStart: "Waiting for the senior's signal..."
-  startWithBots: "Call in reserves and start"
-  enableTimers: "Strict timetable"
-  enableAdvancedBots: "Seasoned reserves"
-  errorEnterName: "Enter your callsign"
-  errorEnterRoomCode: "Enter the case number"
-  errorNoHostResponse: "Nobody answered from case {{code}}. Check the number, or ask the senior to open the case again."
-  errorCopyLink: "Could not copy"
+  startWithBots: 'Call in reserves and start'
+  enableTimers: 'Strict timetable'
+  enableAdvancedBots: 'Seasoned reserves'
+  errorEnterName: 'Enter your callsign'
+  errorEnterRoomCode: 'Enter the case number'
+  errorNoHostResponse: 'Nobody answered from case {{code}}. Check the number, or ask the senior to open the case again.'
+  errorCopyLink: 'Could not copy'
 
 game:
-  caseNo: "Case no. {{code}}"
+  caseNo: 'Case no. {{code}}'
 
-  statRaid: "Raid"
-  statDetail: "Detail"
-  statRejections: "Rejections in a row"
-  statTimer: "Countdown"
+  statRaid: 'Raid'
+  statDetail: 'Detail'
+  statRejections: 'Rejections in a row'
+  statTimer: 'Countdown'
 
-  dossierTitle: "Personnel file"
-  classified: "classified"
-  yourStatus: "Your status"
-  policeOfficer: "Police officer"
-  mole: "Mole"
-  taskPolice: "The raid must stay clean. Find the moles before they wreck three operations."
-  taskMole: "Wreck three raids without getting caught."
-  allies: "Your people inside:"
-  alliesAlone: "You are working alone."
+  dossierTitle: 'Personnel file'
+  classified: 'classified'
+  yourStatus: 'Your status'
+  policeOfficer: 'Police officer'
+  mole: 'Mole'
+  taskPolice: 'The raid must stay clean. Find the moles before they wreck three operations.'
+  taskMole: 'Wreck three raids without getting caught.'
+  allies: 'Your people inside:'
+  alliesAlone: 'You are working alone.'
 
-  caseProgress: "Case progress"
-  winsNeeded: "first to {{wins}}"
-  police: "Police"
-  moles: "Moles"
-  raidClean: "Raid {{num}} · clean"
-  raidFailed: "Raid {{num}} · blown"
-  raidCurrent: "Raid {{num}} · live"
-  raidUpcoming: "Raid {{num}}"
-  raidDone: "{{team}} · sabotage {{sabotage}}"
-  raidPlanned: "Detail: {{size}}"
-  twoSabotages: "2 sabotages"
+  caseProgress: 'Case progress'
+  winsNeeded: 'first to {{wins}}'
+  police: 'Police'
+  moles: 'Moles'
+  raidClean: 'Raid {{num}} · clean'
+  raidFailed: 'Raid {{num}} · blown'
+  raidCurrent: 'Raid {{num}} · live'
+  raidUpcoming: 'Raid {{num}}'
+  raidDone: '{{team}} · sabotage {{sabotage}}'
+  raidPlanned: 'Detail: {{size}}'
+  twoSabotages: '2 sabotages'
 
-  flagYou: "You"
-  flagLead: "Lead"
-  flagOnTeam: "On detail"
-  flagAlly: "Ally"
-  flagOffline: "No signal"
+  flagYou: 'You'
+  flagLead: 'Lead'
+  flagOnTeam: 'On detail'
+  flagAlly: 'Ally'
+  flagOffline: 'No signal'
 
-  observer: "Observer"
-  taskObserver: "You are watching the operation. You cannot vote, assign a detail, or enter the site."
-  observers: "Gallery ({{count}})"
-  observingBanner: "You are observing — no operational authority"
-  observingVote: "Observers do not sign the detail"
-  observingRaid: "Observers stay off the site"
+  observer: 'Observer'
+  taskObserver: 'You are watching the operation. You cannot vote, assign a detail, or enter the site.'
+  observers: 'Gallery ({{count}})'
+  observingBanner: 'You are observing — no operational authority'
+  observingVote: 'Observers do not sign the detail'
+  observingRaid: 'Observers stay off the site'
 
-  kickerBriefing: "Phase 01 · briefing"
-  titleBriefing: "Pre-raid briefing"
-  textBriefing: "Talk it through and decide who you trust. The channel is open — and the moles are listening."
-  consoleBriefing: "Briefing"
-  briefingNote: "Who acted strange during the last raid?"
-  endBriefing: "End briefing"
-  waitingHost: "Waiting for senior"
+  kickerBriefing: 'Phase 01 · briefing'
+  titleBriefing: 'Pre-raid briefing'
+  textBriefing: 'Talk it through and decide who you trust. The channel is open — and the moles are listening.'
+  consoleBriefing: 'Briefing'
+  briefingNote: 'Who acted strange during the last raid?'
+  endBriefing: 'End briefing'
+  waitingHost: 'Waiting for senior'
 
-  kickerDetail: "Phase 02 · assembling the detail"
-  titleDetail: "Raid detail"
-  textDetailLead: "You are assigning {{size}} operatives to the site. Tap officers in the circle to build the detail."
-  textDetailWait: "Lead officer {{lead}} is assigning {{size}} operatives to the site."
-  consoleDetail: "Detail roster"
-  consoleDetailLead: "Detail assembled by"
-  sendDetail: "Send the detail"
-  passLead: "Pass the lead"
-  waitingDetail: "Awaiting the detail"
+  kickerDetail: 'Phase 02 · assembling the detail'
+  titleDetail: 'Raid detail'
+  textDetailLead: 'You are assigning {{size}} operatives to the site. Tap officers in the circle to build the detail.'
+  textDetailWait: 'Lead officer {{lead}} is assigning {{size}} operatives to the site.'
+  consoleDetail: 'Detail roster'
+  consoleDetailLead: 'Detail assembled by'
+  sendDetail: 'Send the detail'
+  passLead: 'Pass the lead'
+  waitingDetail: 'Awaiting the detail'
 
-  kickerVote: "Phase 03 · signing off"
-  titleVote: "Vote on the detail"
-  textVote: "The detail is highlighted in the circle. Sign it off for the raid, or send it back to the next lead?"
-  consoleVote: "Your signature"
-  voteQuestion: "Approve this detail of {{size}} for the raid?"
-  approve: "Approve"
-  reject: "Reject"
-  youApproved: "You approved the detail"
-  youRejected: "You rejected the detail"
-  signatures: "Signatures {{votes}} of {{total}}"
+  kickerVote: 'Phase 03 · signing off'
+  titleVote: 'Vote on the detail'
+  textVote: 'The detail is highlighted in the circle. Sign it off for the raid, or send it back to the next lead?'
+  consoleVote: 'Your signature'
+  voteQuestion: 'Approve this detail of {{size}} for the raid?'
+  approve: 'Approve'
+  reject: 'Reject'
+  youApproved: 'You approved the detail'
+  youRejected: 'You rejected the detail'
+  signatures: 'Signatures {{votes}} of {{total}}'
 
-  kickerVoteResult: "Phase 03 · signatures in"
-  titleVoteResult: "Detail vote"
-  textVoteResult: "Every signature is on the table. The circle shows who signed the detail off — and who sent it back."
-  consoleVoteResult: "Vote result"
-  voteAccepted: "Detail approved"
-  voteRejected: "Detail rejected"
-  voteTally: "Aye {{yes}} · Nay {{no}}"
+  kickerVoteResult: 'Phase 03 · signatures in'
+  titleVoteResult: 'Detail vote'
+  textVoteResult: 'Every signature is on the table. The circle shows who signed the detail off — and who sent it back.'
+  consoleVoteResult: 'Vote result'
+  voteAccepted: 'Detail approved'
+  voteRejected: 'Detail rejected'
+  voteTally: 'Aye {{yes}} · Nay {{no}}'
 
-  kickerBreach: "Phase 04 · breach"
-  titleBreach: "Breaching the site"
-  textBreach: "The detail is in position. Everyone decides alone, and nobody sees what you picked."
-  consoleBreach: "Taking the site"
-  runRaid: "Run the raid"
-  leakInfo: "Leak the raid"
-  reportSent: "Report filed"
-  notOnDetail: "You are not on the detail"
-  awaitReturn: "Wait for the detail to return"
-  reports: "Reports {{reports}} of {{total}}"
+  kickerBreach: 'Phase 04 · breach'
+  titleBreach: 'Breaching the site'
+  textBreach: 'The detail is in position. Everyone decides alone, and nobody sees what you picked.'
+  consoleBreach: 'Taking the site'
+  runRaid: 'Run the raid'
+  leakInfo: 'Leak the raid'
+  reportSent: 'Report filed'
+  notOnDetail: 'You are not on the detail'
+  awaitReturn: 'Wait for the detail to return'
+  reports: 'Reports {{reports}} of {{total}}'
 
-  kickerRoundEnd: "Phase 04 · after-action"
-  titleRoundEnd: "Raid result"
-  textRoundEnd: "The detail is back. Sabotage is counted, not named."
-  consoleRoundEnd: "After-action"
-  raidResultClean: "Raid came back clean"
-  raidResultBlown: "Raid was compromised"
-  raidResultSabotage: "Sabotage reports: {{count}}"
+  kickerRoundEnd: 'Phase 04 · after-action'
+  titleRoundEnd: 'Raid result'
+  textRoundEnd: 'The detail is back. Sabotage is counted, not named.'
+  consoleRoundEnd: 'After-action'
+  raidResultClean: 'Raid came back clean'
+  raidResultBlown: 'Raid was compromised'
+  raidResultSabotage: 'Sabotage reports: {{count}}'
 
-  kickerClosed: "Case closed"
-  titleClosed: "Operation result"
-  textClosed: "Roles are revealed. See who was working against the department all along."
-  caseClosed: "Case closed"
-  policeWon: "Police win"
-  molesWon: "Moles win"
-  wonByRaids: "Decisive raids: {{raids}}"
-  wonByRejections: "Every detail was rejected"
-  startNewGame: "Start a new operation"
-  waitingNewGame: "Waiting for the senior to start a new operation"
+  kickerClosed: 'Case closed'
+  titleClosed: 'Operation result'
+  textClosed: 'Roles are revealed. See who was working against the department all along.'
+  caseClosed: 'Case closed'
+  policeWon: 'Police win'
+  molesWon: 'Moles win'
+  wonByRaids: 'Decisive raids: {{raids}}'
+  wonByRejections: 'Every detail was rejected'
+  startNewGame: 'Start a new operation'
+  waitingNewGame: 'Waiting for the senior to start a new operation'

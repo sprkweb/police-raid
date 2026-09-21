@@ -7,17 +7,12 @@ import { fillLobby } from './helpers';
 function createHost(hostName = 'Ada') {
   let seq = 0;
   let secrets = 0;
-  const room = new HostRoom(
-    'host-peer',
-    hostName,
-    () => {},
-    {
-      timersEnabled: false,
-      createSeatId: () => `seat-${++seq}`,
-      createSecret: () => `secret-${++secrets}`,
-      graceMs: 15_000,
-    },
-  );
+  const room = new HostRoom('host-peer', hostName, () => {}, {
+    timersEnabled: false,
+    createSeatId: () => `seat-${++seq}`,
+    createSecret: () => `secret-${++secrets}`,
+    graceMs: 15_000,
+  });
   return room;
 }
 
@@ -63,7 +58,9 @@ describe('HostRoom seating', () => {
     const room = createHost();
     const joined = room.handleJoinRequest('peer-a', 'Bravo')!;
     room.handleDisconnect('peer-a');
-    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.connected).toBe(false);
+    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.connected).toBe(
+      false,
+    );
 
     expect(room.handleReclaim('peer-b', { seatId: joined.seatId, secret: 'wrong' })).toBeNull();
     expect(room.seats.peerIdForSeat(joined.seatId)).toBeNull();
@@ -74,7 +71,9 @@ describe('HostRoom seating', () => {
     });
     expect(reclaimed).toEqual(joined);
     expect(room.seats.peerIdForSeat(joined.seatId)).toBe('peer-b');
-    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.connected).toBe(true);
+    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.connected).toBe(
+      true,
+    );
     expect(room.engine.getState().players).toHaveLength(2);
   });
 
@@ -85,7 +84,9 @@ describe('HostRoom seating', () => {
     expect(room.seats.peerIdForSeat(joined.seatId)).toBe('peer-b');
     room.handleDisconnect('peer-a');
     expect(room.seats.peerIdForSeat(joined.seatId)).toBe('peer-b');
-    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.connected).toBe(true);
+    expect(room.engine.getState().players.find((p) => p.id === joined.seatId)?.connected).toBe(
+      true,
+    );
   });
 
   it('drops a lobby seat after the grace period, then the secret no longer works', () => {
@@ -101,7 +102,9 @@ describe('HostRoom seating', () => {
 
       vi.advanceTimersByTime(1);
       expect(room.engine.getState().players.map((p) => p.id)).not.toContain(joined.seatId);
-      expect(room.handleReclaim('peer-b', { seatId: joined.seatId, secret: joined.secret })).toBeNull();
+      expect(
+        room.handleReclaim('peer-b', { seatId: joined.seatId, secret: joined.secret }),
+      ).toBeNull();
     } finally {
       vi.useRealTimers();
     }
@@ -121,7 +124,9 @@ describe('HostRoom seating', () => {
     expect(room.engine.getState().phase).toBe(GamePhase.Discussion);
     expect(room.engine.getState().players.map((p) => p.id)).not.toContain(ghost.seatId);
     expect(room.seats.bySeatId(ghost.seatId)).toBeUndefined();
-    expect(room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret })).toBeNull();
+    expect(
+      room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret }),
+    ).toBeNull();
   });
 
   it('drops a disconnected lobby seat when the host starts with bots', () => {
@@ -133,7 +138,9 @@ describe('HostRoom seating', () => {
     expect(room.engine.getState().phase).toBe(GamePhase.Discussion);
     expect(room.engine.getState().players.map((p) => p.id)).not.toContain(ghost.seatId);
     expect(room.seats.bySeatId(ghost.seatId)).toBeUndefined();
-    expect(room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret })).toBeNull();
+    expect(
+      room.handleReclaim('peer-back', { seatId: ghost.seatId, secret: ghost.secret }),
+    ).toBeNull();
   });
 });
 

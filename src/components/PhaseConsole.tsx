@@ -36,7 +36,7 @@ export const ActionButtons: React.FC<{ actions: ActionView[] }> = ({ actions }) 
   if (actions.length === 0) return null;
   return (
     <div className="pr-actions">
-      {actions.map(action => (
+      {actions.map((action) => (
         <button
           key={action.key}
           type="button"

@@ -46,16 +46,14 @@ export const RulesHelp: React.FC = () => {
         aria-controls={open ? dialogId : undefined}
         onClick={() => setOpen(true)}
       >
-        <span className="material-icons" aria-hidden="true">info_outline</span>
+        <span className="material-icons" aria-hidden="true">
+          info_outline
+        </span>
         {t('app.help')}
       </button>
 
       {open && (
-        <div
-          className="pr-rules-overlay"
-          role="presentation"
-          onClick={close}
-        >
+        <div className="pr-rules-overlay" role="presentation" onClick={close}>
           <div
             id={dialogId}
             className="pr-panel pr-rules-panel"
@@ -66,13 +64,10 @@ export const RulesHelp: React.FC = () => {
           >
             <div className="pr-panel-head pr-rules-head">
               <h2 id={titleId}>{t('app.helpTitle')}</h2>
-              <button
-                ref={closeRef}
-                type="button"
-                className="pr-rules-close"
-                onClick={close}
-              >
-                <span className="material-icons" aria-hidden="true">close</span>
+              <button ref={closeRef} type="button" className="pr-rules-close" onClick={close}>
+                <span className="material-icons" aria-hidden="true">
+                  close
+                </span>
                 {t('app.helpClose')}
               </button>
             </div>

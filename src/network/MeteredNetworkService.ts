@@ -9,9 +9,7 @@ const CHANNEL_PREFIX = 'police-raid/';
 function getApiKey(): string {
   const key = import.meta.env.VITE_METERED_API_KEY;
   if (!key || typeof key !== 'string') {
-    throw new Error(
-      'Missing VITE_METERED_API_KEY. Set it in .env (see .env.example).',
-    );
+    throw new Error('Missing VITE_METERED_API_KEY. Set it in .env (see .env.example).');
   }
   return key;
 }
@@ -26,9 +24,9 @@ function isNetworkMessage(data: unknown): data is NetworkMessage {
 }
 
 /**
- * NetworkService implementation using Metered Realtime Messaging over `wss://rms.metered.ca`. 
- * Requires outbound internet and a publishable key (`pk_live_…`) 
- * with `publish`, `subscribe`, `presence`, and `send`, plus channel pattern `*` or `police-raid/*`. 
+ * NetworkService implementation using Metered Realtime Messaging over `wss://rms.metered.ca`.
+ * Requires outbound internet and a publishable key (`pk_live_…`)
+ * with `publish`, `subscribe`, `presence`, and `send`, plus channel pattern `*` or `police-raid/*`.
  * Game traffic is server-routed: room channel for presence / join, Metered
  * direct `send` for per-player state and client actions (so peers cannot read
  * each other's secrets on the channel).

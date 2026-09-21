@@ -574,10 +574,8 @@ export class GameEngine {
 
     if (isTeamApproved(approves, this.state.players.length)) {
       this.state.consecutiveRejections = 0;
-      this.beginInterstitial(
-        GamePhase.VoteResult,
-        this.voteResultDurationMs,
-        () => this.finishVoteResult(),
+      this.beginInterstitial(GamePhase.VoteResult, this.voteResultDurationMs, () =>
+        this.finishVoteResult(),
       );
       return;
     }
@@ -589,10 +587,8 @@ export class GameEngine {
       return;
     }
 
-    this.beginInterstitial(
-      GamePhase.VoteResult,
-      this.voteResultDurationMs,
-      () => this.finishVoteResult(),
+    this.beginInterstitial(GamePhase.VoteResult, this.voteResultDurationMs, () =>
+      this.finishVoteResult(),
     );
   }
 
@@ -677,10 +673,8 @@ export class GameEngine {
       return;
     }
 
-    this.beginInterstitial(
-      GamePhase.RoundEnd,
-      this.roundEndDurationMs,
-      () => this.finishRoundEnd(),
+    this.beginInterstitial(GamePhase.RoundEnd, this.roundEndDurationMs, () =>
+      this.finishRoundEnd(),
     );
   }
 

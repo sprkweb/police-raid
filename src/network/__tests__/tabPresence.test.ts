@@ -52,19 +52,33 @@ describe('tabPresence', () => {
 
   it('treats another tab claiming the same seat as a takeover', () => {
     const current = { roomCode: 'ab12', seatId: 'seat-1', tabId: 'tab-a' };
-    expect(claimTakesOverSeat({ roomCode: 'AB12', seatId: 'seat-1', tabId: 'tab-b' }, current)).toBe(true);
-    expect(claimTakesOverSeat({ roomCode: 'AB12', seatId: 'seat-1', tabId: 'tab-a' }, current)).toBe(false);
-    expect(claimTakesOverSeat({ roomCode: 'AB12', seatId: 'seat-2', tabId: 'tab-b' }, current)).toBe(false);
-    expect(claimTakesOverSeat({ roomCode: 'ZZ99', seatId: 'seat-1', tabId: 'tab-b' }, current)).toBe(false);
+    expect(
+      claimTakesOverSeat({ roomCode: 'AB12', seatId: 'seat-1', tabId: 'tab-b' }, current),
+    ).toBe(true);
+    expect(
+      claimTakesOverSeat({ roomCode: 'AB12', seatId: 'seat-1', tabId: 'tab-a' }, current),
+    ).toBe(false);
+    expect(
+      claimTakesOverSeat({ roomCode: 'AB12', seatId: 'seat-2', tabId: 'tab-b' }, current),
+    ).toBe(false);
+    expect(
+      claimTakesOverSeat({ roomCode: 'ZZ99', seatId: 'seat-1', tabId: 'tab-b' }, current),
+    ).toBe(false);
   });
 
   it('broadcasts a normalized claim to subscribers', () => {
     const bus = memoryBus();
     const seen: SeatClaim[] = [];
-    const unsub = subscribeSeatClaims((claim) => {
-      seen.push(claim);
-    }, { bus, storage: null });
-    announceSeatClaim({ roomCode: 'ab12', seatId: 'seat-1', tabId: 'tab-b' }, { bus, storage: null });
+    const unsub = subscribeSeatClaims(
+      (claim) => {
+        seen.push(claim);
+      },
+      { bus, storage: null },
+    );
+    announceSeatClaim(
+      { roomCode: 'ab12', seatId: 'seat-1', tabId: 'tab-b' },
+      { bus, storage: null },
+    );
     expect(seen).toEqual([{ roomCode: 'AB12', seatId: 'seat-1', tabId: 'tab-b' }]);
     unsub();
   });

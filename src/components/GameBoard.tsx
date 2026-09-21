@@ -30,23 +30,29 @@ const useCompactLayout = () => {
 
 export const GameBoard: React.FC = () => {
   const {
-    gameState, playerId: myPlayerId, isHost, isSpectator, startGame,
-    endDiscussion, proposeTeam, skipProposal, voteTeam, submitRaidAction,
+    gameState,
+    playerId: myPlayerId,
+    isHost,
+    isSpectator,
+    startGame,
+    endDiscussion,
+    proposeTeam,
+    skipProposal,
+    voteTeam,
+    submitRaidAction,
   } = useGame();
   const { t } = useTranslation();
   const [selected, setSelected] = useState<PlayerId[]>([]);
   const compact = useCompactLayout();
   const phaseCountdown = usePhaseCountdown(gameState?.phaseEndsAt);
 
-  const selectionTurn = gameState
-    ? proposingTurnId(gameState)
-    : null;
+  const selectionTurn = gameState ? proposingTurnId(gameState) : null;
   useEffect(() => {
     setSelected([]);
   }, [selectionTurn]);
 
-  const me = gameState?.players.find(p => p.id === myPlayerId);
-  const spectatorMe = gameState?.spectators.find(s => s.id === myPlayerId);
+  const me = gameState?.players.find((p) => p.id === myPlayerId);
+  const spectatorMe = gameState?.spectators.find((s) => s.id === myPlayerId);
   if (!gameState || !myPlayerId || (!me && !spectatorMe)) return null;
 
   const { phase, players, currentProposedTeam, teamVotes, raidActions } = gameState;
@@ -67,14 +73,14 @@ export const GameBoard: React.FC = () => {
   const highlighted = isProposing ? selected : currentProposedTeam;
 
   const toggleSelection = (id: PlayerId) => {
-    setSelected(current => {
-      if (current.includes(id)) return current.filter(p => p !== id);
+    setSelected((current) => {
+      if (current.includes(id)) return current.filter((p) => p !== id);
       if (current.length >= teamSize) return current;
       return [...current, id];
     });
   };
 
-  const seats: SeatView[] = players.map(player => {
+  const seats: SeatView[] = players.map((player) => {
     const onTeam = !isOver && phase !== GamePhase.Discussion && highlighted.includes(player.id);
     const isAlly = isMole && !isOver && player.id !== myPlayerId && player.role === Role.Mole;
     const isLead = !isOver && (isProposing || isVoting || isVoteResult) && player.id === lead?.id;
@@ -104,11 +110,8 @@ export const GameBoard: React.FC = () => {
     }
 
     // Roles arrive already projected: null means hidden from this viewer.
-    const iconTone = player.role === Role.Mole
-      ? 'mole'
-      : player.role === Role.Police
-        ? 'police'
-        : undefined;
+    const iconTone =
+      player.role === Role.Mole ? 'mole' : player.role === Role.Police ? 'police' : undefined;
 
     return {
       id: player.id,
@@ -134,7 +137,12 @@ export const GameBoard: React.FC = () => {
     consoleView.note = t('game.briefingNote');
     if (phaseCountdown != null && gameState.phaseEndsAt != null) consoleView.big = phaseCountdown;
     if (isHost && !observing) {
-      actions.push({ key: 'end', label: t('game.endBriefing'), tone: 'blue', onClick: endDiscussion });
+      actions.push({
+        key: 'end',
+        label: t('game.endBriefing'),
+        tone: 'blue',
+        onClick: endDiscussion,
+      });
     } else if (!observing) {
       consoleView.stat = t('game.waitingHost');
     }
@@ -172,7 +180,10 @@ export const GameBoard: React.FC = () => {
     stage.title = t('game.titleVote');
     stage.text = t('game.textVote');
     consoleView.title = t('game.consoleVote');
-    consoleView.stat = t('game.signatures', { votes: Object.keys(teamVotes).length, total: players.length });
+    consoleView.stat = t('game.signatures', {
+      votes: Object.keys(teamVotes).length,
+      total: players.length,
+    });
 
     const myVote = teamVotes[myPlayerId];
     if (observing) {
@@ -182,7 +193,12 @@ export const GameBoard: React.FC = () => {
     } else {
       consoleView.note = t('game.voteQuestion', { size: currentProposedTeam.length });
       actions.push(
-        { key: 'approve', label: t('game.approve'), tone: 'green', onClick: () => voteTeam('Approve') },
+        {
+          key: 'approve',
+          label: t('game.approve'),
+          tone: 'green',
+          onClick: () => voteTeam('Approve'),
+        },
         { key: 'reject', label: t('game.reject'), tone: 'red', onClick: () => voteTeam('Reject') },
       );
     }
@@ -208,9 +224,19 @@ export const GameBoard: React.FC = () => {
       consoleView.note = t('game.reportSent');
     } else {
       consoleView.title = t('game.consoleBreach');
-      actions.push({ key: 'support', label: t('game.runRaid'), tone: 'blue', onClick: () => submitRaidAction('Support') });
+      actions.push({
+        key: 'support',
+        label: t('game.runRaid'),
+        tone: 'blue',
+        onClick: () => submitRaidAction('Support'),
+      });
       if (isMole) {
-        actions.push({ key: 'sabotage', label: t('game.leakInfo'), tone: 'red', onClick: () => submitRaidAction('Sabotage') });
+        actions.push({
+          key: 'sabotage',
+          label: t('game.leakInfo'),
+          tone: 'red',
+          onClick: () => submitRaidAction('Sabotage'),
+        });
       }
     }
   }
@@ -257,7 +283,9 @@ export const GameBoard: React.FC = () => {
       const outcome = lastRaid.success ? t('game.raidResultClean') : t('game.raidResultBlown');
       consoleView.note = `${outcome} · ${t('game.raidResultSabotage', { count: lastRaid.sabotageCount })}`;
     } else {
-      consoleView.note = t('game.wonByRaids', { raids: policeWon ? gameState.scores.police : gameState.scores.moles });
+      consoleView.note = t('game.wonByRaids', {
+        raids: policeWon ? gameState.scores.police : gameState.scores.moles,
+      });
     }
     if (isHost) {
       actions.push({
@@ -271,7 +299,9 @@ export const GameBoard: React.FC = () => {
     }
   }
 
-  const allies = players.filter(p => p.role === Role.Mole && p.id !== myPlayerId).map(p => p.name);
+  const allies = players
+    .filter((p) => p.role === Role.Mole && p.id !== myPlayerId)
+    .map((p) => p.name);
 
   return (
     <>
@@ -292,22 +322,32 @@ export const GameBoard: React.FC = () => {
                 {observing ? t('game.observer') : isMole ? t('game.mole') : t('game.policeOfficer')}
               </div>
               <div className="pr-task">
-                {observing ? t('game.taskObserver') : isMole ? t('game.taskMole') : t('game.taskPolice')}
+                {observing
+                  ? t('game.taskObserver')
+                  : isMole
+                    ? t('game.taskMole')
+                    : t('game.taskPolice')}
               </div>
               {isMole && (
                 <div className="pr-allies">
-                  {allies.length > 0
-                    ? <>{t('game.allies')} <b>{allies.join(', ')}</b></>
-                    : t('game.alliesAlone')}
+                  {allies.length > 0 ? (
+                    <>
+                      {t('game.allies')} <b>{allies.join(', ')}</b>
+                    </>
+                  ) : (
+                    t('game.alliesAlone')
+                  )}
                 </div>
               )}
             </div>
           </div>
           {gameState.spectators.length > 0 && (
             <div className="pr-observers">
-              <div className="pr-label">{t('game.observers', { count: gameState.spectators.length })}</div>
+              <div className="pr-label">
+                {t('game.observers', { count: gameState.spectators.length })}
+              </div>
               <ul className="pr-observer-list">
-                {gameState.spectators.map(s => (
+                {gameState.spectators.map((s) => (
                   <li key={s.id}>
                     {s.name}
                     {s.id === myPlayerId ? ` · ${t('lobby.you')}` : ''}
@@ -336,17 +376,28 @@ export const GameBoard: React.FC = () => {
           </div>
 
           <div className="pr-raids">
-            {Array.from({ length: MAX_ROUNDS }, (_, i) => i + 1).map(number => {
-              const result = gameState.raidResults.find(r => r.round === number);
+            {Array.from({ length: MAX_ROUNDS }, (_, i) => i + 1).map((number) => {
+              const result = gameState.raidResults.find((r) => r.round === number);
               const current = !result && number === gameState.currentRound && !isOver;
-              const state = result ? (result.success ? 'pr-clean' : 'pr-failed') : current ? 'pr-current' : 'pr-pending';
+              const state = result
+                ? result.success
+                  ? 'pr-clean'
+                  : 'pr-failed'
+                : current
+                  ? 'pr-current'
+                  : 'pr-pending';
               const names = result
-                ? result.team.map(id => players.find(p => p.id === id)?.name).filter(Boolean).join(', ')
+                ? result.team
+                    .map((id) => players.find((p) => p.id === id)?.name)
+                    .filter(Boolean)
+                    .join(', ')
                 : '';
 
               return (
                 <div key={number} className={`pr-raid ${state}`}>
-                  <div className="pr-raid-mark">{result ? (result.success ? '✓' : '✕') : number}</div>
+                  <div className="pr-raid-mark">
+                    {result ? (result.success ? '✓' : '✕') : number}
+                  </div>
                   <div>
                     <div className="pr-raid-t">
                       {result
@@ -377,7 +428,10 @@ export const GameBoard: React.FC = () => {
           </div>
 
           <div className="pr-board">
-            <OperativeRing seats={seats} onSelect={isProposing && iAmLead ? toggleSelection : undefined}>
+            <OperativeRing
+              seats={seats}
+              onSelect={isProposing && iAmLead ? toggleSelection : undefined}
+            >
               <PhaseConsole key={phase} view={consoleView} />
               {!compact && <ActionButtons actions={actions} />}
             </OperativeRing>

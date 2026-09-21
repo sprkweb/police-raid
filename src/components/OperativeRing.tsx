@@ -24,7 +24,7 @@ interface Props {
 
 const SEAT_RADIUS = 38;
 
-const angleOf = (index: number, total: number) => (-90 + (360 / total) * index) * Math.PI / 180;
+const angleOf = (index: number, total: number) => ((-90 + (360 / total) * index) * Math.PI) / 180;
 
 const glyphLabel: Record<SeatGlyph, string> = {
   signed: 'signed',
@@ -36,7 +36,8 @@ const seatClassName = (seat: SeatView, selectable: boolean) => {
   const classes = ['pr-seat'];
   if (seat.accent) classes.push(`pr-accent-${seat.accent}`);
   if (seat.glyph) classes.push(`pr-glyph-${seat.glyph}`);
-  else if (seat.iconTone) classes.push(seat.iconTone === 'mole' ? 'pr-icon-mole' : 'pr-icon-police');
+  else if (seat.iconTone)
+    classes.push(seat.iconTone === 'mole' ? 'pr-icon-mole' : 'pr-icon-police');
   if (seat.dimmed) classes.push('pr-dim');
   if (seat.offline) classes.push('pr-offline');
   if (seat.flag) classes.push('pr-has-flag');

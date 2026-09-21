@@ -2,8 +2,7 @@ import type { GameState, PlayerId } from '../types/game';
 
 export function isViewerSeated(state: GameState, seatId: PlayerId): boolean {
   return (
-    state.players.some((p) => p.id === seatId) ||
-    state.spectators.some((s) => s.id === seatId)
+    state.players.some((p) => p.id === seatId) || state.spectators.some((s) => s.id === seatId)
   );
 }
 

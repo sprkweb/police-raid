@@ -16,7 +16,9 @@ export const OperationStats: React.FC = () => {
     <div className="pr-stats">
       <div className="pr-stat">
         <div className="pr-stat-k">{t('game.statRaid')}</div>
-        <div className="pr-stat-v">{gameState.currentRound} / {MAX_ROUNDS}</div>
+        <div className="pr-stat-v">
+          {gameState.currentRound} / {MAX_ROUNDS}
+        </div>
       </div>
       <div className="pr-stat">
         <div className="pr-stat-k">{t('game.statDetail')}</div>
@@ -24,7 +26,9 @@ export const OperationStats: React.FC = () => {
       </div>
       <div className="pr-stat">
         <div className="pr-stat-k">{t('game.statRejections')}</div>
-        <div className="pr-stat-v">{gameState.consecutiveRejections} / {gameState.players.length}</div>
+        <div className="pr-stat-v">
+          {gameState.consecutiveRejections} / {gameState.players.length}
+        </div>
       </div>
       {gameState.phaseEndsAt != null && countdown != null && (
         <div className="pr-stat pr-stat-timer" aria-live="polite">
