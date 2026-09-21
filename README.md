@@ -18,5 +18,7 @@ npm run dev        # http://localhost:5173/
 npm test           # Vitest unit tests (game engine / rules / bots)
 npm run bench:bots # All-bot winrate + mixed/pairwise matchups (not CI)
 npm run lint
+npm run fmt        # format with oxfmt
+npm run fmt:check  # CI-style check, no writes
 npm run build
 ```
