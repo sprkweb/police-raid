@@ -1,5 +1,10 @@
 import { JoinLobbyError } from './enterRoom';
-import { loadSeatSession, waitForSeatSession, type SeatSession, type StorageLike } from './seatSession';
+import {
+  loadSeatSession,
+  waitForSeatSession,
+  type SeatSession,
+  type StorageLike,
+} from './seatSession';
 import { electJoinLeader } from './tabPresence';
 
 /**
@@ -30,10 +35,7 @@ export async function resolveJoinSeatSession(
     timeoutMs: options.waitTimeoutMs ?? 10_000,
   });
   if (!session) {
-    throw new JoinLobbyError(
-      'NO_HOST_RESPONSE',
-      `No seat session appeared for room ${roomCode}`,
-    );
+    throw new JoinLobbyError('NO_HOST_RESPONSE', `No seat session appeared for room ${roomCode}`);
   }
   return session;
 }

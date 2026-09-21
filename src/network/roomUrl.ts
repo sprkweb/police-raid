@@ -8,7 +8,9 @@ export function roomCodeFromSearch(search: string): string | null {
   return code.length > 0 ? code : null;
 }
 
-export function roomCodeFromLocation(loc: Pick<Location, 'search'> = window.location): string | null {
+export function roomCodeFromLocation(
+  loc: Pick<Location, 'search'> = window.location,
+): string | null {
   return roomCodeFromSearch(loc.search);
 }
 

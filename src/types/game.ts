@@ -5,7 +5,7 @@ export const Role = {
   Mole: 'Mole',
 } as const;
 
-export type Role = typeof Role[keyof typeof Role];
+export type Role = (typeof Role)[keyof typeof Role];
 
 export const GamePhase = {
   Lobby: 'Lobby',
@@ -18,7 +18,7 @@ export const GamePhase = {
   GameOver: 'GameOver',
 } as const;
 
-export type GamePhase = typeof GamePhase[keyof typeof GamePhase];
+export type GamePhase = (typeof GamePhase)[keyof typeof GamePhase];
 
 export type Vote = 'Approve' | 'Reject';
 export type RaidAction = 'Support' | 'Sabotage';

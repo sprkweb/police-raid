@@ -34,7 +34,9 @@ describe('resolveJoinSeatSession', () => {
 
   it('returns null so the join leader can JOIN_REQUEST', async () => {
     const storage = memory();
-    await expect(resolveJoinSeatSession('ab12', 'tab-a', { storage, waitTimeoutMs: 0 })).resolves.toBeNull();
+    await expect(
+      resolveJoinSeatSession('ab12', 'tab-a', { storage, waitTimeoutMs: 0 }),
+    ).resolves.toBeNull();
   });
 
   it('lets a follower reclaim once the leader saves a session', async () => {

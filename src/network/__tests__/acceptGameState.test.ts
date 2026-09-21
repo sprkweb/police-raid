@@ -9,12 +9,14 @@ function state(
 ): GameState {
   return {
     phase: extras.phase ?? GamePhase.Lobby,
-    players: extras.players ?? playerIds.map((id) => ({
-      id,
-      name: id,
-      role: null,
-      connected: true,
-    })),
+    players:
+      extras.players ??
+      playerIds.map((id) => ({
+        id,
+        name: id,
+        role: null,
+        connected: true,
+      })),
     spectators: extras.spectators ?? [],
     hostId,
     stateSeq: extras.stateSeq ?? 1,

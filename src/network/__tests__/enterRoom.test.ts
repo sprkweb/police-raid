@@ -2,12 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameState, PlayerId } from '../../types/game';
 import { GamePhase } from '../../types/game';
 import type { NetworkMessage, NetworkService, SeatKind } from '../../types/network';
-import {
-  JOIN_RETRY_MS,
-  JOIN_TIMEOUT_MS,
-  JoinLobbyError,
-  enterRoom,
-} from '../enterRoom';
+import { JOIN_RETRY_MS, JOIN_TIMEOUT_MS, JoinLobbyError, enterRoom } from '../enterRoom';
 
 function lobbyState(playerIds: PlayerId[], spectators: PlayerId[] = [], seq = 1): GameState {
   return {
@@ -115,7 +110,10 @@ describe('enterRoom', () => {
     const network = new FakeNetwork();
     const states: GameState[] = [];
 
-    const pending = enterRoom(network, 'PR01', { name: 'Bravo', onGameState: (s) => states.push(s) });
+    const pending = enterRoom(network, 'PR01', {
+      name: 'Bravo',
+      onGameState: (s) => states.push(s),
+    });
     await vi.advanceTimersByTimeAsync(0);
 
     expect(network.sent).toEqual([

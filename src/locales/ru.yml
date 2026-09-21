@@ -1,165 +1,165 @@
 app:
-  title: "Police Raid"
-  language: "Язык"
-  help: "Справка"
-  helpTitle: "Устав операции"
-  helpClose: "Закрыть"
+  title: 'Police Raid'
+  language: 'Язык'
+  help: 'Справка'
+  helpTitle: 'Устав операции'
+  helpClose: 'Закрыть'
 
 footer:
-  madeBy: "Сделал Вадим Сапрыкин"
-  viewOnGitHub: "Открыть материалы дела"
+  madeBy: 'Сделал Вадим Сапрыкин'
+  viewOnGitHub: 'Открыть материалы дела'
 
 lobby:
-  kicker: "Фаза 00 · сбор на выезд"
-  title: "Допуск в отдел"
-  brief: "Открой новое дело или войди в уже заведённое. Позывной можно сменить здесь или позже в комнате ожидания."
-  callsignLabel: "Позывной"
-  callsignPlaceholder: "Офицер..."
-  openCaseLabel: "Открыть новое дело"
-  openCase: "Открыть дело"
-  opening: "Заводим дело..."
-  or: "или"
-  orJoin: "или войти в уже открытое"
-  joinCaseLabel: "Войти в дело"
-  caseCodePlaceholder: "Номер дела"
-  join: "Войти"
-  joining: "Выходим на связь..."
-  players: "Личный состав ({{current}}/8)"
-  you: "Вы"
-  host: "Старший"
-  stagingKicker: "Фаза 00 · сбор наряда"
-  stagingTitle: "Комната ожидания"
-  stagingBrief: "Соберите личный состав. Операция стартует, когда в отделе 5–8 человек."
-  inviteLinkLabel: "Ссылка на дело"
-  copyCaseCode: "Скопировать номер дела"
-  copyInviteLink: "Скопировать ссылку"
-  caseCodeCopied: "Номер скопирован"
-  linkCopied: "Ссылка скопирована"
-  connectingTitle: "Выходим на связь"
-  connectingBrief: "Вызываем старшего по этому делу. Держите канал."
-  observers: "Галерея ({{count}})"
-  offline: "Нет связи"
-  hostGoneTitle: "Старший офицер вышел"
-  hostGoneBrief: "Дело закрыто: хост покинул канал. Откройте новое дело или дождитесь, пока старший заведёт его снова."
-  sessionTakenTitle: "Канал перенесён"
-  sessionTakenBrief: "Дело идёт в другом окне. Этот терминал отключён от канала."
-  returnToCheckIn: "Вернуться к допуску"
-  startGame: "Начать операцию (нужно 5–8 человек)"
-  waitingForHostStart: "Ждём сигнала старшего..."
-  startWithBots: "Вызвать резерв и начать"
-  enableTimers: "Жёсткий график"
-  enableAdvancedBots: "Опытный резерв"
-  errorEnterName: "Укажите позывной"
-  errorEnterRoomCode: "Введите номер дела"
-  errorNoHostResponse: "Из дела {{code}} никто не ответил. Проверьте номер или попросите старшего открыть дело заново."
-  errorCopyLink: "Не удалось скопировать"
+  kicker: 'Фаза 00 · сбор на выезд'
+  title: 'Допуск в отдел'
+  brief: 'Открой новое дело или войди в уже заведённое. Позывной можно сменить здесь или позже в комнате ожидания.'
+  callsignLabel: 'Позывной'
+  callsignPlaceholder: 'Офицер...'
+  openCaseLabel: 'Открыть новое дело'
+  openCase: 'Открыть дело'
+  opening: 'Заводим дело...'
+  or: 'или'
+  orJoin: 'или войти в уже открытое'
+  joinCaseLabel: 'Войти в дело'
+  caseCodePlaceholder: 'Номер дела'
+  join: 'Войти'
+  joining: 'Выходим на связь...'
+  players: 'Личный состав ({{current}}/8)'
+  you: 'Вы'
+  host: 'Старший'
+  stagingKicker: 'Фаза 00 · сбор наряда'
+  stagingTitle: 'Комната ожидания'
+  stagingBrief: 'Соберите личный состав. Операция стартует, когда в отделе 5–8 человек.'
+  inviteLinkLabel: 'Ссылка на дело'
+  copyCaseCode: 'Скопировать номер дела'
+  copyInviteLink: 'Скопировать ссылку'
+  caseCodeCopied: 'Номер скопирован'
+  linkCopied: 'Ссылка скопирована'
+  connectingTitle: 'Выходим на связь'
+  connectingBrief: 'Вызываем старшего по этому делу. Держите канал.'
+  observers: 'Галерея ({{count}})'
+  offline: 'Нет связи'
+  hostGoneTitle: 'Старший офицер вышел'
+  hostGoneBrief: 'Дело закрыто: хост покинул канал. Откройте новое дело или дождитесь, пока старший заведёт его снова.'
+  sessionTakenTitle: 'Канал перенесён'
+  sessionTakenBrief: 'Дело идёт в другом окне. Этот терминал отключён от канала.'
+  returnToCheckIn: 'Вернуться к допуску'
+  startGame: 'Начать операцию (нужно 5–8 человек)'
+  waitingForHostStart: 'Ждём сигнала старшего...'
+  startWithBots: 'Вызвать резерв и начать'
+  enableTimers: 'Жёсткий график'
+  enableAdvancedBots: 'Опытный резерв'
+  errorEnterName: 'Укажите позывной'
+  errorEnterRoomCode: 'Введите номер дела'
+  errorNoHostResponse: 'Из дела {{code}} никто не ответил. Проверьте номер или попросите старшего открыть дело заново.'
+  errorCopyLink: 'Не удалось скопировать'
 
 game:
-  caseNo: "Дело № {{code}}"
+  caseNo: 'Дело № {{code}}'
 
-  statRaid: "Рейд"
-  statDetail: "Наряд"
-  statRejections: "Отказов подряд"
-  statTimer: "Отсчёт"
+  statRaid: 'Рейд'
+  statDetail: 'Наряд'
+  statRejections: 'Отказов подряд'
+  statTimer: 'Отсчёт'
 
-  dossierTitle: "Личное дело"
-  classified: "секретно"
-  yourStatus: "Ваш статус"
-  policeOfficer: "Полицейский"
-  mole: "Крот"
-  taskPolice: "Рейд должен пройти чисто. Вычислите кротов раньше, чем они сорвут три операции."
-  taskMole: "Сорвите три рейда и не попадитесь."
-  allies: "Свои в отделе:"
-  alliesAlone: "Вы работаете в одиночку."
+  dossierTitle: 'Личное дело'
+  classified: 'секретно'
+  yourStatus: 'Ваш статус'
+  policeOfficer: 'Полицейский'
+  mole: 'Крот'
+  taskPolice: 'Рейд должен пройти чисто. Вычислите кротов раньше, чем они сорвут три операции.'
+  taskMole: 'Сорвите три рейда и не попадитесь.'
+  allies: 'Свои в отделе:'
+  alliesAlone: 'Вы работаете в одиночку.'
 
-  caseProgress: "Ход дела"
-  winsNeeded: "до {{wins}} побед"
-  police: "Полиция"
-  moles: "Кроты"
-  raidClean: "Рейд {{num}} · чисто"
-  raidFailed: "Рейд {{num}} · провал"
-  raidCurrent: "Рейд {{num}} · идёт"
-  raidUpcoming: "Рейд {{num}}"
-  raidDone: "{{team}} · саботаж {{sabotage}}"
-  raidPlanned: "Наряд: {{size}}"
-  twoSabotages: "2 саботажа"
+  caseProgress: 'Ход дела'
+  winsNeeded: 'до {{wins}} побед'
+  police: 'Полиция'
+  moles: 'Кроты'
+  raidClean: 'Рейд {{num}} · чисто'
+  raidFailed: 'Рейд {{num}} · провал'
+  raidCurrent: 'Рейд {{num}} · идёт'
+  raidUpcoming: 'Рейд {{num}}'
+  raidDone: '{{team}} · саботаж {{sabotage}}'
+  raidPlanned: 'Наряд: {{size}}'
+  twoSabotages: '2 саботажа'
 
-  flagYou: "Вы"
-  flagLead: "Инициатор"
-  flagOnTeam: "В наряде"
-  flagAlly: "Свой"
-  flagOffline: "Нет связи"
+  flagYou: 'Вы'
+  flagLead: 'Инициатор'
+  flagOnTeam: 'В наряде'
+  flagAlly: 'Свой'
+  flagOffline: 'Нет связи'
 
-  observer: "Наблюдатель"
-  taskObserver: "Вы наблюдаете за операцией. Голосовать, собирать наряд и выходить на объект нельзя."
-  observers: "Галерея ({{count}})"
-  observingBanner: "Вы наблюдаете — оперативных прав нет"
-  observingVote: "Наблюдатели наряд не подписывают"
-  observingRaid: "Наблюдатели на объект не выходят"
+  observer: 'Наблюдатель'
+  taskObserver: 'Вы наблюдаете за операцией. Голосовать, собирать наряд и выходить на объект нельзя.'
+  observers: 'Галерея ({{count}})'
+  observingBanner: 'Вы наблюдаете — оперативных прав нет'
+  observingVote: 'Наблюдатели наряд не подписывают'
+  observingRaid: 'Наблюдатели на объект не выходят'
 
-  kickerBriefing: "Фаза 01 · инструктаж"
-  titleBriefing: "Инструктаж перед выездом"
-  textBriefing: "Обсудите, кому вы доверяете. Каналы связи открыты — но помните, что кроты слышат всё."
-  consoleBriefing: "Инструктаж"
-  briefingNote: "Кто вёл себя странно в прошлом рейде?"
-  endBriefing: "Завершить инструктаж"
-  waitingHost: "Ждём старшего"
+  kickerBriefing: 'Фаза 01 · инструктаж'
+  titleBriefing: 'Инструктаж перед выездом'
+  textBriefing: 'Обсудите, кому вы доверяете. Каналы связи открыты — но помните, что кроты слышат всё.'
+  consoleBriefing: 'Инструктаж'
+  briefingNote: 'Кто вёл себя странно в прошлом рейде?'
+  endBriefing: 'Завершить инструктаж'
+  waitingHost: 'Ждём старшего'
 
-  kickerDetail: "Фаза 02 · формирование наряда"
-  titleDetail: "Наряд на рейд"
-  textDetailLead: "Вы назначаете {{size}} оперативников на объект. Нажимайте на людей в круге, чтобы собрать наряд."
-  textDetailWait: "Инициатор {{lead}} назначает {{size}} оперативников на объект."
-  consoleDetail: "Состав наряда"
-  consoleDetailLead: "Наряд формирует"
-  sendDetail: "Отправить наряд"
-  passLead: "Передать право"
-  waitingDetail: "Ожидание наряда"
+  kickerDetail: 'Фаза 02 · формирование наряда'
+  titleDetail: 'Наряд на рейд'
+  textDetailLead: 'Вы назначаете {{size}} оперативников на объект. Нажимайте на людей в круге, чтобы собрать наряд.'
+  textDetailWait: 'Инициатор {{lead}} назначает {{size}} оперативников на объект.'
+  consoleDetail: 'Состав наряда'
+  consoleDetailLead: 'Наряд формирует'
+  sendDetail: 'Отправить наряд'
+  passLead: 'Передать право'
+  waitingDetail: 'Ожидание наряда'
 
-  kickerVote: "Фаза 03 · утверждение наряда"
-  titleVote: "Голосование по составу"
-  textVote: "Наряд подсвечен в круге. Утвердить его на выезд — или завернуть и передать право следующему?"
-  consoleVote: "Ваша подпись"
-  voteQuestion: "Утвердить наряд из {{size}} человек на выезд?"
-  approve: "Утвердить"
-  reject: "Отклонить"
-  youApproved: "Вы утвердили наряд"
-  youRejected: "Вы отклонили наряд"
-  signatures: "Подписей {{votes}} из {{total}}"
+  kickerVote: 'Фаза 03 · утверждение наряда'
+  titleVote: 'Голосование по составу'
+  textVote: 'Наряд подсвечен в круге. Утвердить его на выезд — или завернуть и передать право следующему?'
+  consoleVote: 'Ваша подпись'
+  voteQuestion: 'Утвердить наряд из {{size}} человек на выезд?'
+  approve: 'Утвердить'
+  reject: 'Отклонить'
+  youApproved: 'Вы утвердили наряд'
+  youRejected: 'Вы отклонили наряд'
+  signatures: 'Подписей {{votes}} из {{total}}'
 
-  kickerVoteResult: "Фаза 03 · подписи собраны"
-  titleVoteResult: "Итог голосования"
-  textVoteResult: "Все подписи на столе. В круге видно, кто утвердил наряд — и кто его завернул."
-  consoleVoteResult: "Результат голосования"
-  voteAccepted: "Наряд утверждён"
-  voteRejected: "Наряд отклонён"
-  voteTally: "За {{yes}} · против {{no}}"
+  kickerVoteResult: 'Фаза 03 · подписи собраны'
+  titleVoteResult: 'Итог голосования'
+  textVoteResult: 'Все подписи на столе. В круге видно, кто утвердил наряд — и кто его завернул.'
+  consoleVoteResult: 'Результат голосования'
+  voteAccepted: 'Наряд утверждён'
+  voteRejected: 'Наряд отклонён'
+  voteTally: 'За {{yes}} · против {{no}}'
 
-  kickerBreach: "Фаза 04 · выезд"
-  titleBreach: "Штурм объекта"
-  textBreach: "Группа на позиции. Каждый в наряде решает сам, и никто не увидит, что именно вы выбрали."
-  consoleBreach: "Захват объекта"
-  runRaid: "Провести рейд"
-  leakInfo: "Слить информацию"
-  reportSent: "Рапорт отправлен"
-  notOnDetail: "Вы не в наряде"
-  awaitReturn: "Ожидайте возвращения группы"
-  reports: "Рапортов {{reports}} из {{total}}"
+  kickerBreach: 'Фаза 04 · выезд'
+  titleBreach: 'Штурм объекта'
+  textBreach: 'Группа на позиции. Каждый в наряде решает сам, и никто не увидит, что именно вы выбрали.'
+  consoleBreach: 'Захват объекта'
+  runRaid: 'Провести рейд'
+  leakInfo: 'Слить информацию'
+  reportSent: 'Рапорт отправлен'
+  notOnDetail: 'Вы не в наряде'
+  awaitReturn: 'Ожидайте возвращения группы'
+  reports: 'Рапортов {{reports}} из {{total}}'
 
-  kickerRoundEnd: "Фаза 04 · разбор"
-  titleRoundEnd: "Итог рейда"
-  textRoundEnd: "Группа вернулась. Саботаж считают, но не называют."
-  consoleRoundEnd: "Разбор выезда"
-  raidResultClean: "Рейд прошёл чисто"
-  raidResultBlown: "Рейд сорван"
-  raidResultSabotage: "Саботажей: {{count}}"
+  kickerRoundEnd: 'Фаза 04 · разбор'
+  titleRoundEnd: 'Итог рейда'
+  textRoundEnd: 'Группа вернулась. Саботаж считают, но не называют.'
+  consoleRoundEnd: 'Разбор выезда'
+  raidResultClean: 'Рейд прошёл чисто'
+  raidResultBlown: 'Рейд сорван'
+  raidResultSabotage: 'Саботажей: {{count}}'
 
-  kickerClosed: "Дело закрыто"
-  titleClosed: "Итог операции"
-  textClosed: "Роли раскрыты. Смотрите, кто всё это время работал против отдела."
-  caseClosed: "Дело закрыто"
-  policeWon: "Полиция победила"
-  molesWon: "Кроты победили"
-  wonByRaids: "Решающих рейдов: {{raids}}"
-  wonByRejections: "Все наряды отклонены"
-  startNewGame: "Начать новую операцию"
-  waitingNewGame: "Ждём, пока старший начнёт новую операцию"
+  kickerClosed: 'Дело закрыто'
+  titleClosed: 'Итог операции'
+  textClosed: 'Роли раскрыты. Смотрите, кто всё это время работал против отдела.'
+  caseClosed: 'Дело закрыто'
+  policeWon: 'Полиция победила'
+  molesWon: 'Кроты победили'
+  wonByRaids: 'Решающих рейдов: {{raids}}'
+  wonByRejections: 'Все наряды отклонены'
+  startNewGame: 'Начать новую операцию'
+  waitingNewGame: 'Ждём, пока старший начнёт новую операцию'

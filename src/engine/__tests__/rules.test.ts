@@ -64,12 +64,8 @@ describe('assignRoles', () => {
     for (const count of [5, 6, 7, 8] as const) {
       const roles = assignRoles(count, createSeededRandom(42));
       expect(roles).toHaveLength(count);
-      expect(roles.filter((r) => r === Role.Mole)).toHaveLength(
-        count <= 6 ? 2 : 3,
-      );
-      expect(roles.filter((r) => r === Role.Police)).toHaveLength(
-        count - (count <= 6 ? 2 : 3),
-      );
+      expect(roles.filter((r) => r === Role.Mole)).toHaveLength(count <= 6 ? 2 : 3);
+      expect(roles.filter((r) => r === Role.Police)).toHaveLength(count - (count <= 6 ? 2 : 3));
     }
   });
 

@@ -1,12 +1,6 @@
 import type { GameState, PlayerId, RaidAction, Role, Vote } from '../types/game';
 import { GamePhase, Role as Roles } from '../types/game';
-import {
-  BALANCE,
-  MAX_PLAYERS,
-  MIN_PLAYERS,
-  type PlayerCount,
-  WINS_NEEDED,
-} from './constants';
+import { BALANCE, MAX_PLAYERS, MIN_PLAYERS, type PlayerCount, WINS_NEEDED } from './constants';
 import { shuffle, type RandomFn } from './rng';
 
 export function isSupportedPlayerCount(n: number): n is PlayerCount {
@@ -97,9 +91,7 @@ export function countSabotages(actions: Readonly<Record<PlayerId, RaidAction | n
   return Object.values(actions).filter((a) => a === 'Sabotage').length;
 }
 
-export function winnerFromScores(
-  scores: GameState['scores'],
-): 'Police' | 'Moles' | null {
+export function winnerFromScores(scores: GameState['scores']): 'Police' | 'Moles' | null {
   if (scores.police >= WINS_NEEDED) return 'Police';
   if (scores.moles >= WINS_NEEDED) return 'Moles';
   return null;

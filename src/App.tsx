@@ -39,7 +39,9 @@ function App() {
         </header>
         <div className="pr-hazard" aria-hidden="true" />
 
-        {inGame ? <GameBoard /> : (
+        {inGame ? (
+          <GameBoard />
+        ) : (
           <>
             <Lobby />
             <SiteFooter />

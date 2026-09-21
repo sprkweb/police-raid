@@ -10,12 +10,12 @@ export type MessageType =
   | 'PLAYER_ACTION';
 
 export type PlayerActionPayload =
-  | { type: 'PROPOSE_TEAM', team: PlayerId[] }
+  | { type: 'PROPOSE_TEAM'; team: PlayerId[] }
   | { type: 'SKIP_PROPOSAL' }
-  | { type: 'VOTE_TEAM', vote: Vote }
-  | { type: 'RAID_ACTION', action: RaidAction }
+  | { type: 'VOTE_TEAM'; vote: Vote }
+  | { type: 'RAID_ACTION'; action: RaidAction }
   | { type: 'START_GAME' }
-  | { type: 'RENAME', name: string };
+  | { type: 'RENAME'; name: string };
 
 export interface JoinRequestPayload {
   name: string;

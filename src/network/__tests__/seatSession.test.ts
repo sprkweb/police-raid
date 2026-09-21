@@ -42,7 +42,10 @@ describe('seatSession', () => {
     const storage = memory();
     storage.setItem(seatSessionKey('X'), '{');
     expect(loadSeatSession('X', storage)).toBeNull();
-    storage.setItem(seatSessionKey('X'), JSON.stringify({ seatId: 'a', secret: 'b', hostPeerId: 'c', kind: 'admin' }));
+    storage.setItem(
+      seatSessionKey('X'),
+      JSON.stringify({ seatId: 'a', secret: 'b', hostPeerId: 'c', kind: 'admin' }),
+    );
     expect(loadSeatSession('X', storage)).toBeNull();
   });
 

@@ -8,13 +8,14 @@ import { distributeProjectedState, sendProjectedState } from '../engine/distribu
 import { projectForPlayer } from '../engine/projectState';
 import { preferredCallsign, saveLastCallsign } from '../network/callsignMemory';
 import { clearRoomUrl, roomCodeFromLocation, syncRoomUrl } from '../network/roomUrl';
-import {
-  clearSeatSession,
-  loadSeatSession,
-  saveSeatSession,
-} from '../network/seatSession';
+import { clearSeatSession, loadSeatSession, saveSeatSession } from '../network/seatSession';
 import { resolveJoinSeatSession } from '../network/resolveJoinSession';
-import { announceSeatClaim, claimTakesOverSeat, getTabId, subscribeSeatClaims } from '../network/tabPresence';
+import {
+  announceSeatClaim,
+  claimTakesOverSeat,
+  getTabId,
+  subscribeSeatClaims,
+} from '../network/tabPresence';
 import { normalizeRoomCode } from '../network/roomCode';
 import type { BayesianBeliefsDebugSnapshot } from '../engine/bots/bayesian';
 
@@ -162,7 +163,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const viewerId = room?.hostSeatId;
     setGameState(viewerId ? projectForPlayer(newState, viewerId) : { ...newState });
     const me = viewerId
-      ? newState.players.find((p) => p.id === viewerId) ?? newState.spectators.find((s) => s.id === viewerId)
+      ? (newState.players.find((p) => p.id === viewerId) ??
+        newState.spectators.find((s) => s.id === viewerId))
       : undefined;
     if (me) {
       setMyName(me.name);
@@ -182,7 +184,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       if (msg.type === 'RECLAIM') {
         const payload = msg.payload;
-        if (!payload || typeof payload.seatId !== 'string' || typeof payload.secret !== 'string') return;
+        if (!payload || typeof payload.seatId !== 'string' || typeof payload.secret !== 'string')
+          return;
         const response = room.handleReclaim(from, payload);
         if (!response) return;
         network.sendMessage(from, { type: 'JOIN_RESPONSE', payload: response });
@@ -349,39 +352,41 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{
-      gameState,
-      playerId: myPlayerId,
-      playerName: myName,
-      isHost,
-      isSpectator: seatKind === 'spectator',
-      connecting,
-      hostGone,
-      sessionTakenOver,
-      connectErrorCode,
-      roomCode,
-      joinRoom,
-      createRoom,
-      renamePlayer,
-      returnToCheckIn,
-      startGame: () => sendAction({ type: 'START_GAME' }),
-      startGameWithBots: () => {
-        hostRoomRef.current?.startGameWithBots();
-      },
-      setTimersEnabled: (enabled) => {
-        hostRoomRef.current?.engine.setTimersEnabled(enabled);
-      },
-      setAdvancedBotsEnabled: (enabled) => {
-        hostRoomRef.current?.engine.setAdvancedBotsEnabled(enabled);
-      },
-      endDiscussion: () => {
-        hostRoomRef.current?.engine.endDiscussion();
-      },
-      proposeTeam: (team) => sendAction({ type: 'PROPOSE_TEAM', team }),
-      skipProposal: () => sendAction({ type: 'SKIP_PROPOSAL' }),
-      voteTeam: (vote) => sendAction({ type: 'VOTE_TEAM', vote }),
-      submitRaidAction: (action) => sendAction({ type: 'RAID_ACTION', action }),
-    }}>
+    <GameContext.Provider
+      value={{
+        gameState,
+        playerId: myPlayerId,
+        playerName: myName,
+        isHost,
+        isSpectator: seatKind === 'spectator',
+        connecting,
+        hostGone,
+        sessionTakenOver,
+        connectErrorCode,
+        roomCode,
+        joinRoom,
+        createRoom,
+        renamePlayer,
+        returnToCheckIn,
+        startGame: () => sendAction({ type: 'START_GAME' }),
+        startGameWithBots: () => {
+          hostRoomRef.current?.startGameWithBots();
+        },
+        setTimersEnabled: (enabled) => {
+          hostRoomRef.current?.engine.setTimersEnabled(enabled);
+        },
+        setAdvancedBotsEnabled: (enabled) => {
+          hostRoomRef.current?.engine.setAdvancedBotsEnabled(enabled);
+        },
+        endDiscussion: () => {
+          hostRoomRef.current?.engine.endDiscussion();
+        },
+        proposeTeam: (team) => sendAction({ type: 'PROPOSE_TEAM', team }),
+        skipProposal: () => sendAction({ type: 'SKIP_PROPOSAL' }),
+        voteTeam: (vote) => sendAction({ type: 'VOTE_TEAM', vote }),
+        submitRaidAction: (action) => sendAction({ type: 'RAID_ACTION', action }),
+      }}
+    >
       {children}
     </GameContext.Provider>
   );

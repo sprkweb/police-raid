@@ -130,10 +130,13 @@ export async function enterRoom(
       onSeated = resolve;
       retry = setInterval(ask, retryMs);
       timeout = setTimeout(
-        () => reject(new JoinLobbyError(
-          'NO_HOST_RESPONSE',
-          `No host answered in room ${network.roomCode ?? roomCode}`,
-        )),
+        () =>
+          reject(
+            new JoinLobbyError(
+              'NO_HOST_RESPONSE',
+              `No host answered in room ${network.roomCode ?? roomCode}`,
+            ),
+          ),
         timeoutMs,
       );
       ask();

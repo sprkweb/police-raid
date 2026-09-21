@@ -60,11 +60,9 @@ describe('distributeProjectedState', () => {
 
   it('does nothing when not host', () => {
     const sendMessage = vi.fn();
-    distributeProjectedState(
-      { isHost: false, sendMessage },
-      playingState(),
-      { peerIdForSeat: (id) => id },
-    );
+    distributeProjectedState({ isHost: false, sendMessage }, playingState(), {
+      peerIdForSeat: (id) => id,
+    });
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
@@ -97,11 +95,9 @@ describe('distributeProjectedState', () => {
 
   it('skips seats with no live peer', () => {
     const sendMessage = vi.fn();
-    distributeProjectedState(
-      { isHost: true, sendMessage },
-      playingState(),
-      { peerIdForSeat: () => null },
-    );
+    distributeProjectedState({ isHost: true, sendMessage }, playingState(), {
+      peerIdForSeat: () => null,
+    });
     expect(sendMessage).not.toHaveBeenCalled();
   });
 });
