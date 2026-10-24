@@ -1,121 +1,120 @@
-export type PlayerId = string;
+export type PlayerId = string
 
 export const Role = {
-  Police: 'Police',
-  Mole: 'Mole',
-} as const;
+    Police: 'Police',
+    Mole: 'Mole',
+} as const
 
-export type Role = (typeof Role)[keyof typeof Role];
+export type Role = (typeof Role)[keyof typeof Role]
 
 export const GamePhase = {
-  Lobby: 'Lobby',
-  Discussion: 'Discussion',
-  ProposingTeam: 'ProposingTeam',
-  VotingOnTeam: 'VotingOnTeam',
-  VoteResult: 'VoteResult',
-  Raid: 'Raid',
-  RoundEnd: 'RoundEnd',
-  GameOver: 'GameOver',
-} as const;
+    Lobby: 'Lobby',
+    Discussion: 'Discussion',
+    ProposingTeam: 'ProposingTeam',
+    VotingOnTeam: 'VotingOnTeam',
+    VoteResult: 'VoteResult',
+    Raid: 'Raid',
+    RoundEnd: 'RoundEnd',
+    GameOver: 'GameOver',
+} as const
 
-export type GamePhase = (typeof GamePhase)[keyof typeof GamePhase];
+export type GamePhase = (typeof GamePhase)[keyof typeof GamePhase]
 
-export type Vote = 'Approve' | 'Reject';
-export type RaidAction = 'Support' | 'Sabotage';
+export type Vote = 'Approve' | 'Reject'
+export type RaidAction = 'Support' | 'Sabotage'
 
 export interface Player {
-  id: PlayerId;
-  name: string;
-  role: Role | null;
-  /** False while this seat’s current transport peer is gone. */
-  connected: boolean;
+    id: PlayerId
+    name: string
+    role: Role | null
+    /** False while this seat’s current transport peer is gone. */
+    connected: boolean
 }
 
 export interface Spectator {
-  id: PlayerId;
-  name: string;
+    id: PlayerId
+    name: string
 }
 
 export interface RaidResult {
-  round: number;
-  team: PlayerId[];
-  sabotageCount: number;
-  success: boolean;
+    round: number
+    team: PlayerId[]
+    sabotageCount: number
+    success: boolean
 }
 
 /**
- * Public match timeline: proposals, resolved ballots, and raids.
- * Overlaps `GameState.raidResults` on completed raids (`success` lives only on
+ * Public match timeline: proposals, resolved ballots, and raids. Overlaps
+ * `GameState.raidResults` on completed raids (`success` lives only on
  * `RaidResult`; `proposerId` lives only on the raid event).
  */
 export type GameEvent =
-  | {
-      kind: 'proposal';
-      proposerId: PlayerId;
-      team: readonly PlayerId[];
-    }
-  | {
-      kind: 'votes';
-      team: readonly PlayerId[];
-      votes: Readonly<Record<PlayerId, Vote>>;
-      /** Rejections so far this round; cops Approve when this reaches N-1. */
-      consecutiveRejections: number;
-    }
-  | {
-      kind: 'raid';
-      team: readonly PlayerId[];
-      sabotageCount: number;
-      proposerId: PlayerId;
-      round: number;
-    };
+    | {
+          kind: 'proposal'
+          proposerId: PlayerId
+          team: readonly PlayerId[]
+      }
+    | {
+          kind: 'votes'
+          team: readonly PlayerId[]
+          votes: Readonly<Record<PlayerId, Vote>>
+          /** Rejections so far this round; cops Approve when this reaches N-1. */
+          consecutiveRejections: number
+      }
+    | {
+          kind: 'raid'
+          team: readonly PlayerId[]
+          sabotageCount: number
+          proposerId: PlayerId
+          round: number
+      }
 
 export interface GameState {
-  phase: GamePhase;
-  players: Player[];
-  spectators: Spectator[];
-  hostId: PlayerId;
-  /**
-   * Monotonic revision. Clients ignore `GAME_STATE_UPDATE` payloads whose
-   * `stateSeq` is not greater than the last one they applied.
-   */
-  stateSeq: number;
+    phase: GamePhase
+    players: Player[]
+    spectators: Spectator[]
+    hostId: PlayerId
+    /**
+     * Monotonic revision. Clients ignore `GAME_STATE_UPDATE` payloads whose
+     * `stateSeq` is not greater than the last one they applied.
+     */
+    stateSeq: number
 
-  currentRound: number;
-  scores: {
-    police: number;
-    moles: number;
-  };
-  raidResults: RaidResult[];
-  /** Proposals, ballots, and raids this match. Cleared on rematch. */
-  history: GameEvent[];
+    currentRound: number
+    scores: {
+        police: number
+        moles: number
+    }
+    raidResults: RaidResult[]
+    /** Proposals, ballots, and raids this match. Cleared on rematch. */
+    history: GameEvent[]
 
-  proposerIndex: number;
-  consecutiveRejections: number;
-  currentProposedTeam: PlayerId[];
+    proposerIndex: number
+    consecutiveRejections: number
+    currentProposedTeam: PlayerId[]
 
-  /**
-   * Vote value, or `null` when the viewer may only know that a ballot was cast
-   * (projected client views). Authoritative host state always stores Vote.
-   */
-  teamVotes: Record<PlayerId, Vote | null>;
-  /**
-   * Raid action, or `null` when the value is hidden from this viewer.
-   * Authoritative host state always stores RaidAction; UI never shows the value.
-   */
-  raidActions: Record<PlayerId, RaidAction | null>;
+    /**
+     * Vote value, or `null` when the viewer may only know that a ballot was
+     * cast (projected client views). Authoritative host state always stores
+     * Vote.
+     */
+    teamVotes: Record<PlayerId, Vote | null>
+    /**
+     * Raid action, or `null` when the value is hidden from this viewer.
+     * Authoritative host state always stores RaidAction; UI never shows the
+     * value.
+     */
+    raidActions: Record<PlayerId, RaidAction | null>
 
-  winner: 'Police' | 'Moles' | null;
+    winner: 'Police' | 'Moles' | null
 
-  /** Host lobby toggle: timed phases with auto-actions on expiry. */
-  timersEnabled: boolean;
-  /**
-   * Host lobby toggle: Bayesian bot tactics when true, original selfish
-   * heuristics when false. Applies to reserve bots and timer auto-fills.
-   */
-  advancedBotsEnabled: boolean;
-  /**
-   * Absolute timestamp (ms since epoch) when the current timed phase ends.
-   * `null` when timers are off or the phase has no deadline.
-   */
-  phaseEndsAt: number | null;
+    /** Host lobby toggle: timed phases with auto-actions on expiry. */
+    timersEnabled: boolean
+    /** Host lobby toggle. Applies to reserve bots and timer auto-fills. */
+    advancedBotsEnabled: boolean
+    /**
+     * Absolute timestamp (ms since epoch) when the current timed phase ends.
+     * `null` when timers are off or the phase has no deadline.
+     */
+    phaseEndsAt: number | null
 }

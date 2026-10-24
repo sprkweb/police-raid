@@ -1,1 +1,1 @@
-export { createRandomBrain } from './brain';
+export { createRandomBrain } from './brain'

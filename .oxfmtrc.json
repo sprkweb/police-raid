@@ -1,5 +1,9 @@
 {
-  "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "singleQuote": true,
-  "ignorePatterns": ["package-lock.json", "pnpm-lock.yaml"]
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "semi": false,
+    "sortImports": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "jsdoc": true,
+    "ignorePatterns": ["package-lock.json", "pnpm-lock.yaml"]
 }
