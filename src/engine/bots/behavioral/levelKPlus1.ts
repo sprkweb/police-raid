@@ -90,12 +90,17 @@ export class LevelKPlus1Strategy implements BehavioralStrategy {
             return this.level0Strategy.chooseTeamVote(ctx)
         }
 
-        const utility = hypotheses.probability(
+        let utility = hypotheses.probability(
             // probability that there are not enough moles to sabotage
             (h) =>
                 h.filter((m) => ctx.proposedTeam.includes(m)).length <
                 ctx.requiredSabotages,
         )
+
+        // hammer
+        if (ctx.consecutiveRejections >= ctx.playerIds.length - 1) {
+            utility += ctx.role === Role.Mole ? 1.4 : 2.5
+        }
 
         return logitQuantalResponse(
             [
