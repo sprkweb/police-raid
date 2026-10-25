@@ -1,15 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { GamePhase, Role } from '../../types/game'
-import { createBotBrain } from '../bots/createBotBrain'
-import type { BotBrain } from '../bots/types'
 import {
     BOT_ID_PREFIX,
     MAX_PLAYERS,
     MIN_PLAYERS,
     WINS_NEEDED,
 } from '../constants'
-import { GameEngine } from '../GameEngine'
 import { createSeededRandom, createSequenceRandom } from '../rng'
 import {
     allRaid,
@@ -25,15 +22,9 @@ import {
     teamOfSize,
 } from './helpers'
 
-function activeBrainId(engine: GameEngine): BotBrain['id'] {
-    return (
-        engine as unknown as { brainFor: (id: string) => BotBrain }
-    ).brainFor('any').id
-}
-
 describe('GameEngine lobby', () => {
     it('initializes with the host in Lobby', () => {
-        const { engine, getState } = createTestEngine('host', 'Ada')
+        const { getState } = createTestEngine('host', 'Ada')
         const state = getState()
         expect(state.phase).toBe(GamePhase.Lobby)
         expect(state.players).toHaveLength(1)
@@ -43,7 +34,6 @@ describe('GameEngine lobby', () => {
             role: null,
         })
         expect(state.advancedBotsEnabled).toBe(true)
-        expect(activeBrainId(engine)).toBe('level1')
     })
 
     it('adds unique players up to MAX_PLAYERS', () => {
@@ -510,33 +500,13 @@ describe('GameEngine startGameWithBots', () => {
 })
 
 describe('GameEngine advanced bots toggle', () => {
-    it('switches to the level0 brain in Lobby', () => {
+    it('changes the default bot level setting in Lobby', () => {
         const { engine, getState } = createTestEngine()
         engine.setAdvancedBotsEnabled(false)
         expect(getState().advancedBotsEnabled).toBe(false)
-        expect(activeBrainId(engine)).toBe('level0')
 
         engine.setAdvancedBotsEnabled(true)
         expect(getState().advancedBotsEnabled).toBe(true)
-        expect(activeBrainId(engine)).toBe('level1')
-    })
-
-    it('honors an injected brain without inferring the lobby toggle from its id', () => {
-        const level0 = createBotBrain('level0')
-        const { engine, getState } = createTestEngine('host', 'Host', {
-            botBrain: () => level0,
-        })
-        expect(getState().advancedBotsEnabled).toBe(true)
-        expect(activeBrainId(engine)).toBe('level0')
-    })
-
-    it('honors an injected random brain without flipping the lobby toggle', () => {
-        const randomBrain = createBotBrain('random')
-        const { engine, getState } = createTestEngine('host', 'Host', {
-            botBrain: () => randomBrain,
-        })
-        expect(getState().advancedBotsEnabled).toBe(true)
-        expect(activeBrainId(engine)).toBe('random')
     })
 
     it('ignores the toggle after the match has started', () => {
@@ -544,7 +514,6 @@ describe('GameEngine advanced bots toggle', () => {
         expect(ctx.getState().advancedBotsEnabled).toBe(true)
         ctx.engine.setAdvancedBotsEnabled(false)
         expect(ctx.getState().advancedBotsEnabled).toBe(true)
-        expect(activeBrainId(ctx.engine)).toBe('level1')
     })
 
     it('ignores the toggle after startGameWithBots', () => {
@@ -556,7 +525,6 @@ describe('GameEngine advanced bots toggle', () => {
         expect(getState().phase).toBe(GamePhase.Discussion)
         engine.setAdvancedBotsEnabled(true)
         expect(getState().advancedBotsEnabled).toBe(false)
-        expect(activeBrainId(engine)).toBe('level0')
     })
 })
 
@@ -601,19 +569,17 @@ describe('GameEngine rematch', () => {
         expect(state.advancedBotsEnabled).toBe(true)
     })
 
-    it('keeps the level0 brain across rematch', () => {
+    it('keeps the default bot level setting across rematch', () => {
         const ctx = startWithPlayers(5, {
             advancedBotsEnabled: false,
             random: createSequenceRandom([0, 0, 0, 0, 0]),
         })
         expect(ctx.getState().advancedBotsEnabled).toBe(false)
-        expect(activeBrainId(ctx.engine)).toBe('level0')
         for (let i = 0; i < WINS_NEEDED; i++) {
             passSuccessfulRaid(ctx)
         }
         ctx.engine.startGame()
         expect(ctx.getState().advancedBotsEnabled).toBe(false)
-        expect(activeBrainId(ctx.engine)).toBe('level0')
     })
 
     it('keeps departed players on the GameOver roster, then replaces them with bots on rematch', () => {

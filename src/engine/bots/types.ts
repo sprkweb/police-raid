@@ -9,6 +9,24 @@ import type { RandomFn } from '../rng'
 
 export type BotBrainId = string
 
+export type BotConfig =
+    | { algorithm: 'random' }
+    | {
+          algorithm: 'behavioral'
+          level: number
+          rationality: number
+          expectedOthersRationality: number
+      }
+
+/** Owns brains and algorithm resources for one match. */
+export interface BotFactory {
+    brainFor(actorId: PlayerId): BotBrain
+}
+
+export type CreateBotFactory = (
+    configs: ReadonlyMap<PlayerId, BotConfig>,
+) => BotFactory
+
 export interface BotMatchContext {
     actorId: PlayerId
     role: Role | null | undefined
@@ -45,6 +63,3 @@ export interface BotBrain {
     chooseTeamVote(ctx: BotVoteContext): Vote
     chooseRaidAction(ctx: BotRaidContext): RaidAction
 }
-
-/** Per-seat policy. A single live brain is `() => brain` for every actor. */
-export type BotBrainForSeat = (actorId: PlayerId) => BotBrain

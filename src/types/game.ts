@@ -110,7 +110,7 @@ export interface GameState {
 
     /** Host lobby toggle: timed phases with auto-actions on expiry. */
     timersEnabled: boolean
-    /** Host lobby toggle. Applies to reserve bots and timer auto-fills. */
+    /** Host lobby toggle. Sets the default level for bot seats only. */
     advancedBotsEnabled: boolean
     /**
      * Absolute timestamp (ms since epoch) when the current timed phase ends.

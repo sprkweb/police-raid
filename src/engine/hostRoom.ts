@@ -53,7 +53,8 @@ export class HostRoom {
             now: options.now,
             timersEnabled: options.timersEnabled,
             advancedBotsEnabled: options.advancedBotsEnabled,
-            botBrain: options.botBrain,
+            botConfigsBySeat: options.botConfigsBySeat,
+            createBotFactory: options.createBotFactory,
             voteResultDurationMs: options.voteResultDurationMs,
             roundEndDurationMs: options.roundEndDurationMs,
         }

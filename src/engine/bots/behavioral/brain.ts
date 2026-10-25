@@ -1,4 +1,4 @@
-import type { BotBrain } from '../types'
+import type { BotConfig, BotBrain } from '../types'
 import {
     createBehavioralStrategyBrain,
     type BehavioralStrategy,
@@ -6,59 +6,48 @@ import {
 import { Level0Strategy } from './level0'
 import { LevelKPlus1Strategy, MoleHypothesesFromHistory } from './levelKPlus1'
 
-const DEFAULT_BOT_RATIONALITY = 2.5
-const EXPECTED_OTHERS_RATIONALITY = 1.5
-
-export function createLevel0Brain(): BotBrain {
-    return createLevelKBrain(
-        0,
-        DEFAULT_BOT_RATIONALITY,
-        EXPECTED_OTHERS_RATIONALITY,
-    )
-}
-
-export function createLevel1Brain(): BotBrain {
-    return createLevelKBrain(
-        1,
-        DEFAULT_BOT_RATIONALITY,
-        EXPECTED_OTHERS_RATIONALITY,
-    )
-}
-
-export function createLevel2Brain(): BotBrain {
-    return createLevelKBrain(
-        2,
-        DEFAULT_BOT_RATIONALITY,
-        EXPECTED_OTHERS_RATIONALITY,
-    )
-}
-
-/**
- * CreateLevelKBrain is a factory to create a Level-K bot brain with any
- * rationality and any K. In practice, levels above 2 are probably unneccessary
- */
-function createLevelKBrain(
+/** Build hypotheses by modeling other players at each lower reasoning level. */
+function createHypotheses(
     level: number,
-    botRationality: number,
-    otherPlayersRationality: number,
-): BotBrain {
-    if (!Number.isInteger(level) || level < 0) {
-        throw new Error(`Level ${level} is not a positive integer.`)
-    }
-
-    // first create level 0 strategy
-    let levelKStrategy: BehavioralStrategy = new Level0Strategy(
-        level === 0 ? botRationality : otherPlayersRationality,
+    expectedOthersRationality: number,
+): MoleHypothesesFromHistory {
+    let modeledStrategy: BehavioralStrategy = new Level0Strategy(
+        expectedOthersRationality,
     )
-
-    // then in a loop create level k+1 stategies until the given level
-    for (let k = 1; k <= level; k++) {
-        levelKStrategy = new LevelKPlus1Strategy(
-            k === level ? botRationality : otherPlayersRationality,
-            new MoleHypothesesFromHistory(levelKStrategy),
+    for (let k = 1; k < level; k++) {
+        modeledStrategy = new LevelKPlus1Strategy(
+            expectedOthersRationality,
+            new MoleHypothesesFromHistory(modeledStrategy),
         )
     }
+    return new MoleHypothesesFromHistory(modeledStrategy)
+}
 
-    const botBrainId = `level${level}`
-    return createBehavioralStrategyBrain(botBrainId, levelKStrategy)
+/** Shares hypotheses within one match for bots with the same model of others. */
+export function createBehavioralBrainFactory(): (
+    config: BotConfig & { algorithm: 'behavioral' },
+) => BotBrain {
+    const hypothesesByModel = new Map<string, MoleHypothesesFromHistory>()
+    return ({ level, rationality, expectedOthersRationality }) => {
+        if (level === 0) {
+            return createBehavioralStrategyBrain(
+                'level0',
+                new Level0Strategy(rationality),
+            )
+        }
+
+        const modelKey = `${level}:${expectedOthersRationality}`
+        let hypotheses = hypothesesByModel.get(modelKey)
+        if (!hypotheses) {
+            // Each model owns its nested hypotheses too; sharing across levels
+            // could expose later events while reconstructing an earlier decision.
+            hypotheses = createHypotheses(level, expectedOthersRationality)
+            hypothesesByModel.set(modelKey, hypotheses)
+        }
+
+        return createBehavioralStrategyBrain(
+            `level${level}`,
+            new LevelKPlus1Strategy(rationality, hypotheses),
+        )
+    }
 }

@@ -6,8 +6,14 @@ import type {
     RaidAction,
 } from '../types/game'
 import { GamePhase, Role } from '../types/game'
-import { createBotBrain } from './bots/createBotBrain'
-import type { BotBrainForSeat } from './bots/types'
+import { DEFAULT_BOT_RATIONALITY, EXPECTED_OTHERS_RATIONALITY } from './bots'
+import { createBotFactory } from './bots/createBotFactory'
+import type {
+    BotBrain,
+    BotConfig,
+    BotFactory,
+    CreateBotFactory,
+} from './bots/types'
 import { uniquifyCallsign, normalizeCallsign } from './callsigns'
 import {
     BOT_ID_PREFIX,
@@ -49,8 +55,13 @@ export interface GameEngineOptions {
     voteResultDurationMs?: number
     /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
     roundEndDurationMs?: number
-    /** Per-seat policy. Omit to use one brain for every seat. */
-    botBrain?: BotBrainForSeat
+    /**
+     * Host-only overrides for bot seats; human timeout actions always use
+     * behavioral level 0.
+     */
+    botConfigsBySeat?: Readonly<Record<PlayerId, BotConfig>>
+    /** Creates fresh brains and resources on every successful match start. */
+    createBotFactory?: CreateBotFactory
 }
 
 export class GameEngine {
@@ -62,7 +73,9 @@ export class GameEngine {
     private roundEndDurationMs: number
     /** When true, bot players auto-act on propose / vote / raid. */
     private botsEnabled = false
-    private brainFor: BotBrainForSeat
+    private botMatch: BotFactory | undefined
+    private readonly createBotFactory: CreateBotFactory
+    private readonly botConfigsBySeat: ReadonlyMap<PlayerId, BotConfig>
     /** Humans who left after the lobby; rematch replaces them with bots. */
     private departedIds = new Set<PlayerId>()
     private phaseTimerId: ReturnType<typeof setTimeout> | null = null
@@ -88,14 +101,12 @@ export class GameEngine {
         if (options.advancedBotsEnabled != null) {
             this.state.advancedBotsEnabled = options.advancedBotsEnabled
         }
-        if (options.botBrain) {
-            this.brainFor = options.botBrain
-        } else {
-            const brain = createBotBrain(
-                this.state.advancedBotsEnabled ? 'level1' : 'level0',
-            )
-            this.brainFor = () => brain
-        }
+        this.createBotFactory = options.createBotFactory ?? createBotFactory
+        this.botConfigsBySeat = new Map(
+            Object.entries(options.botConfigsBySeat ?? {}).map(
+                ([id, config]) => [id, { ...config }],
+            ),
+        )
         this.notify()
     }
 
@@ -201,16 +212,11 @@ export class GameEngine {
         this.notify()
     }
 
-    /**
-     * Host-only lobby setting: Swaps the live `BotBrain` used by reserve seats
-     * and auto-fills.
-     */
+    /** Host-only lobby setting: selects the default level for bot seats. */
     public setAdvancedBotsEnabled(enabled: boolean) {
         if (this.state.phase !== GamePhase.Lobby) return
         if (this.state.advancedBotsEnabled === enabled) return
         this.state.advancedBotsEnabled = enabled
-        const brain = createBotBrain(enabled ? 'level1' : 'level0')
-        this.brainFor = () => brain
         this.notify()
     }
 
@@ -403,6 +409,29 @@ export class GameEngine {
             p.role = roles[i]!
         })
 
+        const configs = new Map<PlayerId, BotConfig>()
+        for (const player of this.state.players) {
+            const override = isBot(player.id)
+                ? this.botConfigsBySeat.get(player.id)
+                : undefined
+            configs.set(
+                player.id,
+                override
+                    ? { ...override }
+                    : {
+                          algorithm: 'behavioral',
+                          level:
+                              isBot(player.id) && this.state.advancedBotsEnabled
+                                  ? 1
+                                  : 0,
+                          rationality: DEFAULT_BOT_RATIONALITY,
+                          expectedOthersRationality:
+                              EXPECTED_OTHERS_RATIONALITY,
+                      },
+            )
+        }
+        this.botMatch = this.createBotFactory(configs)
+
         this.state.proposerIndex = pickProposerIndex(numPlayers, this.random)
         if (this.botsEnabled) {
             const humanIdx = this.state.players.findIndex((p) => !isBot(p.id))
@@ -557,6 +586,12 @@ export class GameEngine {
             history: this.state.history,
             random: this.random,
         }
+    }
+
+    private brainFor(actorId: PlayerId): BotBrain {
+        if (!this.botMatch)
+            throw new Error('Bot actions require an active match.')
+        return this.botMatch.brainFor(actorId)
     }
 
     private botChooseProposedTeam(actorId: PlayerId): PlayerId[] {
