@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+declare const __BUILD_COMMIT__: string
+
 interface ImportMetaEnv {
     readonly VITE_METERED_API_KEY?: string
 }

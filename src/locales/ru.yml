@@ -7,7 +7,7 @@ app:
 
 footer:
     madeBy: 'Сделал Вадим Сапрыкин'
-    viewOnGitHub: 'Открыть материалы дела'
+    viewOnGitHub: 'Посмотреть исходный код'
 
 lobby:
     kicker: 'Фаза 00 · сбор на выезд'

@@ -7,7 +7,7 @@ app:
 
 footer:
     madeBy: 'Made by Vadim Saprykin'
-    viewOnGitHub: 'Open the case files'
+    viewOnGitHub: 'View source code'
 
 lobby:
     kicker: 'Phase 00 · mustering out'

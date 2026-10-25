@@ -14,7 +14,7 @@ export const SiteFooter: React.FC = () => {
                 {t('footer.madeBy')}
             </a>
             <a
-                href="https://github.com/sprkweb/police-raid"
+                href={`https://github.com/sprkweb/police-raid/tree/${__BUILD_COMMIT__}`}
                 className="pr-footer-gh"
                 target="_blank"
                 rel="noreferrer"
