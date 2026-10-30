@@ -1,1 +1,0 @@
-export { createHeuristicBrain } from './brain';

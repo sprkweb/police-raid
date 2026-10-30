@@ -1,19 +1,21 @@
 /// <reference types="vite/client" />
 
+declare const __BUILD_COMMIT__: string
+
 interface ImportMetaEnv {
-  readonly VITE_METERED_API_KEY?: string;
+    readonly VITE_METERED_API_KEY?: string
 }
 
 interface ImportMeta {
-  readonly env: ImportMetaEnv;
+    readonly env: ImportMetaEnv
 }
 
 declare module '*.yml' {
-  const content: any;
-  export default content;
+    const content: any
+    export default content
 }
 
 declare module '*.md?raw' {
-  const content: string;
-  export default content;
+    const content: string
+    export default content
 }

@@ -1,54 +1,65 @@
-import type { GameEvent, GamePhase, PlayerId, RaidAction, Role, Vote } from '../../types/game';
-import type { RandomFn } from '../rng';
+import type {
+    GameEvent,
+    PlayerId,
+    RaidAction,
+    Role,
+    Vote,
+} from '../../types/game'
+import type { RandomFn } from '../rng'
 
-export type BotBrainId = 'heuristic' | 'bayesian' | 'random';
+export type BotBrainId = string
+
+export type BotConfig =
+    | { algorithm: 'random' }
+    | {
+          algorithm: 'behavioral'
+          level: number
+          rationality: number
+          expectedOthersRationality: number
+      }
+
+/** Owns brains and algorithm resources for one match. */
+export interface BotFactory {
+    brainFor(actorId: PlayerId): BotBrain
+}
+
+export type CreateBotFactory = (
+    configs: ReadonlyMap<PlayerId, BotConfig>,
+) => BotFactory
 
 export interface BotMatchContext {
-  actorId: PlayerId;
-  playerIds: readonly PlayerId[];
-  moleCount: number;
-  currentRound: number;
-  consecutiveRejections: number;
-  history: readonly GameEvent[];
-  random: RandomFn;
+    actorId: PlayerId
+    role: Role | null | undefined
+    playerIds: readonly PlayerId[]
+    moleIds: readonly PlayerId[]
+    currentRound: number
+    consecutiveRejections: number
+    requiredSabotages: number
+    scores: { police: number; moles: number }
+    history: readonly GameEvent[]
+    random: RandomFn
 }
 
 export interface BotProposeContext extends BotMatchContext {
-  teamSize: number;
+    teamSize: number
 }
 
 export interface BotVoteContext extends BotMatchContext {
-  proposedTeam: readonly PlayerId[];
+    proposedTeam: readonly PlayerId[]
 }
 
 export interface BotRaidContext extends BotMatchContext {
-  role: Role | null | undefined;
-  proposedTeam: readonly PlayerId[];
-  proposerId: PlayerId;
-  requiredSabotages: number;
-  scores: { police: number; moles: number };
-  /** True mole set; used only for raid sabotage, never for propose/vote. */
-  trueMoleIds: readonly PlayerId[];
+    proposedTeam: readonly PlayerId[]
+    proposerId: PlayerId
 }
 
-export interface BotDebugContext {
-  players: readonly { id: PlayerId; name: string }[];
-  moleCount: number;
-  observerIds: readonly PlayerId[];
-  history: readonly GameEvent[];
-  proposedTeam: readonly PlayerId[];
-  phase: GamePhase;
-  currentRound: number;
-}
-
-/** Pluggable bot decision surface. `GameEngine` must not import a concrete policy. */
+/**
+ * Pluggable bot decision surface. `GameEngine` must not import a concrete
+ * policy.
+ */
 export interface BotBrain {
-  readonly id: BotBrainId;
-  chooseProposedTeam(ctx: BotProposeContext): PlayerId[];
-  chooseTeamVote(ctx: BotVoteContext): Vote;
-  chooseRaidAction(ctx: BotRaidContext): RaidAction;
-  debugBeliefs?(ctx: BotDebugContext): unknown;
+    id: BotBrainId
+    chooseProposedTeam(ctx: BotProposeContext): PlayerId[]
+    chooseTeamVote(ctx: BotVoteContext): Vote
+    chooseRaidAction(ctx: BotRaidContext): RaidAction
 }
-
-/** Per-seat policy. A single live brain is `() => brain` for every actor. */
-export type BotBrainForSeat = (actorId: PlayerId) => BotBrain;
