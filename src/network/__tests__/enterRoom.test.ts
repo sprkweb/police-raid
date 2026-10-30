@@ -41,7 +41,6 @@ function lobbyState(
         raidActions: {},
         winner: null,
         timersEnabled: false,
-        advancedBotsEnabled: true,
         phaseEndsAt: null,
     }
 }

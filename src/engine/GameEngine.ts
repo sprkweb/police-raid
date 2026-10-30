@@ -49,8 +49,6 @@ export interface GameEngineOptions {
     now?: () => number
     /** Override the lobby default. */
     timersEnabled?: boolean
-    /** Override the lobby default. */
-    advancedBotsEnabled?: boolean
     /** How long to hold VoteResult. `0` finishes in the same tick (tests). */
     voteResultDurationMs?: number
     /** How long to hold RoundEnd. `0` finishes in the same tick (tests). */
@@ -97,9 +95,6 @@ export class GameEngine {
         this.state = createInitialState(hostId, hostName)
         if (options.timersEnabled != null) {
             this.state.timersEnabled = options.timersEnabled
-        }
-        if (options.advancedBotsEnabled != null) {
-            this.state.advancedBotsEnabled = options.advancedBotsEnabled
         }
         this.createBotFactory = options.createBotFactory ?? createBotFactory
         this.botConfigsBySeat = new Map(
@@ -209,14 +204,6 @@ export class GameEngine {
         if (this.state.phase !== GamePhase.Lobby) return
         if (this.state.timersEnabled === enabled) return
         this.state.timersEnabled = enabled
-        this.notify()
-    }
-
-    /** Host-only lobby setting: selects the default level for bot seats. */
-    public setAdvancedBotsEnabled(enabled: boolean) {
-        if (this.state.phase !== GamePhase.Lobby) return
-        if (this.state.advancedBotsEnabled === enabled) return
-        this.state.advancedBotsEnabled = enabled
         this.notify()
     }
 
@@ -420,10 +407,7 @@ export class GameEngine {
                     ? { ...override }
                     : {
                           algorithm: 'behavioral',
-                          level:
-                              isBot(player.id) && this.state.advancedBotsEnabled
-                                  ? 1
-                                  : 0,
+                          level: 0,
                           rationality: DEFAULT_BOT_RATIONALITY,
                           expectedOthersRationality:
                               EXPECTED_OTHERS_RATIONALITY,

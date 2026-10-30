@@ -33,7 +33,6 @@ describe('GameEngine lobby', () => {
             name: 'Ada',
             role: null,
         })
-        expect(state.advancedBotsEnabled).toBe(true)
     })
 
     it('adds unique players up to MAX_PLAYERS', () => {
@@ -499,35 +498,6 @@ describe('GameEngine startGameWithBots', () => {
     })
 })
 
-describe('GameEngine advanced bots toggle', () => {
-    it('changes the default bot level setting in Lobby', () => {
-        const { engine, getState } = createTestEngine()
-        engine.setAdvancedBotsEnabled(false)
-        expect(getState().advancedBotsEnabled).toBe(false)
-
-        engine.setAdvancedBotsEnabled(true)
-        expect(getState().advancedBotsEnabled).toBe(true)
-    })
-
-    it('ignores the toggle after the match has started', () => {
-        const ctx = startWithPlayers(5)
-        expect(ctx.getState().advancedBotsEnabled).toBe(true)
-        ctx.engine.setAdvancedBotsEnabled(false)
-        expect(ctx.getState().advancedBotsEnabled).toBe(true)
-    })
-
-    it('ignores the toggle after startGameWithBots', () => {
-        const { engine, getState } = createTestEngine('host', 'Host', {
-            random: createSeededRandom(1),
-        })
-        engine.setAdvancedBotsEnabled(false)
-        engine.startGameWithBots()
-        expect(getState().phase).toBe(GamePhase.Discussion)
-        engine.setAdvancedBotsEnabled(true)
-        expect(getState().advancedBotsEnabled).toBe(false)
-    })
-})
-
 describe('GameEngine rematch', () => {
     it('ignores startGame while a match is in progress', () => {
         const ctx = startWithPlayers(5)
@@ -566,20 +536,6 @@ describe('GameEngine rematch', () => {
         expect(state.currentProposedTeam).toEqual([])
         expect(state.hostId).toBe('host')
         expect(state.timersEnabled).toBe(false)
-        expect(state.advancedBotsEnabled).toBe(true)
-    })
-
-    it('keeps the default bot level setting across rematch', () => {
-        const ctx = startWithPlayers(5, {
-            advancedBotsEnabled: false,
-            random: createSequenceRandom([0, 0, 0, 0, 0]),
-        })
-        expect(ctx.getState().advancedBotsEnabled).toBe(false)
-        for (let i = 0; i < WINS_NEEDED; i++) {
-            passSuccessfulRaid(ctx)
-        }
-        ctx.engine.startGame()
-        expect(ctx.getState().advancedBotsEnabled).toBe(false)
     })
 
     it('keeps departed players on the GameOver roster, then replaces them with bots on rematch', () => {

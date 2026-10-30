@@ -42,20 +42,17 @@ describe('bot match lifecycle', () => {
         const { engine } = createTestEngine('host', 'Host', {
             createBotFactory: create,
         })
-        engine.setAdvancedBotsEnabled(false)
-        engine.setAdvancedBotsEnabled(true)
         engine.startGame()
         expect(create).not.toHaveBeenCalled()
         engine.startGameWithBots()
         expect(create).toHaveBeenCalledTimes(1)
-        expect(create.mock.calls[0][0].get(botId)).toEqual(profile(1))
+        expect(create.mock.calls[0][0].get(botId)).toEqual(profile(0))
         engine.startGame()
         engine.startGameWithBots()
-        engine.setAdvancedBotsEnabled(false)
         expect(create).toHaveBeenCalledTimes(1)
     })
 
-    it('snapshots overrides and applies the toggle only to unconfigured bots', () => {
+    it('snapshots overrides and defaults unconfigured bots to level 0', () => {
         const { create, factories } = observeFactory()
         const custom: BotConfig = {
             algorithm: 'behavioral',
@@ -68,13 +65,12 @@ describe('bot match lifecycle', () => {
             [`${BOT_ID_PREFIX}2`]: { algorithm: 'random' },
             host: custom,
         }
-        const { engine, getState } = createTestEngine('host', 'Host', {
+        const { engine } = createTestEngine('host', 'Host', {
             botConfigsBySeat: overrides,
             createBotFactory: create,
         })
         custom.level = 0
         delete overrides[`${BOT_ID_PREFIX}2`]
-        engine.setAdvancedBotsEnabled(false)
         engine.startGameWithBots()
         const configs = create.mock.calls[0][0]
         expect(configs.get(botId)).toEqual({
@@ -89,23 +85,32 @@ describe('bot match lifecycle', () => {
         expect(configs.get(`${BOT_ID_PREFIX}3`)).toEqual(profile(0))
         expect(configs.get('host')).toEqual(profile(0))
         expect(factories[0].brainFor(botId).id).toBe('level2')
-        expect(getState().advancedBotsEnabled).toBe(false)
     })
 
-    it('recreates injected factories and brains on rematch, retaining settings', () => {
+    it('recreates factories and brains on rematch', () => {
+        vi.useFakeTimers()
         const { create, factories } = observeFactory()
-        const ctx = startWithPlayers(5, {
-            advancedBotsEnabled: false,
+        const ctx = createTestEngine('host', 'Host', {
             createBotFactory: create,
+            timersEnabled: true,
+            random: () => 0,
         })
-        const oldBrain = factories[0].brainFor('host')
-        for (let i = 0; i < WINS_NEEDED; i++) passSuccessfulRaid(ctx)
+        ctx.engine.startGameWithBots()
+        const oldBrain = factories[0].brainFor(botId)
+        for (
+            let i = 0;
+            i < 100 && ctx.getState().phase !== GamePhase.GameOver;
+            i++
+        ) {
+            vi.advanceTimersToNextTimer()
+        }
         expect(ctx.getState().phase).toBe(GamePhase.GameOver)
         ctx.engine.startGame()
         expect(create).toHaveBeenCalledTimes(2)
         expect(factories[1]).not.toBe(factories[0])
-        expect(factories[1].brainFor('host')).not.toBe(oldBrain)
-        expect(ctx.getState().advancedBotsEnabled).toBe(false)
+        expect(factories[1].brainFor(botId)).not.toBe(oldBrain)
+        expect(factories[0].brainFor(botId).id).toBe('level0')
+        expect(factories[1].brainFor(botId).id).toBe('level0')
         expect(ctx.getState().history).toEqual([])
     })
 
@@ -119,7 +124,7 @@ describe('bot match lifecycle', () => {
         ctx.engine.removePlayer('p2')
         ctx.engine.startGame()
         expect(create.mock.calls[1][0].has('p2')).toBe(false)
-        expect(create.mock.calls[1][0].get(botId)).toEqual(profile(1))
+        expect(create.mock.calls[1][0].get(botId)).toEqual(profile(0))
     })
 
     it('discards real behavioral caches after a complete bot match', () => {
@@ -140,14 +145,14 @@ describe('bot match lifecycle', () => {
         }
         expect(ctx.getState().phase).toBe(GamePhase.GameOver)
         const oldCaches = new Set(get.mock.contexts)
-        expect(oldCaches.size).toBe(3)
+        expect(oldCaches.size).toBe(2)
         get.mockClear()
         ctx.engine.startGame()
         for (let i = 0; i < 20 && ctx.getState().scores.police === 0; i++) {
             vi.advanceTimersToNextTimer()
         }
         expect(ctx.getState().scores.police).toBe(1)
-        expect(new Set(get.mock.contexts).size).toBe(3)
+        expect(new Set(get.mock.contexts).size).toBe(2)
         expect(get.mock.contexts.every((cache) => !oldCaches.has(cache))).toBe(
             true,
         )

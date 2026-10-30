@@ -54,7 +54,6 @@ export function createInitialState(
         hostId,
         stateSeq: 0,
         timersEnabled: true,
-        advancedBotsEnabled: true,
         ...createMatchProgress(),
     }
 }

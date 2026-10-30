@@ -39,7 +39,6 @@ export const Lobby: React.FC = () => {
         startGame,
         startGameWithBots,
         setTimersEnabled,
-        setAdvancedBotsEnabled,
         isHost,
         playerId: myPlayerId,
         roomCode: activeRoomCode,
@@ -359,17 +358,6 @@ export const Lobby: React.FC = () => {
                                     }
                                 />
                                 <span>{t('lobby.enableTimers')}</span>
-                            </label>
-                            <label className="pr-check">
-                                <input
-                                    type="checkbox"
-                                    checked={gameState.advancedBotsEnabled}
-                                    disabled={!isHost}
-                                    onChange={(e) =>
-                                        setAdvancedBotsEnabled(e.target.checked)
-                                    }
-                                />
-                                <span>{t('lobby.enableAdvancedBots')}</span>
                             </label>
                         </div>
                         <div className="pr-lobby-launch">
