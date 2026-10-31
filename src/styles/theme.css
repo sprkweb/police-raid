@@ -1269,54 +1269,19 @@ body {
     gap: 10px;
     padding: 2px 0 2px;
 }
-.pr-label-with-help,
-.pr-launch-with-help {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.pr-launch-with-help .pr-btn {
-    flex: 1;
-    min-width: 0;
-}
 .pr-help-hint {
     position: relative;
     display: inline-flex;
-    flex: none;
 }
-.pr-help-hint-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--pr-txt-2);
-    cursor: help;
-    font: 600 12px var(--pr-ui);
+.pr-field > .pr-help-hint {
+    align-self: flex-start;
 }
-.pr-help-hint-trigger span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border: 1px solid currentColor;
-    border-radius: 50%;
-}
-.pr-help-hint-trigger:hover,
-.pr-help-hint-trigger:focus-visible {
-    color: var(--pr-blue);
-}
-.pr-help-hint-trigger:focus-visible {
-    outline: 2px solid var(--pr-blue);
-    outline-offset: 2px;
+.pr-lobby-launch > .pr-help-hint {
+    display: block;
 }
 .pr-help-hint-tip {
     position: absolute;
-    right: 0;
+    left: 0;
     bottom: 100%;
     z-index: 10;
     width: max-content;

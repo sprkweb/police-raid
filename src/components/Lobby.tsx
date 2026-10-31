@@ -352,15 +352,14 @@ export const Lobby: React.FC = () => {
                         {error && <p className="pr-error">{error}</p>}
                         <div className="pr-lobby-options">
                             <div className="pr-field">
-                                <div className="pr-label-with-help">
+                                <HelpHint text={t('lobby.botTacticHint')}>
                                     <label
                                         className="pr-label"
                                         htmlFor="botTactic"
                                     >
                                         {t('lobby.botTactic')}
                                     </label>
-                                    <HelpHint text={t('lobby.botTacticHint')} />
-                                </div>
+                                </HelpHint>
                                 <select
                                     id="botTactic"
                                     className="pr-input pr-tactic-select"
@@ -404,7 +403,9 @@ export const Lobby: React.FC = () => {
                                         {t('lobby.startGame')}
                                     </button>
                                     {showStartWithBots && (
-                                        <div className="pr-launch-with-help">
+                                        <HelpHint
+                                            text={t('lobby.startWithBotsHint')}
+                                        >
                                             <button
                                                 type="button"
                                                 className="pr-btn pr-green"
@@ -412,12 +413,7 @@ export const Lobby: React.FC = () => {
                                             >
                                                 {t('lobby.startWithBots')}
                                             </button>
-                                            <HelpHint
-                                                text={t(
-                                                    'lobby.startWithBotsHint',
-                                                )}
-                                            />
-                                        </div>
+                                        </HelpHint>
                                     )}
                                 </>
                             ) : (

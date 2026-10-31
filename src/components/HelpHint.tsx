@@ -1,6 +1,12 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 
-export function HelpHint({ text }: { text: string }) {
+export function HelpHint({
+    text,
+    children,
+}: {
+    text: string
+    children: ReactNode
+}) {
     const [open, setOpen] = useState(false)
     const containerRef = useRef<HTMLSpanElement>(null)
     const tooltipId = useId()
@@ -28,6 +34,9 @@ export function HelpHint({ text }: { text: string }) {
         <span
             className="pr-help-hint"
             ref={containerRef}
+            aria-describedby={open ? tooltipId : undefined}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setOpen(false)}
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => {
                 if (!containerRef.current?.contains(document.activeElement)) {
@@ -35,17 +44,7 @@ export function HelpHint({ text }: { text: string }) {
                 }
             }}
         >
-            <button
-                type="button"
-                className="pr-help-hint-trigger"
-                aria-label={text}
-                aria-describedby={open ? tooltipId : undefined}
-                onFocus={() => setOpen(true)}
-                onBlur={() => setOpen(false)}
-                onClick={() => setOpen(true)}
-            >
-                <span aria-hidden="true">?</span>
-            </button>
+            {children}
             {open && (
                 <span
                     className="pr-help-hint-tip"
