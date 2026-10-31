@@ -1266,8 +1266,35 @@ body {
 .pr-lobby-options {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 18px;
     padding: 2px 0 2px;
+}
+.pr-help-hint {
+    position: relative;
+    display: inline-flex;
+}
+.pr-field > .pr-help-hint {
+    align-self: flex-start;
+}
+.pr-lobby-options > .pr-help-hint,
+.pr-lobby-launch > .pr-help-hint {
+    display: block;
+}
+.react-tooltip.pr-help-hint-tip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    width: max-content;
+    max-width: min(240px, calc(100vw - 64px));
+    padding: 8px 10px;
+    border: 1px solid var(--pr-line-2);
+    background: var(--pr-raise);
+    color: var(--pr-txt);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+    font: 13px/1.4 var(--pr-ui);
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: normal;
 }
 .pr-lobby-launch {
     display: flex;
@@ -1276,6 +1303,9 @@ body {
     margin-top: 4px;
     padding-top: 18px;
     border-top: 1px solid var(--pr-line);
+}
+.pr-lobby-launch .pr-btn {
+    white-space: normal;
 }
 .pr-check {
     display: inline-flex;
@@ -1621,4 +1651,24 @@ body {
         padding: 5px 8px;
         font-size: 11px;
     }
+}
+
+.pr-bot-tactic {
+    justify-content: space-between;
+    min-height: 44px;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 13px;
+    font-weight: 400;
+}
+.pr-bot-tactic:has(select:disabled) {
+    opacity: 0.6;
+    cursor: default;
+}
+.pr-bot-tactic select:disabled {
+    cursor: default;
+}
+
+.react-tooltip.pr-help-hint-tip .react-tooltip-content-wrapper {
+    padding: 0;
 }

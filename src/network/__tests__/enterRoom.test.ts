@@ -40,6 +40,7 @@ function lobbyState(
         teamVotes: {},
         raidActions: {},
         winner: null,
+        botBrainId: 'level0',
         timersEnabled: false,
         phaseEndsAt: null,
     }

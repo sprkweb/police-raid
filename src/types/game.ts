@@ -1,3 +1,5 @@
+import type { BotBrainId } from '../engine/bots/types'
+
 export type PlayerId = string
 
 export const Role = {
@@ -108,6 +110,7 @@ export interface GameState {
 
     winner: 'Police' | 'Moles' | null
 
+    botBrainId: BotBrainId
     /** Host lobby toggle: timed phases with auto-actions on expiry. */
     timersEnabled: boolean
     /**
