@@ -428,7 +428,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
                     hostRoomRef.current?.engine.setBotBrainId(id)
                 },
                 /** Host-only lobby toggle for phase time limits. */
-    setTimersEnabled: (enabled) => {
+                setTimersEnabled: (enabled) => {
                     hostRoomRef.current?.engine.setTimersEnabled(enabled)
                 },
                 endDiscussion: () => {
