@@ -11,6 +11,7 @@ import {
 } from '../network/callsignMemory'
 import { JoinLobbyError } from '../network/joinLobby'
 import { normalizeRoomCode } from '../network/roomCode'
+import { HelpHint } from './HelpHint'
 
 type CopiedField = 'code' | 'link' | null
 type PendingAction = 'create' | 'join' | null
@@ -350,14 +351,18 @@ export const Lobby: React.FC = () => {
                     <div className="pr-lobby-body">
                         {error && <p className="pr-error">{error}</p>}
                         <div className="pr-lobby-options">
-                            <label
-                                className="pr-field"
-                                title={t('lobby.botTacticHint')}
-                            >
-                                <span className="pr-label">
-                                    {t('lobby.botTactic')}
-                                </span>
+                            <div className="pr-field">
+                                <div className="pr-label-with-help">
+                                    <label
+                                        className="pr-label"
+                                        htmlFor="botTactic"
+                                    >
+                                        {t('lobby.botTactic')}
+                                    </label>
+                                    <HelpHint text={t('lobby.botTacticHint')} />
+                                </div>
                                 <select
+                                    id="botTactic"
                                     className="pr-input pr-tactic-select"
                                     value={gameState.botBrainId}
                                     disabled={!isHost}
@@ -374,7 +379,7 @@ export const Lobby: React.FC = () => {
                                         </option>
                                     ))}
                                 </select>
-                            </label>
+                            </div>
                             <label className="pr-check">
                                 <input
                                     type="checkbox"
@@ -399,14 +404,20 @@ export const Lobby: React.FC = () => {
                                         {t('lobby.startGame')}
                                     </button>
                                     {showStartWithBots && (
-                                        <button
-                                            type="button"
-                                            className="pr-btn pr-green"
-                                            title={t('lobby.startWithBotsHint')}
-                                            onClick={startGameWithBots}
-                                        >
-                                            {t('lobby.startWithBots')}
-                                        </button>
+                                        <div className="pr-launch-with-help">
+                                            <button
+                                                type="button"
+                                                className="pr-btn pr-green"
+                                                onClick={startGameWithBots}
+                                            >
+                                                {t('lobby.startWithBots')}
+                                            </button>
+                                            <HelpHint
+                                                text={t(
+                                                    'lobby.startWithBotsHint',
+                                                )}
+                                            />
+                                        </div>
                                     )}
                                 </>
                             ) : (
