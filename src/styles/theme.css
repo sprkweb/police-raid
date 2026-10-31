@@ -1266,7 +1266,7 @@ body {
 .pr-lobby-options {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 18px;
     padding: 2px 0 2px;
 }
 .pr-help-hint {
@@ -1280,10 +1280,9 @@ body {
     display: block;
 }
 .pr-help-hint-tip {
-    position: absolute;
-    left: 0;
-    bottom: 100%;
-    z-index: 10;
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
     width: max-content;
     max-width: min(240px, calc(100vw - 64px));
     padding: 8px 10px;
@@ -1653,7 +1652,18 @@ body {
     }
 }
 
-.pr-tactic-select option {
-    background: var(--pr-bg, #101820);
-    color: var(--pr-text, #fff);
+.pr-bot-tactic {
+    justify-content: space-between;
+    min-height: 44px;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 13px;
+    font-weight: 400;
+}
+.pr-bot-tactic:has(select:disabled) {
+    opacity: 0.6;
+    cursor: default;
+}
+.pr-bot-tactic select:disabled {
+    cursor: default;
 }

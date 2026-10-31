@@ -351,34 +351,6 @@ export const Lobby: React.FC = () => {
                     <div className="pr-lobby-body">
                         {error && <p className="pr-error">{error}</p>}
                         <div className="pr-lobby-options">
-                            <div className="pr-field">
-                                <HelpHint text={t('lobby.botTacticHint')}>
-                                    <label
-                                        className="pr-label"
-                                        htmlFor="botTactic"
-                                    >
-                                        {t('lobby.botTactic')}
-                                    </label>
-                                </HelpHint>
-                                <select
-                                    id="botTactic"
-                                    className="pr-input pr-tactic-select"
-                                    value={gameState.botBrainId}
-                                    disabled={!isHost}
-                                    onChange={(e) =>
-                                        setBotBrainId(e.target.value)
-                                    }
-                                >
-                                    {LOBBY_BOT_TACTICS.map((tactic) => (
-                                        <option
-                                            key={tactic.id}
-                                            value={tactic.id}
-                                        >
-                                            {t(tactic.labelKey)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
                             <label className="pr-check">
                                 <input
                                     type="checkbox"
@@ -390,6 +362,51 @@ export const Lobby: React.FC = () => {
                                 />
                                 <span>{t('lobby.enableTimers')}</span>
                             </label>
+                            <div className="pr-field">
+                                <HelpHint text={t('lobby.botTacticHint')}>
+                                    <label
+                                        className="pr-label"
+                                        htmlFor="botTactic"
+                                    >
+                                        {t('lobby.botTactic')}
+                                    </label>
+                                </HelpHint>
+                                <div className="pr-tool pr-lang pr-bot-tactic">
+                                    <span aria-hidden="true">
+                                        {t(
+                                            LOBBY_BOT_TACTICS.find(
+                                                (tactic) =>
+                                                    tactic.id ===
+                                                    gameState.botBrainId,
+                                            )!.labelKey,
+                                        )}
+                                    </span>
+                                    <span
+                                        className="material-icons pr-lang-chevron"
+                                        aria-hidden="true"
+                                    >
+                                        expand_more
+                                    </span>
+                                    <select
+                                        id="botTactic"
+                                        className="pr-lang-select"
+                                        value={gameState.botBrainId}
+                                        disabled={!isHost}
+                                        onChange={(e) =>
+                                            setBotBrainId(e.target.value)
+                                        }
+                                    >
+                                        {LOBBY_BOT_TACTICS.map((tactic) => (
+                                            <option
+                                                key={tactic.id}
+                                                value={tactic.id}
+                                            >
+                                                {t(tactic.labelKey)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div className="pr-lobby-launch">
                             {isHost ? (
