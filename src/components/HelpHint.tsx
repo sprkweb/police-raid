@@ -17,6 +17,7 @@ export function HelpHint({
 }) {
     const [open, setOpen] = useState(false)
     const containerRef = useRef<HTMLSpanElement>(null)
+    const pointerFocusRef = useRef(false)
     const tooltipId = useId()
     const tooltipRef = useRef<HTMLSpanElement>(null)
     const [pointer, setPointer] = useState<{ x: number; y: number } | null>(
@@ -47,7 +48,7 @@ export function HelpHint({
     useEffect(() => {
         if (!open) return
 
-        const onPointerDown = (event: PointerEvent) => {
+        const onOutsidePointer = (event: PointerEvent) => {
             if (!containerRef.current?.contains(event.target as Node)) {
                 setOpen(false)
             }
@@ -55,10 +56,12 @@ export function HelpHint({
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') setOpen(false)
         }
-        document.addEventListener('pointerdown', onPointerDown)
+        document.addEventListener('pointermove', onOutsidePointer)
+        document.addEventListener('pointerdown', onOutsidePointer)
         document.addEventListener('keydown', onKeyDown)
         return () => {
-            document.removeEventListener('pointerdown', onPointerDown)
+            document.removeEventListener('pointermove', onOutsidePointer)
+            document.removeEventListener('pointerdown', onOutsidePointer)
             document.removeEventListener('keydown', onKeyDown)
         }
     }, [open])
@@ -68,11 +71,20 @@ export function HelpHint({
             className="pr-help-hint"
             ref={containerRef}
             aria-describedby={open ? tooltipId : undefined}
+            onPointerDownCapture={() => {
+                pointerFocusRef.current = true
+                setOpen(false)
+            }}
             onFocus={() => {
+                if (pointerFocusRef.current) return
                 setPointer(null)
                 setOpen(true)
             }}
-            onBlur={() => setOpen(false)}
+            onBlur={() => {
+                pointerFocusRef.current = false
+                setOpen(false)
+            }}
+            onChange={() => setOpen(false)}
             onMouseEnter={(event) => {
                 setPointer({ x: event.clientX, y: event.clientY })
                 setOpen(true)
@@ -80,11 +92,7 @@ export function HelpHint({
             onMouseMove={(event) =>
                 setPointer({ x: event.clientX, y: event.clientY })
             }
-            onMouseLeave={() => {
-                if (!containerRef.current?.contains(document.activeElement)) {
-                    setOpen(false)
-                }
-            }}
+            onMouseLeave={() => setOpen(false)}
         >
             {children}
             {open &&
