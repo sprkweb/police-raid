@@ -6,6 +6,7 @@ import React, {
     useState,
 } from 'react'
 
+import type { BotBrainId } from '../engine/bots/types'
 import {
     distributeProjectedState,
     sendProjectedState,
@@ -63,6 +64,7 @@ interface GameContextType {
     startGame: () => void
     /** Pad lobby with bots and start when under MIN_PLAYERS. */
     startGameWithBots: () => void
+    setBotBrainId: (id: BotBrainId) => void
     /** Host-only lobby toggle for phase time limits. */
     setTimersEnabled: (enabled: boolean) => void
     endDiscussion: () => void
@@ -422,7 +424,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
                 startGameWithBots: () => {
                     hostRoomRef.current?.startGameWithBots()
                 },
-                setTimersEnabled: (enabled) => {
+                setBotBrainId: (id) => {
+                    hostRoomRef.current?.engine.setBotBrainId(id)
+                },
+                /** Host-only lobby toggle for phase time limits. */
+    setTimersEnabled: (enabled) => {
                     hostRoomRef.current?.engine.setTimersEnabled(enabled)
                 },
                 endDiscussion: () => {

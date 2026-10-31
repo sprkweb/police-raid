@@ -54,6 +54,7 @@ export function createInitialState(
         hostId,
         stateSeq: 0,
         timersEnabled: true,
+        botBrainId: 'level0',
         ...createMatchProgress(),
     }
 }

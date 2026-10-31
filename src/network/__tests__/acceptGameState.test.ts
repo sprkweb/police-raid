@@ -36,6 +36,7 @@ function state(
         teamVotes: extras.teamVotes ?? {},
         raidActions: extras.raidActions ?? {},
         winner: extras.winner ?? null,
+        botBrainId: 'level0',
         timersEnabled: extras.timersEnabled ?? false,
         phaseEndsAt: extras.phaseEndsAt ?? null,
     }

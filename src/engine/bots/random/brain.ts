@@ -8,10 +8,7 @@ import type {
     BotVoteContext,
 } from '../types'
 
-/**
- * Uniform random among legal moves. The lobby toggle does not select this
- * brain.
- */
+/** Uniform random among legal moves. */
 export function createRandomBrain(): BotBrain {
     return {
         id: 'random',

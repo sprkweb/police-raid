@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useGame } from '../context/GameContext'
+import { LOBBY_BOT_TACTICS } from '../engine/bots/lobbyTactics'
 import { randomCallsign } from '../engine/callsigns'
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants'
 import {
@@ -39,6 +40,7 @@ export const Lobby: React.FC = () => {
         startGame,
         startGameWithBots,
         setTimersEnabled,
+        setBotBrainId,
         isHost,
         playerId: myPlayerId,
         roomCode: activeRoomCode,
@@ -348,6 +350,31 @@ export const Lobby: React.FC = () => {
                     <div className="pr-lobby-body">
                         {error && <p className="pr-error">{error}</p>}
                         <div className="pr-lobby-options">
+                            <label
+                                className="pr-field"
+                                title={t('lobby.botTacticHint')}
+                            >
+                                <span className="pr-label">
+                                    {t('lobby.botTactic')}
+                                </span>
+                                <select
+                                    className="pr-input pr-tactic-select"
+                                    value={gameState.botBrainId}
+                                    disabled={!isHost}
+                                    onChange={(e) =>
+                                        setBotBrainId(e.target.value)
+                                    }
+                                >
+                                    {LOBBY_BOT_TACTICS.map((tactic) => (
+                                        <option
+                                            key={tactic.id}
+                                            value={tactic.id}
+                                        >
+                                            {t(tactic.labelKey)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
                             <label className="pr-check">
                                 <input
                                     type="checkbox"
@@ -375,6 +402,7 @@ export const Lobby: React.FC = () => {
                                         <button
                                             type="button"
                                             className="pr-btn pr-green"
+                                            title={t('lobby.startWithBotsHint')}
                                             onClick={startGameWithBots}
                                         >
                                             {t('lobby.startWithBots')}
