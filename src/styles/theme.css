@@ -1276,6 +1276,7 @@ body {
 .pr-field > .pr-help-hint {
     align-self: flex-start;
 }
+.pr-lobby-options > .pr-help-hint,
 .pr-lobby-launch > .pr-help-hint {
     display: block;
 }

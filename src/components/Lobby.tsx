@@ -131,7 +131,8 @@ export const Lobby: React.FC = () => {
         ).length
         const canStart =
             connectedCount >= MIN_PLAYERS && connectedCount <= MAX_PLAYERS
-        const showStartWithBots = isHost && connectedCount < MIN_PLAYERS
+        const needsBots = connectedCount < MIN_PLAYERS
+        const showStartWithBots = isHost && needsBots
         const caseUrl =
             typeof window !== 'undefined' ? window.location.href : ''
 
@@ -362,51 +363,57 @@ export const Lobby: React.FC = () => {
                                 />
                                 <span>{t('lobby.enableTimers')}</span>
                             </label>
-                            <div className="pr-field">
+                            {needsBots && (
                                 <HelpHint text={t('lobby.botTacticHint')}>
-                                    <label
-                                        className="pr-label"
-                                        htmlFor="botTactic"
-                                    >
-                                        {t('lobby.botTactic')}
-                                    </label>
-                                </HelpHint>
-                                <div className="pr-tool pr-lang pr-bot-tactic">
-                                    <span aria-hidden="true">
-                                        {t(
-                                            LOBBY_BOT_TACTICS.find(
-                                                (tactic) =>
-                                                    tactic.id ===
-                                                    gameState.botBrainId,
-                                            )!.labelKey,
-                                        )}
-                                    </span>
-                                    <span
-                                        className="material-icons pr-lang-chevron"
-                                        aria-hidden="true"
-                                    >
-                                        expand_more
-                                    </span>
-                                    <select
-                                        id="botTactic"
-                                        className="pr-lang-select"
-                                        value={gameState.botBrainId}
-                                        disabled={!isHost}
-                                        onChange={(e) =>
-                                            setBotBrainId(e.target.value)
-                                        }
-                                    >
-                                        {LOBBY_BOT_TACTICS.map((tactic) => (
-                                            <option
-                                                key={tactic.id}
-                                                value={tactic.id}
+                                    <div className="pr-field">
+                                        <label
+                                            className="pr-label"
+                                            htmlFor="botTactic"
+                                        >
+                                            {t('lobby.botTactic')}
+                                        </label>
+                                        <div className="pr-tool pr-lang pr-bot-tactic">
+                                            <span aria-hidden="true">
+                                                {t(
+                                                    LOBBY_BOT_TACTICS.find(
+                                                        (tactic) =>
+                                                            tactic.id ===
+                                                            gameState.botBrainId,
+                                                    )!.labelKey,
+                                                )}
+                                            </span>
+                                            <span
+                                                className="material-icons pr-lang-chevron"
+                                                aria-hidden="true"
                                             >
-                                                {t(tactic.labelKey)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+                                                expand_more
+                                            </span>
+                                            <select
+                                                id="botTactic"
+                                                className="pr-lang-select"
+                                                value={gameState.botBrainId}
+                                                disabled={!isHost}
+                                                onChange={(e) =>
+                                                    setBotBrainId(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {LOBBY_BOT_TACTICS.map(
+                                                    (tactic) => (
+                                                        <option
+                                                            key={tactic.id}
+                                                            value={tactic.id}
+                                                        >
+                                                            {t(tactic.labelKey)}
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </HelpHint>
+                            )}
                         </div>
                         <div className="pr-lobby-launch">
                             {isHost ? (
