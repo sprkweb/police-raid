@@ -11,6 +11,7 @@ export type BotBrainId = string
 
 export type BotConfig =
     | { algorithm: 'random' }
+    | { algorithm: 'pands' }
     | {
           algorithm: 'behavioral'
           level: number

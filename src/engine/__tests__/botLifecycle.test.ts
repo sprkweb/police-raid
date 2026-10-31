@@ -223,64 +223,82 @@ describe('lobby reinforcement tactics', () => {
         expect(engine.getState().botBrainId).toBe('random')
     })
 
-    it('uses random for reinforcement but keeps human timeout defaults', () => {
-        const { create, factories } = observeFactory()
-        const { engine } = createTestEngine('host', 'Bot Alpha', {
-            createBotFactory: create,
-            random: () => 0,
-        })
-        engine.setBotBrainId('random')
-        engine.startGameWithBots()
-        expect(factories[0].brainFor(botId).id).toBe('random')
-        expect(factories[0].brainFor('host').id).toBe('level0')
-        const names = engine.getState().players.map((p) => p.name.toLowerCase())
-        expect(new Set(names).size).toBe(names.length)
-        expect(
-            engine
+    it.each(['random', 'pands'] as const)(
+        'uses %s for reinforcement but keeps human timeout defaults',
+        (algorithm) => {
+            const { create, factories } = observeFactory()
+            const { engine } = createTestEngine('host', 'Bot Alpha', {
+                createBotFactory: create,
+                random: () => 0,
+            })
+            engine.setBotBrainId(algorithm)
+            expect(engine.getState().botBrainId).toBe(algorithm)
+            expect(projectForPlayer(engine.getState(), 'host').botBrainId).toBe(
+                algorithm,
+            )
+            engine.startGameWithBots()
+            for (const player of engine.getState().players.slice(1)) {
+                expect(factories[0].brainFor(player.id).id).toBe(algorithm)
+            }
+            expect(factories[0].brainFor('host').id).toBe('level0')
+            engine.setBotBrainId('level0')
+            expect(engine.getState().botBrainId).toBe(algorithm)
+            const names = engine
                 .getState()
-                .players.slice(1)
-                .every((p) => p.name.startsWith('Bot ')),
-        ).toBe(true)
-    })
+                .players.map((p) => p.name.toLowerCase())
+            expect(new Set(names).size).toBe(names.length)
+            expect(
+                engine
+                    .getState()
+                    .players.slice(1)
+                    .every((p) => p.name.startsWith('Bot ')),
+            ).toBe(true)
+        },
+    )
 })
 
 describe('reinforcement rematch', () => {
-    it('publishes selection and retains tactics and names while replacing departed humans', () => {
-        vi.useFakeTimers()
-        const { create } = observeFactory()
-        const ctx = createTestEngine('host', 'Host', {
-            createBotFactory: create,
-            timersEnabled: true,
-            botConfigsBySeat: { [botId]: profile(0) },
-        })
-        ctx.engine.addPlayer('p2', 'Human')
-        ctx.engine.setBotBrainId('random')
-        expect(ctx.latest.botBrainId).toBe('random')
-        expect(projectForPlayer(ctx.latest, 'p2').botBrainId).toBe('random')
-        ctx.engine.startGameWithBots()
-        expect(create.mock.calls[0][0].get(botId)).toEqual(profile(0))
-        const names = ctx
-            .getState()
-            .players.slice(2)
-            .map((p) => p.name)
-        for (
-            let i = 0;
-            i < 200 && ctx.getState().phase !== GamePhase.GameOver;
-            i++
-        )
-            vi.advanceTimersToNextTimer()
-        expect(ctx.getState().phase).toBe(GamePhase.GameOver)
-        ctx.engine.removePlayer('p2')
-        ctx.engine.startGame()
-        expect(ctx.getState().botBrainId).toBe('random')
-        expect(
-            ctx
+    it.each(['random', 'pands'] as const)(
+        'publishes %s selection and retains tactics and names while replacing departed humans',
+        (algorithm) => {
+            vi.useFakeTimers()
+            const { create } = observeFactory()
+            const ctx = createTestEngine('host', 'Host', {
+                createBotFactory: create,
+                timersEnabled: true,
+                botConfigsBySeat: { [botId]: profile(0) },
+            })
+            ctx.engine.addPlayer('p2', 'Human')
+            ctx.engine.setBotBrainId(algorithm)
+            expect(ctx.latest.botBrainId).toBe(algorithm)
+            expect(projectForPlayer(ctx.latest, 'p2').botBrainId).toBe(
+                algorithm,
+            )
+            ctx.engine.startGameWithBots()
+            expect(create.mock.calls[0][0].get(botId)).toEqual(profile(0))
+            const names = ctx
                 .getState()
                 .players.slice(2)
-                .map((p) => p.name),
-        ).toEqual(names)
-        expect(create.mock.calls[1][0].get(`${BOT_ID_PREFIX}4`)).toEqual({
-            algorithm: 'random',
-        })
-    })
+                .map((p) => p.name)
+            for (
+                let i = 0;
+                i < 200 && ctx.getState().phase !== GamePhase.GameOver;
+                i++
+            )
+                vi.advanceTimersToNextTimer()
+            expect(ctx.getState().phase).toBe(GamePhase.GameOver)
+            ctx.engine.removePlayer('p2')
+            ctx.engine.startGame()
+            expect(ctx.getState().botBrainId).toBe(algorithm)
+            expect(
+                ctx
+                    .getState()
+                    .players.slice(2)
+                    .map((p) => p.name),
+            ).toEqual(names)
+            expect(create.mock.calls[1][0].get(`${BOT_ID_PREFIX}4`)).toEqual({
+                algorithm,
+            })
+        },
+    )
 })

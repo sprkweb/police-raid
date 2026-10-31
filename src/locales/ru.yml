@@ -53,6 +53,7 @@ lobby:
     startWithBotsHint: 'Начать с ботами'
     tacticRandom: 'Импровизация'
     tacticLevel0: 'Базовая подготовка'
+    tacticPandS: 'Старая школа'
     errorEnterName: 'Укажите позывной'
     errorEnterRoomCode: 'Введите номер дела'
     errorNoHostResponse: 'Из дела {{code}} никто не ответил. Проверьте номер или попросите старшего открыть дело заново.'

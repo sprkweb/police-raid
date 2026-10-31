@@ -21,4 +21,9 @@ export const LOBBY_BOT_TACTICS: readonly {
             expectedOthersRationality: EXPECTED_OTHERS_RATIONALITY,
         },
     },
+    {
+        id: 'pands',
+        labelKey: 'lobby.tacticPandS',
+        config: { algorithm: 'pands' },
+    },
 ]
