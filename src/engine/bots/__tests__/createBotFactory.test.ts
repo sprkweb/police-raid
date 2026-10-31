@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { Role, type GameEvent } from '../../../types/game'
+import { Role, type GameEvent, type PlayerId } from '../../../types/game'
 import {
     LevelKPlus1Strategy,
     MoleHypothesesFromHistory,
@@ -57,6 +57,28 @@ const context = (actorId = 'a', events: GameEvent[] = []): BotVoteContext => ({
 afterEach(() => vi.restoreAllMocks())
 
 describe('match bot factory', () => {
+    it('supports independent PandS brains and resets their learned history per match', () => {
+        const configs = new Map<PlayerId, BotConfig>([
+            ['a', { algorithm: 'pands' }],
+            ['c', { algorithm: 'pands' }],
+        ])
+        const factory = createBotFactory(configs)
+        const brain = factory.brainFor('a')
+        expect(brain.id).toBe('pands')
+        expect(factory.brainFor('a')).toBe(brain)
+        expect(factory.brainFor('c')).not.toBe(brain)
+        const learned = brain.chooseProposedTeam({
+            ...context('a', history),
+            teamSize: 2,
+        })
+        expect(learned).not.toContain('b')
+        const fresh = createBotFactory(configs).brainFor('a')
+        expect(fresh).not.toBe(brain)
+        expect(fresh.chooseProposedTeam({ ...context(), teamSize: 2 })).toEqual(
+            ['a', 'b'],
+        )
+    })
+
     it('keeps one brain per seat, snapshots configs, and rejects unknown seats', () => {
         const config = behavioral(0)
         const configs = new Map([

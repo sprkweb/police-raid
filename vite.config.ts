@@ -2,7 +2,8 @@ import { execFileSync } from 'node:child_process'
 
 import yaml from '@rollup/plugin-yaml'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type UserConfig } from 'vite'
+import type { UserConfig as VitestUserConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 const pagesBase = process.env.PAGES_BASE_PATH
@@ -29,8 +30,13 @@ function getBuildCommit(): string {
     }
 }
 
-export default defineConfig({
+const config: UserConfig & Pick<VitestUserConfig, 'test'> = {
     base,
+    build: {
+        rolldownOptions: {
+            output: { comments: { legal: true } },
+        },
+    },
     define: {
         __BUILD_COMMIT__: JSON.stringify(getBuildCommit()),
     },
@@ -39,4 +45,6 @@ export default defineConfig({
         environment: 'node',
         include: ['src/**/*.{test,spec}.{ts,tsx}'],
     },
-})
+}
+
+export default defineConfig(config)

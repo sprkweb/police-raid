@@ -24,6 +24,13 @@ npm run build
 
 ## License
 
+The optional [PandSBot implementation](src/engine/bots/pands/README.md) is
+ported from PandSBot by Pavel Raliuk and Alex Paklonski, from THE RESISTANCE
+Competition, Vienna Game/AI Conference 2012. Its algorithm is licensed under
+[GNU GPL version 3.0](src/engine/bots/pands/LICENSE.GPL-3.0); its original
+source and attribution are preserved alongside the port. The surrounding
+project is licensed as follows.
+
 Copyright &copy; 2026 Vadim Saprykin
 
 This program is free software: you can redistribute it and/or modify

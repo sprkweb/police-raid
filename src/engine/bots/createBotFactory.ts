@@ -1,11 +1,13 @@
 import type { PlayerId } from '../../types/game'
 import { createBehavioralBrainFactory } from './behavioral/brain'
+import { createPandSBrain } from './pands'
 import { createRandomBrain } from './random'
 import type { BotBrain, BotConfig, CreateBotFactory } from './types'
 
 function validateConfig(config: BotConfig): void {
     switch (config.algorithm) {
         case 'random':
+        case 'pands':
             return
         case 'behavioral':
             if (!Number.isInteger(config.level) || config.level < 0) {
@@ -48,6 +50,9 @@ export const createBotFactory: CreateBotFactory = (configs) => {
                 switch (config.algorithm) {
                     case 'random':
                         brain = createRandomBrain()
+                        break
+                    case 'pands':
+                        brain = createPandSBrain()
                         break
                     case 'behavioral':
                         brain = createBehavioralBrain(config)
