@@ -1280,7 +1280,7 @@ body {
 .pr-lobby-launch > .pr-help-hint {
     display: block;
 }
-.pr-help-hint-tip {
+.react-tooltip.pr-help-hint-tip {
     position: fixed;
     pointer-events: none;
     z-index: 100;
@@ -1667,4 +1667,8 @@ body {
 }
 .pr-bot-tactic select:disabled {
     cursor: default;
+}
+
+.react-tooltip.pr-help-hint-tip .react-tooltip-content-wrapper {
+    padding: 0;
 }
