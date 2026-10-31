@@ -16,7 +16,7 @@ The port's legal headers are also retained in the production JavaScript bundle.
 `createPandSBrain(): BotBrain` creates one brain for one seat in one match.
 The factory accepts `{ algorithm: 'pands' }`, including through the existing
 host-only `GameEngineOptions.botConfigsBySeat`. The lobby's reinforcement
-tactics selector also offers **PandSBot**. Its selection applies to reinforcement
+tactics selector also offers **Old school** (PandSBot). Its selection applies to reinforcement
 bots and persists on rematch, including bots replacing departed players;
 explicit seat overrides still take precedence. Human timeout actions and the
 default lobby selection continue to use behavioral level 0.
