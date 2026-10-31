@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useGame } from '../context/GameContext'
+import { LOBBY_BOT_TACTICS } from '../engine/bots/lobbyTactics'
 import { randomCallsign } from '../engine/callsigns'
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/constants'
 import {
@@ -10,6 +11,7 @@ import {
 } from '../network/callsignMemory'
 import { JoinLobbyError } from '../network/joinLobby'
 import { normalizeRoomCode } from '../network/roomCode'
+import { HelpHint } from './HelpHint'
 
 type CopiedField = 'code' | 'link' | null
 type PendingAction = 'create' | 'join' | null
@@ -39,6 +41,7 @@ export const Lobby: React.FC = () => {
         startGame,
         startGameWithBots,
         setTimersEnabled,
+        setBotBrainId,
         isHost,
         playerId: myPlayerId,
         roomCode: activeRoomCode,
@@ -128,7 +131,8 @@ export const Lobby: React.FC = () => {
         ).length
         const canStart =
             connectedCount >= MIN_PLAYERS && connectedCount <= MAX_PLAYERS
-        const showStartWithBots = isHost && connectedCount < MIN_PLAYERS
+        const needsBots = connectedCount < MIN_PLAYERS
+        const showStartWithBots = isHost && needsBots
         const caseUrl =
             typeof window !== 'undefined' ? window.location.href : ''
 
@@ -359,6 +363,57 @@ export const Lobby: React.FC = () => {
                                 />
                                 <span>{t('lobby.enableTimers')}</span>
                             </label>
+                            {needsBots && (
+                                <HelpHint text={t('lobby.botTacticHint')}>
+                                    <div className="pr-field">
+                                        <label
+                                            className="pr-label"
+                                            htmlFor="botTactic"
+                                        >
+                                            {t('lobby.botTactic')}
+                                        </label>
+                                        <div className="pr-tool pr-lang pr-bot-tactic">
+                                            <span aria-hidden="true">
+                                                {t(
+                                                    LOBBY_BOT_TACTICS.find(
+                                                        (tactic) =>
+                                                            tactic.id ===
+                                                            gameState.botBrainId,
+                                                    )!.labelKey,
+                                                )}
+                                            </span>
+                                            <span
+                                                className="material-icons pr-lang-chevron"
+                                                aria-hidden="true"
+                                            >
+                                                expand_more
+                                            </span>
+                                            <select
+                                                id="botTactic"
+                                                className="pr-lang-select"
+                                                value={gameState.botBrainId}
+                                                disabled={!isHost}
+                                                onChange={(e) =>
+                                                    setBotBrainId(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {LOBBY_BOT_TACTICS.map(
+                                                    (tactic) => (
+                                                        <option
+                                                            key={tactic.id}
+                                                            value={tactic.id}
+                                                        >
+                                                            {t(tactic.labelKey)}
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </HelpHint>
+                            )}
                         </div>
                         <div className="pr-lobby-launch">
                             {isHost ? (
@@ -372,13 +427,17 @@ export const Lobby: React.FC = () => {
                                         {t('lobby.startGame')}
                                     </button>
                                     {showStartWithBots && (
-                                        <button
-                                            type="button"
-                                            className="pr-btn pr-green"
-                                            onClick={startGameWithBots}
+                                        <HelpHint
+                                            text={t('lobby.startWithBotsHint')}
                                         >
-                                            {t('lobby.startWithBots')}
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className="pr-btn pr-green"
+                                                onClick={startGameWithBots}
+                                            >
+                                                {t('lobby.startWithBots')}
+                                            </button>
+                                        </HelpHint>
                                     )}
                                 </>
                             ) : (

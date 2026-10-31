@@ -8,13 +8,19 @@ import type {
 import { GamePhase, Role } from '../types/game'
 import { DEFAULT_BOT_RATIONALITY, EXPECTED_OTHERS_RATIONALITY } from './bots'
 import { createBotFactory } from './bots/createBotFactory'
+import { LOBBY_BOT_TACTICS } from './bots/lobbyTactics'
 import type {
     BotBrain,
+    BotBrainId,
     BotConfig,
     BotFactory,
     CreateBotFactory,
 } from './bots/types'
-import { uniquifyCallsign, normalizeCallsign } from './callsigns'
+import {
+    pickUnusedCallsign,
+    uniquifyCallsign,
+    normalizeCallsign,
+} from './callsigns'
 import {
     BOT_ID_PREFIX,
     MAX_PLAYERS,
@@ -199,6 +205,14 @@ export class GameEngine {
         }
     }
 
+    public setBotBrainId(id: BotBrainId) {
+        if (this.state.phase !== GamePhase.Lobby) return
+        if (!LOBBY_BOT_TACTICS.some((tactic) => tactic.id === id)) return
+        if (this.state.botBrainId === id) return
+        this.state.botBrainId = id
+        this.notify()
+    }
+
     /** Host-only lobby setting: enable per-phase countdown + auto-actions. */
     public setTimersEnabled(enabled: boolean) {
         if (this.state.phase !== GamePhase.Lobby) return
@@ -307,7 +321,12 @@ export class GameEngine {
         }
         return {
             id: `${BOT_ID_PREFIX}${n}`,
-            name: `Bot ${n}`,
+            name: `Bot ${pickUnusedCallsign(
+                [...this.state.players, ...this.state.spectators]
+                    .filter((p) => p.name.toLowerCase().startsWith('bot '))
+                    .map((p) => p.name.slice(4)),
+                this.random,
+            )}`,
             role: null,
             connected: true,
         }
@@ -399,7 +418,10 @@ export class GameEngine {
         const configs = new Map<PlayerId, BotConfig>()
         for (const player of this.state.players) {
             const override = isBot(player.id)
-                ? this.botConfigsBySeat.get(player.id)
+                ? (this.botConfigsBySeat.get(player.id) ??
+                  LOBBY_BOT_TACTICS.find(
+                      (tactic) => tactic.id === this.state.botBrainId,
+                  )!.config)
                 : undefined
             configs.set(
                 player.id,
