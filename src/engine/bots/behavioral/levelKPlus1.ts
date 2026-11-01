@@ -21,7 +21,7 @@ import type {
 } from '../types'
 import { LocalStrategy, type BehavioralStrategy } from './behavioralStrategy'
 import { Level0Strategy } from './level0'
-import { logitQuantalResponse } from './logitQuantalResponse'
+import { LogitQuantalResponse } from './logitQuantalResponse'
 import { combinations } from './math'
 import { MoleHypothesisSpace } from './moleHypotheses'
 
@@ -68,7 +68,7 @@ export class LevelKPlus1Strategy implements BehavioralStrategy {
 
         const teams = combinations(ctx.playerIds, ctx.teamSize)
 
-        return logitQuantalResponse(
+        return new LogitQuantalResponse(
             teams.map((team) => ({
                 action: team,
                 utility: hypotheses.probability(
@@ -102,7 +102,7 @@ export class LevelKPlus1Strategy implements BehavioralStrategy {
             utility += ctx.role === Role.Mole ? 1.4 : 2.5
         }
 
-        return logitQuantalResponse(
+        return new LogitQuantalResponse(
             [
                 { action: 'Approve', utility: utility },
                 { action: 'Reject', utility: 1 - utility },

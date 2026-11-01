@@ -10,7 +10,7 @@ import type {
     BotVoteContext,
 } from '../types'
 import { LocalStrategy, type BehavioralStrategy } from './behavioralStrategy'
-import { logitQuantalResponse } from './logitQuantalResponse'
+import { LogitQuantalResponse } from './logitQuantalResponse'
 import { combinations } from './math'
 
 export class Level0Strategy implements BehavioralStrategy {
@@ -47,7 +47,7 @@ export class Level0Strategy implements BehavioralStrategy {
             return { action: team, utility }
         })
 
-        return logitQuantalResponse(utilities, this.rationality)
+        return new LogitQuantalResponse(utilities, this.rationality)
     }
 
     // TODO: tune utilities using inspect
@@ -81,7 +81,7 @@ export class Level0Strategy implements BehavioralStrategy {
         // first round
         if (ctx.currentRound === 1) utility += 1
 
-        return logitQuantalResponse(
+        return new LogitQuantalResponse(
             [
                 { action: 'Approve', utility },
                 { action: 'Reject', utility: 1 },
@@ -120,7 +120,7 @@ export class Level0Strategy implements BehavioralStrategy {
             sabotageUtility = -1
         }
 
-        return logitQuantalResponse(
+        return new LogitQuantalResponse(
             [
                 { action: 'Support', utility: 0 },
                 { action: 'Sabotage', utility: sabotageUtility },
