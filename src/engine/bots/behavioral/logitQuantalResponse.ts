@@ -13,17 +13,28 @@ function softmax(logits: readonly number[]): number[] {
     return exps.map((e) => e / sum)
 }
 
-export function logitQuantalResponse<Action>(
-    utilities: readonly ExpectedUtility<Action>[],
-    rationality: number,
-): LocalStrategy<Action> {
-    if (utilities.length === 0) return new LocalStrategy([])
+export class LogitQuantalResponse<Action> extends LocalStrategy<Action> {
+    readonly utilities: readonly ExpectedUtility<Action>[]
 
-    const probabilities = softmax(utilities.map((u) => u.utility * rationality))
-    return new LocalStrategy(
-        probabilities.map((probability, i) => ({
-            probability,
-            value: utilities[i].action,
-        })),
-    )
+    constructor(
+        utilities: readonly ExpectedUtility<Action>[],
+        rationality: number,
+    ) {
+        if (utilities.length === 0) {
+            super([])
+            this.utilities = []
+            return
+        }
+
+        const probabilities = softmax(
+            utilities.map((u) => u.utility * rationality),
+        )
+        super(
+            probabilities.map((probability, i) => ({
+                probability,
+                value: utilities[i].action,
+            })),
+        )
+        this.utilities = utilities
+    }
 }

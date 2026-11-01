@@ -6,10 +6,10 @@ export interface Sample<T> {
 }
 
 export class SampleSpace<T> {
-    protected samplePoints: Sample<T>[]
+    readonly samplePoints: readonly Sample<T>[]
 
     // Initialize with all possibilities
-    constructor(samples: Sample<T>[]) {
+    constructor(samples: readonly Sample<T>[]) {
         this.samplePoints = samples
     }
 
