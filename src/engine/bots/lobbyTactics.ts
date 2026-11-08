@@ -1,4 +1,7 @@
-import { DEFAULT_BOT_RATIONALITY, EXPECTED_OTHERS_RATIONALITY } from './index'
+import {
+    DEFAULT_BOT_RATIONALITY as DEFAULT_BOT_PRECISION,
+    EXPECTED_OTHERS_RATIONALITY as EXPECTED_OTHERS_PRECISION,
+} from './index'
 import type { BotBrainId, BotConfig } from './types'
 
 export const LOBBY_BOT_TACTICS: readonly {
@@ -17,8 +20,8 @@ export const LOBBY_BOT_TACTICS: readonly {
         config: {
             algorithm: 'behavioral',
             level: 0,
-            rationality: DEFAULT_BOT_RATIONALITY,
-            expectedOthersRationality: EXPECTED_OTHERS_RATIONALITY,
+            precision: DEFAULT_BOT_PRECISION,
+            expectedOthersPrecision: EXPECTED_OTHERS_PRECISION,
         },
     },
     {

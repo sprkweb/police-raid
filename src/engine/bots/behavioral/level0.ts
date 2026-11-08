@@ -9,21 +9,20 @@ import type {
     BotRaidContext,
     BotVoteContext,
 } from '../types'
-import { LocalStrategy, type BehavioralStrategy } from './behavioralStrategy'
-import { LogitQuantalResponse } from './logitQuantalResponse'
+import {
+    type ActionUtilityEstimator,
+    type Utility,
+} from './logitQuantalResponse'
 import { combinations } from './math'
 
-export class Level0Strategy implements BehavioralStrategy {
-    private rationality: number
-    constructor(rationality: number) {
-        this.rationality = rationality
-    }
-
+export class Level0Estimator implements ActionUtilityEstimator {
     // TODO: tune utilities using inspect
-    chooseProposedTeam(ctx: BotProposeContext): LocalStrategy<PlayerId[]> {
+    estimateProposedTeam(
+        ctx: BotProposeContext,
+    ): readonly Utility<PlayerId[]>[] {
         const teams = combinations(ctx.playerIds, ctx.teamSize)
 
-        const utilities = teams.map((team) => {
+        return teams.map((team) => {
             let utility = 0
             const meOnTeam = team.includes(ctx.actorId)
 
@@ -46,12 +45,10 @@ export class Level0Strategy implements BehavioralStrategy {
 
             return { action: team, utility }
         })
-
-        return new LogitQuantalResponse(utilities, this.rationality)
     }
 
     // TODO: tune utilities using inspect
-    chooseTeamVote(ctx: BotVoteContext): LocalStrategy<Vote> {
+    estimateTeamVote(ctx: BotVoteContext): readonly Utility<Vote>[] {
         let utility = 0
 
         const meOnTeam = ctx.proposedTeam.includes(ctx.actorId)
@@ -81,18 +78,15 @@ export class Level0Strategy implements BehavioralStrategy {
         // first round
         if (ctx.currentRound === 1) utility += 1
 
-        return new LogitQuantalResponse(
-            [
-                { action: 'Approve', utility },
-                { action: 'Reject', utility: 1 },
-            ],
-            this.rationality,
-        )
+        return [
+            { action: 'Approve', utility },
+            { action: 'Reject', utility: 1 },
+        ]
     }
 
-    chooseRaidAction(ctx: BotRaidContext): LocalStrategy<RaidAction> {
+    estimateRaidAction(ctx: BotRaidContext): readonly Utility<RaidAction>[] {
         if (ctx.role !== Roles.Mole) {
-            return new LocalStrategy([{ probability: 1, value: 'Support' }])
+            return [{ action: 'Support', utility: 1 }]
         }
 
         const molesCount = ctx.proposedTeam.filter((p) =>
@@ -120,12 +114,9 @@ export class Level0Strategy implements BehavioralStrategy {
             sabotageUtility = -1
         }
 
-        return new LogitQuantalResponse(
-            [
-                { action: 'Support', utility: 0 },
-                { action: 'Sabotage', utility: sabotageUtility },
-            ],
-            this.rationality,
-        )
+        return [
+            { action: 'Support', utility: 0 },
+            { action: 'Sabotage', utility: sabotageUtility },
+        ]
     }
 }

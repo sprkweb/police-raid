@@ -3,23 +3,34 @@ import {
     createBehavioralStrategyBrain,
     type BehavioralStrategy,
 } from './behavioralStrategy'
-import { Level0Strategy } from './level0'
-import { LevelKPlus1Strategy, MoleHypothesesFromHistory } from './levelKPlus1'
+import { Level0Estimator } from './level0'
+import { LevelKPlus1Estimator, MoleHypothesesFromHistory } from './levelKPlus1'
+import {
+    LogitBehavioralStrategy,
+    type ActionUtilityEstimator,
+} from './logitQuantalResponse'
 
 /** Build hypotheses by modeling other players at each lower reasoning level. */
 function createHypotheses(
     level: number,
-    expectedOthersRationality: number,
+    expectedOthersPrecision: number,
 ): MoleHypothesesFromHistory {
-    let modeledStrategy: BehavioralStrategy = new Level0Strategy(
-        expectedOthersRationality,
+    // first create level 0 strategy
+    let modeledStrategy: BehavioralStrategy = new LogitBehavioralStrategy(
+        expectedOthersPrecision,
+        new Level0Estimator(),
     )
+
     for (let k = 1; k < level; k++) {
-        modeledStrategy = new LevelKPlus1Strategy(
-            expectedOthersRationality,
-            new MoleHypothesesFromHistory(modeledStrategy),
+        // then create level 1, 2, ... k strategies
+        const hypotheses = new MoleHypothesesFromHistory(modeledStrategy)
+        const utilityEstimator = new LevelKPlus1Estimator(hypotheses)
+        modeledStrategy = new LogitBehavioralStrategy(
+            expectedOthersPrecision,
+            utilityEstimator,
         )
     }
+
     return new MoleHypothesesFromHistory(modeledStrategy)
 }
 
@@ -28,26 +39,29 @@ export function createBehavioralBrainFactory(): (
     config: BotConfig & { algorithm: 'behavioral' },
 ) => BotBrain {
     const hypothesesByModel = new Map<string, MoleHypothesesFromHistory>()
-    return ({ level, rationality, expectedOthersRationality }) => {
+    return ({ level, precision, expectedOthersPrecision }) => {
+        let utilityEstimator: ActionUtilityEstimator
+
         if (level === 0) {
-            return createBehavioralStrategyBrain(
-                'level0',
-                new Level0Strategy(rationality),
-            )
+            utilityEstimator = new Level0Estimator()
+        } else {
+            // create an estimator based on the model of other players at level k reasoning
+            const modelKey = `${level}:${expectedOthersPrecision}`
+            let hypotheses = hypothesesByModel.get(modelKey)
+            if (!hypotheses) {
+                // Each model owns its nested hypotheses too; sharing across levels
+                // could expose later events while reconstructing an earlier decision.
+                hypotheses = createHypotheses(level, expectedOthersPrecision)
+                hypothesesByModel.set(modelKey, hypotheses)
+            }
+
+            utilityEstimator = new LevelKPlus1Estimator(hypotheses)
         }
 
-        const modelKey = `${level}:${expectedOthersRationality}`
-        let hypotheses = hypothesesByModel.get(modelKey)
-        if (!hypotheses) {
-            // Each model owns its nested hypotheses too; sharing across levels
-            // could expose later events while reconstructing an earlier decision.
-            hypotheses = createHypotheses(level, expectedOthersRationality)
-            hypothesesByModel.set(modelKey, hypotheses)
-        }
-
-        return createBehavioralStrategyBrain(
-            `level${level}`,
-            new LevelKPlus1Strategy(rationality, hypotheses),
+        const strategy = new LogitBehavioralStrategy(
+            precision,
+            utilityEstimator,
         )
+        return createBehavioralStrategyBrain(`level${level}`, strategy)
     }
 }

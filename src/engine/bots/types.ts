@@ -15,8 +15,8 @@ export type BotConfig =
     | {
           algorithm: 'behavioral'
           level: number
-          rationality: number
-          expectedOthersRationality: number
+          precision: number
+          expectedOthersPrecision: number
       }
 
 /** Owns brains and algorithm resources for one match. */

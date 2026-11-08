@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
 import { Role } from '../../../../types/game'
-import { Level0Strategy } from '../level0'
+import { Level0Estimator } from '../level0'
+import { LogitBehavioralStrategy } from '../logitQuantalResponse'
 import { logistic, proposeCtx, raidCtx, voteCtx } from './fixtures'
 
-describe('Level0Strategy', () => {
-    const strategy = new Level0Strategy(2)
+describe('Level0Estimator', () => {
+    const estimator = new Level0Estimator()
+    const strategy = new LogitBehavioralStrategy(2, estimator)
 
     it('enumerates legal teams and favors including the police actor', () => {
-        const teams = strategy.chooseProposedTeam(proposeCtx())
+        const teams = strategy.strategyForTeamProposal(proposeCtx())
+        const utilities = estimator.estimateProposedTeam(proposeCtx())
+        expect(utilities).toHaveLength(10)
+        for (const { action, utility } of utilities) {
+            expect(action).toHaveLength(2)
+            expect(new Set(action).size).toBe(2)
+            expect(utility).toBe(action.includes('C') ? 1 : 0)
+        }
         expect(teams.count()).toBe(10)
         expect(
             teams.probability((t) => t.length === 2 && new Set(t).size === 2),
@@ -19,7 +28,7 @@ describe('Level0Strategy', () => {
     })
 
     it('balances self-inclusion, sufficient moles and redundant moles when proposing', () => {
-        const teams = strategy.chooseProposedTeam(
+        const teams = strategy.strategyForTeamProposal(
             proposeCtx({ actorId: 'A', role: Role.Mole }),
         )
         const probability = (team: string[]) =>
@@ -31,7 +40,7 @@ describe('Level0Strategy', () => {
         expect(probability(['A', 'B']) / probability(['C', 'D'])).toBeCloseTo(
             Math.exp(2 * 0.86),
         )
-        const needsTwo = strategy.chooseProposedTeam(
+        const needsTwo = strategy.strategyForTeamProposal(
             proposeCtx({ actorId: 'A', role: Role.Mole, requiredSabotages: 2 }),
         )
         expect(
@@ -76,9 +85,13 @@ describe('Level0Strategy', () => {
     ])(
         'assigns approval utility $utility for $overrides',
         ({ overrides, utility }) => {
+            expect(estimator.estimateTeamVote(voteCtx(overrides))).toEqual([
+                { action: 'Approve', utility: expect.closeTo(utility) },
+                { action: 'Reject', utility: 1 },
+            ])
             expect(
                 strategy
-                    .chooseTeamVote(voteCtx(overrides))
+                    .strategyForTeamVote(voteCtx(overrides))
                     .probability((v) => v === 'Approve'),
             ).toBeCloseTo(logistic(2 * (utility - 1)))
         },
@@ -86,8 +99,11 @@ describe('Level0Strategy', () => {
 
     it('police always support', () => {
         expect(
+            estimator.estimateRaidAction(raidCtx({ role: Role.Police })),
+        ).toEqual([{ action: 'Support', utility: 1 }])
+        expect(
             strategy
-                .chooseRaidAction(raidCtx({ role: Role.Police }))
+                .strategyForRaidAction(raidCtx({ role: Role.Police }))
                 .probability((a) => a === 'Support'),
         ).toBe(1)
     })
@@ -100,13 +116,16 @@ describe('Level0Strategy', () => {
     ])(
         'adjusts sabotage for $moleIds and threshold $requiredSabotages',
         ({ moleIds, requiredSabotages, utility }) => {
-            const actions = strategy.chooseRaidAction(
-                raidCtx({
-                    proposedTeam: ['A', 'B', 'C'],
-                    moleIds,
-                    requiredSabotages,
-                }),
-            )
+            const ctx = raidCtx({
+                proposedTeam: ['A', 'B', 'C'],
+                moleIds,
+                requiredSabotages,
+            })
+            expect(estimator.estimateRaidAction(ctx)).toEqual([
+                { action: 'Support', utility: 0 },
+                { action: 'Sabotage', utility: expect.closeTo(utility) },
+            ])
+            const actions = strategy.strategyForRaidAction(ctx)
             expect(actions.probability((a) => a === 'Sabotage')).toBeCloseTo(
                 logistic(2 * utility),
             )

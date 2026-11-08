@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { GamePhase } from '../../types/game'
-import { Level0Strategy } from '../bots/behavioral/level0'
+import { Level0Estimator } from '../bots/behavioral/level0'
 import { MoleHypothesesFromHistory } from '../bots/behavioral/levelKPlus1'
 import { createBotFactory } from '../bots/createBotFactory'
 import type { BotConfig, BotFactory, CreateBotFactory } from '../bots/types'
@@ -19,8 +19,8 @@ const botId = `${BOT_ID_PREFIX}1`
 const profile = (level: number): BotConfig => ({
     algorithm: 'behavioral',
     level,
-    rationality: 2.5,
-    expectedOthersRationality: 1.5,
+    precision: 2.5,
+    expectedOthersPrecision: 1.5,
 })
 function observeFactory() {
     const factories: BotFactory[] = []
@@ -58,8 +58,8 @@ describe('bot match lifecycle', () => {
         const custom: BotConfig = {
             algorithm: 'behavioral',
             level: 2,
-            rationality: 3,
-            expectedOthersRationality: 0.5,
+            precision: 3,
+            expectedOthersPrecision: 0.5,
         }
         const overrides: Record<string, BotConfig> = {
             [botId]: custom,
@@ -77,8 +77,8 @@ describe('bot match lifecycle', () => {
         expect(configs.get(botId)).toEqual({
             algorithm: 'behavioral',
             level: 2,
-            rationality: 3,
-            expectedOthersRationality: 0.5,
+            precision: 3,
+            expectedOthersPrecision: 0.5,
         })
         expect(configs.get(`${BOT_ID_PREFIX}2`)).toEqual({
             algorithm: 'random',
@@ -161,9 +161,12 @@ describe('bot match lifecycle', () => {
 
     it('uses cache-free level 0 for all human timeout actions, even with overrides', () => {
         vi.useFakeTimers()
-        const propose = vi.spyOn(Level0Strategy.prototype, 'chooseProposedTeam')
-        const vote = vi.spyOn(Level0Strategy.prototype, 'chooseTeamVote')
-        const raid = vi.spyOn(Level0Strategy.prototype, 'chooseRaidAction')
+        const propose = vi.spyOn(
+            Level0Estimator.prototype,
+            'estimateProposedTeam',
+        )
+        const vote = vi.spyOn(Level0Estimator.prototype, 'estimateTeamVote')
+        const raid = vi.spyOn(Level0Estimator.prototype, 'estimateRaidAction')
         const get = vi.spyOn(MoleHypothesesFromHistory.prototype, 'get')
         const ctx = startWithPlayers(5, {
             timersEnabled: true,

@@ -19,22 +19,23 @@ import type {
     BotRaidContext,
     BotVoteContext,
 } from '../types'
-import { LocalStrategy, type BehavioralStrategy } from './behavioralStrategy'
-import { Level0Strategy } from './level0'
-import { LogitQuantalResponse } from './logitQuantalResponse'
+import type { BehavioralStrategy } from './behavioralStrategy'
+import { Level0Estimator } from './level0'
+import {
+    type ActionUtilityEstimator,
+    type Utility,
+} from './logitQuantalResponse'
 import { combinations } from './math'
 import { MoleHypothesisSpace } from './moleHypotheses'
 
-export class LevelKPlus1Strategy implements BehavioralStrategy {
-    private rationality: number
-    private hypotheses: MoleHypothesesFromHistory
-    // level0Strategy can be used for actions when hypotheses are not needed / nonexistent
-    private level0Strategy: Level0Strategy
+export class LevelKPlus1Estimator implements ActionUtilityEstimator {
+    readonly hypotheses: MoleHypothesesFromHistory
+    // level0Estimator can be used for actions when hypotheses are not needed / nonexistent
+    private level0Estimator: Level0Estimator
 
-    constructor(rationality: number, hypotheses: MoleHypothesesFromHistory) {
-        this.rationality = rationality
+    constructor(hypotheses: MoleHypothesesFromHistory) {
         this.hypotheses = hypotheses
-        this.level0Strategy = new Level0Strategy(this.rationality)
+        this.level0Estimator = new Level0Estimator()
     }
 
     /**
@@ -43,9 +44,9 @@ export class LevelKPlus1Strategy implements BehavioralStrategy {
      * be no hypotheses left, so fallback is always needed. This might happen,
      * for example, when, based on raid history, it is possible to tell with
      * 100% certainty that this player is a mole (there are no possible
-     * hypotheses left where he is innocent). Fallback in this strategy is
-     * human-like "play dumb and pretend that it is not obvious that I am a
-     * mole": basically, use level 0 strategy
+     * hypotheses left where he is innocent). Fallback is human-like "play dumb
+     * and pretend that it is not obvious that I am a mole": basically, use
+     * level 0 strategy
      */
     private getHypotheses(ctx: BotMatchContext): MoleHypothesisSpace {
         return (
@@ -58,36 +59,35 @@ export class LevelKPlus1Strategy implements BehavioralStrategy {
         )
     }
 
-    chooseProposedTeam(ctx: BotProposeContext): LocalStrategy<PlayerId[]> {
+    estimateProposedTeam(
+        ctx: BotProposeContext,
+    ): readonly Utility<PlayerId[]>[] {
         const hypotheses = this.getHypotheses(ctx)
         if (hypotheses.count() === 0) {
             // rare case, no possible hypotheses
             // fallback to level 0 strategy
-            return this.level0Strategy.chooseProposedTeam(ctx)
+            return this.level0Estimator.estimateProposedTeam(ctx)
         }
 
         const teams = combinations(ctx.playerIds, ctx.teamSize)
 
-        return new LogitQuantalResponse(
-            teams.map((team) => ({
-                action: team,
-                utility: hypotheses.probability(
-                    // probability that there are not enough moles to sabotage
-                    (h) =>
-                        h.filter((m) => team.includes(m)).length <
-                        ctx.requiredSabotages,
-                ),
-            })),
-            this.rationality,
-        )
+        return teams.map((team) => ({
+            action: team,
+            utility: hypotheses.probability(
+                // probability that there are not enough moles to sabotage
+                (h) =>
+                    h.filter((m) => team.includes(m)).length <
+                    ctx.requiredSabotages,
+            ),
+        }))
     }
 
-    chooseTeamVote(ctx: BotVoteContext): LocalStrategy<Vote> {
+    estimateTeamVote(ctx: BotVoteContext): readonly Utility<Vote>[] {
         const hypotheses = this.getHypotheses(ctx)
         if (hypotheses.count() === 0) {
             // rare case, no possible hypotheses
             // fallback to level 0 strategy
-            return this.level0Strategy.chooseTeamVote(ctx)
+            return this.level0Estimator.estimateTeamVote(ctx)
         }
 
         let utility = hypotheses.probability(
@@ -102,18 +102,15 @@ export class LevelKPlus1Strategy implements BehavioralStrategy {
             utility += ctx.role === Role.Mole ? 1.4 : 2.5
         }
 
-        return new LogitQuantalResponse(
-            [
-                { action: 'Approve', utility: utility },
-                { action: 'Reject', utility: 1 - utility },
-            ],
-            this.rationality,
-        )
+        return [
+            { action: 'Approve', utility: utility },
+            { action: 'Reject', utility: 1 - utility },
+        ]
     }
 
-    chooseRaidAction(ctx: BotRaidContext): LocalStrategy<RaidAction> {
+    estimateRaidAction(ctx: BotRaidContext): readonly Utility<RaidAction>[] {
         // just use algorithm from level 0
-        return this.level0Strategy.chooseRaidAction(ctx)
+        return this.level0Estimator.estimateRaidAction(ctx)
     }
 }
 
@@ -245,14 +242,15 @@ export class MoleHypothesesFromHistory {
         dp[0] = 1 // 100% chance of 0 sabotages with 0 moles in team
 
         for (const mole of molesInTeam) {
-            const hisStrategy = this.previousLevelStrategy.chooseRaidAction({
-                ...ctx,
-                moleIds: moles,
-                actorId: mole,
-                role: Role.Mole,
-                proposedTeam: team,
-                proposerId: raid.proposerId,
-            })
+            const hisStrategy =
+                this.previousLevelStrategy.strategyForRaidAction({
+                    ...ctx,
+                    moleIds: moles,
+                    actorId: mole,
+                    role: Role.Mole,
+                    proposedTeam: team,
+                    proposerId: raid.proposerId,
+                })
             const p = hisStrategy.probability((a) => a == 'Sabotage')
 
             for (let j = molesInTeam.length; j >= 1; j--)
@@ -270,7 +268,7 @@ export class MoleHypothesesFromHistory {
         moles: readonly PlayerId[],
     ): number {
         const { proposerId, team } = proposal
-        const hisStrategy = this.previousLevelStrategy.chooseProposedTeam({
+        const hisStrategy = this.previousLevelStrategy.strategyForTeamProposal({
             ...ctx,
             moleIds: moles,
             actorId: proposerId,
@@ -298,7 +296,7 @@ export class MoleHypothesesFromHistory {
         return ctx.playerIds
             .map((player) =>
                 this.previousLevelStrategy
-                    .chooseTeamVote({
+                    .strategyForTeamVote({
                         ...ctx,
                         moleIds: moles,
                         proposedTeam: team,
