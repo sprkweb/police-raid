@@ -53,6 +53,7 @@ lobby:
     startWithBotsHint: 'Start with bots'
     tacticRandom: 'Improvisation'
     tacticLevel0: 'Basic training'
+    tacticLevel1: 'Operational analysis'
     tacticPandS: 'Old school'
     errorEnterName: 'Enter your callsign'
     errorEnterRoomCode: 'Enter the case number'

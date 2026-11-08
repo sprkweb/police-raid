@@ -226,7 +226,7 @@ describe('lobby reinforcement tactics', () => {
         expect(engine.getState().botBrainId).toBe('random')
     })
 
-    it.each(['random', 'pands'] as const)(
+    it.each(['random', 'level1', 'pands'] as const)(
         'uses %s for reinforcement but keeps human timeout defaults',
         (algorithm) => {
             const { create, factories } = observeFactory()

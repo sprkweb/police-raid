@@ -25,6 +25,16 @@ export const LOBBY_BOT_TACTICS: readonly {
         },
     },
     {
+        id: 'level1',
+        labelKey: 'lobby.tacticLevel1',
+        config: {
+            algorithm: 'behavioral',
+            level: 1,
+            precision: DEFAULT_BOT_PRECISION,
+            expectedOthersPrecision: EXPECTED_OTHERS_PRECISION,
+        },
+    },
+    {
         id: 'pands',
         labelKey: 'lobby.tacticPandS',
         config: { algorithm: 'pands' },
