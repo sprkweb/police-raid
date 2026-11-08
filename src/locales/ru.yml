@@ -53,6 +53,7 @@ lobby:
     startWithBotsHint: 'Начать с ботами'
     tacticRandom: 'Импровизация'
     tacticLevel0: 'Базовая подготовка'
+    tacticLevel1: 'Оперативный анализ'
     tacticPandS: 'Старая школа'
     errorEnterName: 'Укажите позывной'
     errorEnterRoomCode: 'Введите номер дела'
