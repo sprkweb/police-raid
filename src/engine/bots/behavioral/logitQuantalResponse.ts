@@ -65,7 +65,9 @@ export class LogitBehavioralStrategy implements BehavioralStrategy {
         this.estimator = estimator
     }
 
-    strategyForTeamProposal(ctx: BotProposeContext): LogitQuantalResponse<PlayerId[]> {
+    strategyForTeamProposal(
+        ctx: BotProposeContext,
+    ): LogitQuantalResponse<PlayerId[]> {
         const utilities = this.estimator.estimateProposedTeam(ctx)
         return new LogitQuantalResponse(utilities, this.precision)
     }
@@ -75,7 +77,9 @@ export class LogitBehavioralStrategy implements BehavioralStrategy {
         return new LogitQuantalResponse(utilities, this.precision)
     }
 
-    strategyForRaidAction(ctx: BotRaidContext): LogitQuantalResponse<RaidAction> {
+    strategyForRaidAction(
+        ctx: BotRaidContext,
+    ): LogitQuantalResponse<RaidAction> {
         const utilities = this.estimator.estimateRaidAction(ctx)
         return new LogitQuantalResponse(utilities, this.precision)
     }

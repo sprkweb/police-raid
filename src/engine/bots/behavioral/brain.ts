@@ -3,6 +3,7 @@ import {
     createBehavioralStrategyBrain,
     type BehavioralStrategy,
 } from './behavioralStrategy'
+import { withBehavioralDebug } from './debug'
 import { Level0Estimator } from './level0'
 import { LevelKPlus1Estimator, MoleHypothesesFromHistory } from './levelKPlus1'
 import {
@@ -62,6 +63,9 @@ export function createBehavioralBrainFactory(): (
             precision,
             utilityEstimator,
         )
-        return createBehavioralStrategyBrain(`level${level}`, strategy)
+        return createBehavioralStrategyBrain(
+            `level${level}`,
+            import.meta.env.DEV ? withBehavioralDebug(strategy) : strategy,
+        )
     }
 }
