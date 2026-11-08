@@ -14,12 +14,12 @@ function validateConfig(config: BotConfig): void {
                 throw new Error('Bot level must be a non-negative integer.')
             }
             for (const value of [
-                config.rationality,
-                config.expectedOthersRationality,
+                config.precision,
+                config.expectedOthersPrecision,
             ]) {
                 if (!Number.isFinite(value) || value < 0) {
                     throw new Error(
-                        'Bot rationality must be finite and non-negative.',
+                        'Bot precision must be finite and non-negative.',
                     )
                 }
             }

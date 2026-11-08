@@ -1,22 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { Role, type GameEvent, type PlayerId } from '../../../types/game'
-import {
-    LevelKPlus1Strategy,
-    MoleHypothesesFromHistory,
-} from '../behavioral/levelKPlus1'
+import { MoleHypothesesFromHistory } from '../behavioral/levelKPlus1'
+import { LogitBehavioralStrategy } from '../behavioral/logitQuantalResponse'
 import { createBotFactory } from '../createBotFactory'
 import type { BotConfig, BotVoteContext } from '../types'
 
 const behavioral = (
     level = 1,
-    rationality = 2.5,
-    expectedOthersRationality = 1.5,
+    precision = 2.5,
+    expectedOthersPrecision = 1.5,
 ): BotConfig => ({
     algorithm: 'behavioral',
     level,
-    rationality,
-    expectedOthersRationality,
+    precision,
+    expectedOthersPrecision,
 })
 const history: GameEvent[] = [
     { kind: 'proposal', proposerId: 'a', team: ['a', 'b'] },
@@ -114,12 +112,12 @@ describe('match bot factory', () => {
         { ...behavioral(), level: -1 },
         { ...behavioral(), level: 0.5 },
         { ...behavioral(), level: Infinity },
-        { ...behavioral(), rationality: -1 },
-        { ...behavioral(), rationality: NaN },
-        { ...behavioral(), rationality: Infinity },
-        { ...behavioral(), expectedOthersRationality: -1 },
-        { ...behavioral(), expectedOthersRationality: NaN },
-        { ...behavioral(), expectedOthersRationality: Infinity },
+        { ...behavioral(), precision: -1 },
+        { ...behavioral(), precision: NaN },
+        { ...behavioral(), precision: Infinity },
+        { ...behavioral(), expectedOthersPrecision: -1 },
+        { ...behavioral(), expectedOthersPrecision: NaN },
+        { ...behavioral(), expectedOthersPrecision: Infinity },
         { algorithm: 'unknown' },
     ])('rejects invalid config before any action: %j', (config) => {
         expect(() =>
@@ -135,9 +133,12 @@ describe('match bot factory', () => {
         expect(new Set(get.mock.contexts).size).toBe(level)
     })
 
-    it('shares hypotheses despite different own rationality, but keeps separate decisions', () => {
+    it('shares hypotheses despite different own precision, but keeps separate decisions', () => {
         const get = vi.spyOn(MoleHypothesesFromHistory.prototype, 'get')
-        const vote = vi.spyOn(LevelKPlus1Strategy.prototype, 'chooseTeamVote')
+        const vote = vi.spyOn(
+            LogitBehavioralStrategy.prototype,
+            'strategyForTeamVote',
+        )
         const factory = createBotFactory(
             new Map([
                 ['a', behavioral(1, 0)],
@@ -173,7 +174,10 @@ describe('match bot factory', () => {
     })
 
     it('does not leak later level 1 knowledge into historical level 2 reasoning', () => {
-        const vote = vi.spyOn(LevelKPlus1Strategy.prototype, 'chooseTeamVote')
+        const vote = vi.spyOn(
+            LogitBehavioralStrategy.prototype,
+            'strategyForTeamVote',
+        )
         const configs = new Map([
             ['a', behavioral(1)],
             ['c', behavioral(2)],
@@ -189,11 +193,11 @@ describe('match bot factory', () => {
                 .chooseTeamVote(context('a', history.slice(0, 1)))
             if (firstLevelOne)
                 factory.brainFor('a').chooseTeamVote(context('a', history))
-            const resultIndex = vote.mock.results.length
             factory.brainFor('c').chooseTeamVote(context('c', history))
-            return vote.mock.results[resultIndex].value.probability(
-                (v: string) => v === 'Approve',
-            )
+            // Nested modeled votes finish first; the outer decision finishes last.
+            return vote.mock.results
+                .at(-1)!
+                .value.probability((v: string) => v === 'Approve')
         }
         expect(probability(true)).toBeCloseTo(probability(false), 12)
     })

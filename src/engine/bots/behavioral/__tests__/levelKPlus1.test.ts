@@ -7,22 +7,36 @@ import type {
     BotVoteContext,
 } from '../../types'
 import { LocalStrategy } from '../behavioralStrategy'
-import { Level0Strategy } from '../level0'
-import { LevelKPlus1Strategy, MoleHypothesesFromHistory } from '../levelKPlus1'
+import { Level0Estimator } from '../level0'
+import { LevelKPlus1Estimator, MoleHypothesesFromHistory } from '../levelKPlus1'
+import { LogitBehavioralStrategy } from '../logitQuantalResponse'
 import { logistic, proposeCtx, raidCtx, voteCtx } from './fixtures'
 
-describe('LevelKPlus1Strategy', () => {
-    const create = () =>
-        new LevelKPlus1Strategy(
-            2,
-            new MoleHypothesesFromHistory(new Level0Strategy(0)),
+describe('LevelKPlus1Estimator', () => {
+    const createEstimator = () =>
+        new LevelKPlus1Estimator(
+            new MoleHypothesesFromHistory(
+                new LogitBehavioralStrategy(0, new Level0Estimator()),
+            ),
         )
+    const create = () => new LogitBehavioralStrategy(2, createEstimator())
     // Two moles among the four other players: P(no mole in C+D) = 1/2,
     // P(no mole in A+B) = 1/6, since the actor C is assumed innocent.
     it.each([Role.Police, Role.Mole])(
         'uses an innocent-actor perspective for %s proposals',
         (role) => {
-            const teams = create().chooseProposedTeam(proposeCtx({ role }))
+            const ctx = proposeCtx({ role })
+            const utilities = createEstimator().estimateProposedTeam(ctx)
+            expect(utilities).toHaveLength(10)
+            expect(
+                utilities.find(({ action }) => action.join() === 'C,D')
+                    ?.utility,
+            ).toBeCloseTo(1 / 2)
+            expect(
+                utilities.find(({ action }) => action.join() === 'A,B')
+                    ?.utility,
+            ).toBeCloseTo(1 / 6)
+            const teams = create().strategyForTeamProposal(ctx)
             expect(
                 teams.probability((t) => t.join() === 'C,D') /
                     teams.probability((t) => t.join() === 'A,B'),
@@ -32,14 +46,27 @@ describe('LevelKPlus1Strategy', () => {
     )
 
     it('votes using team safety and the required sabotage threshold', () => {
+        for (const [threshold, approval] of [
+            [1, 1 / 6],
+            [2, 5 / 6],
+        ]) {
+            expect(
+                createEstimator().estimateTeamVote(
+                    voteCtx({ requiredSabotages: threshold }),
+                ),
+            ).toEqual([
+                { action: 'Approve', utility: expect.closeTo(approval) },
+                { action: 'Reject', utility: expect.closeTo(1 - approval) },
+            ])
+        }
         expect(
             create()
-                .chooseTeamVote(voteCtx())
+                .strategyForTeamVote(voteCtx())
                 .probability((v) => v === 'Approve'),
         ).toBeCloseTo(logistic(-4 / 3))
         expect(
             create()
-                .chooseTeamVote(voteCtx({ requiredSabotages: 2 }))
+                .strategyForTeamVote(voteCtx({ requiredSabotages: 2 }))
                 .probability((v) => v === 'Approve'),
         ).toBeCloseTo(logistic(4 / 3))
     })
@@ -58,10 +85,18 @@ describe('LevelKPlus1Strategy', () => {
                 },
             ],
         })
+        const estimator = createEstimator()
+        const baselineEstimator = new Level0Estimator()
+        expect(estimator.estimateProposedTeam(ctx)).toEqual(
+            baselineEstimator.estimateProposedTeam(ctx),
+        )
+        expect(estimator.estimateTeamVote(voteCtx(ctx))).toEqual(
+            baselineEstimator.estimateTeamVote(voteCtx(ctx)),
+        )
         const higher = create()
-        const baseline = new Level0Strategy(2)
-        const proposed = higher.chooseProposedTeam(ctx)
-        const expected = baseline.chooseProposedTeam(ctx)
+        const baseline = new LogitBehavioralStrategy(2, new Level0Estimator())
+        const proposed = higher.strategyForTeamProposal(ctx)
+        const expected = baseline.strategyForTeamProposal(ctx)
         for (const id of ctx.playerIds) {
             expect(proposed.probability((t) => t.includes(id))).toBeCloseTo(
                 expected.probability((t) => t.includes(id)),
@@ -69,9 +104,13 @@ describe('LevelKPlus1Strategy', () => {
         }
         const vote = voteCtx(ctx)
         expect(
-            higher.chooseTeamVote(vote).probability((v) => v === 'Approve'),
+            higher
+                .strategyForTeamVote(vote)
+                .probability((v) => v === 'Approve'),
         ).toBeCloseTo(
-            baseline.chooseTeamVote(vote).probability((v) => v === 'Approve'),
+            baseline
+                .strategyForTeamVote(vote)
+                .probability((v) => v === 'Approve'),
         )
     })
 
@@ -79,13 +118,16 @@ describe('LevelKPlus1Strategy', () => {
         'uses level zero for %s raid actions',
         (role) => {
             const ctx = raidCtx({ role })
+            expect(createEstimator().estimateRaidAction(ctx)).toEqual(
+                new Level0Estimator().estimateRaidAction(ctx),
+            )
             expect(
                 create()
-                    .chooseRaidAction(ctx)
+                    .strategyForRaidAction(ctx)
                     .probability((a) => a === 'Sabotage'),
             ).toBeCloseTo(
-                new Level0Strategy(2)
-                    .chooseRaidAction(ctx)
+                new LogitBehavioralStrategy(2, new Level0Estimator())
+                    .strategyForRaidAction(ctx)
                     .probability((a) => a === 'Sabotage'),
             )
         },
@@ -94,18 +136,18 @@ describe('LevelKPlus1Strategy', () => {
 
 function model() {
     return {
-        chooseProposedTeam: vi.fn(
+        strategyForTeamProposal: vi.fn(
             (_ctx: BotProposeContext) =>
                 new LocalStrategy([{ value: ['A', 'B'], probability: 1 }]),
         ),
-        chooseTeamVote: vi.fn(
+        strategyForTeamVote: vi.fn(
             (_ctx: BotVoteContext) =>
                 new LocalStrategy([
                     { value: 'Approve' as const, probability: 0.5 },
                     { value: 'Reject' as const, probability: 0.5 },
                 ]),
         ),
-        chooseRaidAction: vi.fn(
+        strategyForRaidAction: vi.fn(
             (_ctx: BotRaidContext) =>
                 new LocalStrategy([
                     { value: 'Support' as const, probability: 0.5 },
@@ -149,9 +191,9 @@ describe('MoleHypothesesFromHistory', () => {
         expect(prior.count()).toBe(10)
         expect(prior.probability((h) => h.includes('A'))).toBeCloseTo(0.4)
         expect(history.get(ctx)).toBe(prior)
-        expect(strategy.chooseRaidAction).not.toHaveBeenCalled()
-        expect(strategy.chooseProposedTeam).not.toHaveBeenCalled()
-        expect(strategy.chooseTeamVote).not.toHaveBeenCalled()
+        expect(strategy.strategyForRaidAction).not.toHaveBeenCalled()
+        expect(strategy.strategyForTeamProposal).not.toHaveBeenCalled()
+        expect(strategy.strategyForTeamVote).not.toHaveBeenCalled()
     })
 
     it.each([
@@ -183,7 +225,7 @@ describe('MoleHypothesesFromHistory', () => {
 
     it('uses each mole’s individual sabotage probability', () => {
         const strategy = model()
-        strategy.chooseRaidAction.mockImplementation(
+        strategy.strategyForRaidAction.mockImplementation(
             (ctx) =>
                 new LocalStrategy([
                     {
@@ -203,7 +245,7 @@ describe('MoleHypothesesFromHistory', () => {
         expect(
             posterior.probability((h) => h.includes('A') && h.includes('B')),
         ).toBeCloseTo(0.68 / 3.68)
-        for (const [ctx] of strategy.chooseRaidAction.mock.calls) {
+        for (const [ctx] of strategy.strategyForRaidAction.mock.calls) {
             expect(ctx.role).toBe(Role.Mole)
             expect(ctx.moleIds).toContain(ctx.actorId)
             expect(ctx.proposerId).toBe('C')
@@ -227,7 +269,7 @@ describe('MoleHypothesesFromHistory', () => {
 
     it('matches proposed teams regardless of order and infers the proposer’s role', () => {
         const strategy = model()
-        strategy.chooseProposedTeam.mockImplementation(
+        strategy.strategyForTeamProposal.mockImplementation(
             (ctx) =>
                 new LocalStrategy([
                     {
@@ -246,8 +288,8 @@ describe('MoleHypothesesFromHistory', () => {
         expect(posterior.probability((h) => h.includes('A'))).toBeCloseTo(
             (4 * 0.8) / (4 * 0.8 + 6 * 0.2),
         )
-        expect(strategy.chooseProposedTeam).toHaveBeenCalledTimes(10)
-        for (const [ctx] of strategy.chooseProposedTeam.mock.calls) {
+        expect(strategy.strategyForTeamProposal).toHaveBeenCalledTimes(10)
+        for (const [ctx] of strategy.strategyForTeamProposal.mock.calls) {
             expect(ctx.actorId).toBe('A')
             expect(ctx.teamSize).toBe(2)
             expect(ctx.role).toBe(
@@ -258,7 +300,7 @@ describe('MoleHypothesesFromHistory', () => {
 
     it('multiplies the likelihoods of all observed ballots', () => {
         const strategy = model()
-        strategy.chooseTeamVote.mockImplementation(
+        strategy.strategyForTeamVote.mockImplementation(
             (ctx) =>
                 new LocalStrategy([
                     {
@@ -282,7 +324,7 @@ describe('MoleHypothesesFromHistory', () => {
         expect(
             posterior.probability((h) => h.includes('B') && h.includes('C')),
         ).toBeCloseTo(likelihood / total)
-        expect(strategy.chooseTeamVote).toHaveBeenCalledTimes(50)
+        expect(strategy.strategyForTeamVote).toHaveBeenCalledTimes(50)
     })
 
     it('processes appended events once and agrees with a fresh full-history reconstruction', () => {
@@ -292,16 +334,16 @@ describe('MoleHypothesesFromHistory', () => {
         history.get(proposeCtx({ history: events.slice(0, 1) }))
         const posterior = history.get(proposeCtx({ history: events }))
         const calls =
-            strategy.chooseProposedTeam.mock.calls.length +
-            strategy.chooseTeamVote.mock.calls.length +
-            strategy.chooseRaidAction.mock.calls.length
+            strategy.strategyForTeamProposal.mock.calls.length +
+            strategy.strategyForTeamVote.mock.calls.length +
+            strategy.strategyForRaidAction.mock.calls.length
         expect(history.get(proposeCtx({ history: [...events] }))).toBe(
             posterior,
         )
         expect(
-            strategy.chooseProposedTeam.mock.calls.length +
-                strategy.chooseTeamVote.mock.calls.length +
-                strategy.chooseRaidAction.mock.calls.length,
+            strategy.strategyForTeamProposal.mock.calls.length +
+                strategy.strategyForTeamVote.mock.calls.length +
+                strategy.strategyForRaidAction.mock.calls.length,
         ).toBe(calls)
         const fresh = new MoleHypothesesFromHistory(model()).get(
             proposeCtx({ history: events }),
@@ -333,7 +375,7 @@ describe('MoleHypothesesFromHistory', () => {
                 consecutiveRejections: 3,
             }),
         )
-        const proposals = strategy.chooseProposedTeam.mock.calls.map(
+        const proposals = strategy.strategyForTeamProposal.mock.calls.map(
             ([ctx]) => ctx,
         )
         expect(proposals).toHaveLength(27)
@@ -354,7 +396,7 @@ describe('MoleHypothesesFromHistory', () => {
         })
         // Record score values at call time: the model maintains one mutable score object.
         const observed: { police: number; moles: number }[] = []
-        strategy.chooseProposedTeam.mockImplementation((ctx) => {
+        strategy.strategyForTeamProposal.mockImplementation((ctx) => {
             observed.push({ ...ctx.scores })
             return new LocalStrategy([{ value: ['A', 'B'], probability: 1 }])
         })
@@ -375,9 +417,11 @@ describe('MoleHypothesesFromHistory', () => {
                 history: events,
             }),
         )
-        expect(strategy.chooseProposedTeam.mock.calls[0][0]).toMatchObject({
-            currentRound: 4,
-            requiredSabotages: 2,
-        })
+        expect(strategy.strategyForTeamProposal.mock.calls[0][0]).toMatchObject(
+            {
+                currentRound: 4,
+                requiredSabotages: 2,
+            },
+        )
     })
 })

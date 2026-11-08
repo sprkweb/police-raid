@@ -10,8 +10,7 @@ import type {
 import { SampleSpace } from './sample'
 
 export class LocalStrategy<Action> extends SampleSpace<Action> {
-    // TODO: test this
-    choose(random: RandomFn): Action {
+    chooseAction(random: RandomFn): Action {
         let r = random()
         for (let i = 0; i < this.samplePoints.length; i++) {
             r -= this.samplePoints[i].probability
@@ -28,9 +27,9 @@ export class LocalStrategy<Action> extends SampleSpace<Action> {
  * circumstances
  */
 export interface BehavioralStrategy {
-    chooseProposedTeam(ctx: BotProposeContext): LocalStrategy<PlayerId[]>
-    chooseTeamVote(ctx: BotVoteContext): LocalStrategy<Vote>
-    chooseRaidAction(ctx: BotRaidContext): LocalStrategy<RaidAction>
+    strategyForTeamProposal(ctx: BotProposeContext): LocalStrategy<PlayerId[]>
+    strategyForTeamVote(ctx: BotVoteContext): LocalStrategy<Vote>
+    strategyForRaidAction(ctx: BotRaidContext): LocalStrategy<RaidAction>
 }
 
 /**
@@ -44,13 +43,15 @@ export function createBehavioralStrategyBrain(
     return {
         id,
         chooseProposedTeam(ctx: BotProposeContext): PlayerId[] {
-            return strategy.chooseProposedTeam(ctx).choose(ctx.random)
+            return strategy
+                .strategyForTeamProposal(ctx)
+                .chooseAction(ctx.random)
         },
         chooseTeamVote(ctx: BotVoteContext): Vote {
-            return strategy.chooseTeamVote(ctx).choose(ctx.random)
+            return strategy.strategyForTeamVote(ctx).chooseAction(ctx.random)
         },
         chooseRaidAction(ctx: BotRaidContext): RaidAction {
-            return strategy.chooseRaidAction(ctx).choose(ctx.random)
+            return strategy.strategyForRaidAction(ctx).chooseAction(ctx.random)
         },
     }
 }

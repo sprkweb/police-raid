@@ -11,8 +11,8 @@ describe('createBehavioralBrainFactory', () => {
             const brain = createBehavioralBrainFactory()({
                 algorithm: 'behavioral',
                 level,
-                rationality: 2,
-                expectedOthersRationality: 1,
+                precision: 2,
+                expectedOthersPrecision: 1,
             })
             expect(brain.id).toBe(`level${level}`)
             const ctx = proposeCtx({

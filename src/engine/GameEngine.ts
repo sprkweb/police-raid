@@ -430,9 +430,8 @@ export class GameEngine {
                     : {
                           algorithm: 'behavioral',
                           level: 0,
-                          rationality: DEFAULT_BOT_RATIONALITY,
-                          expectedOthersRationality:
-                              EXPECTED_OTHERS_RATIONALITY,
+                          precision: DEFAULT_BOT_RATIONALITY,
+                          expectedOthersPrecision: EXPECTED_OTHERS_RATIONALITY,
                       },
             )
         }
