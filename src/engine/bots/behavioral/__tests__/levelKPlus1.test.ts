@@ -31,19 +31,49 @@ describe('LevelKPlus1Estimator', () => {
             expect(
                 utilities.find(({ action }) => action.join() === 'C,D')
                     ?.utility,
-            ).toBeCloseTo(1 / 2)
+            ).toBeCloseTo(1)
             expect(
                 utilities.find(({ action }) => action.join() === 'A,B')
                     ?.utility,
-            ).toBeCloseTo(1 / 6)
+            ).toBeCloseTo(role === Role.Mole ? 5 / 6 : 1 / 3)
             const teams = create().strategyForTeamProposal(ctx)
             expect(
                 teams.probability((t) => t.join() === 'C,D') /
                     teams.probability((t) => t.join() === 'A,B'),
-            ).toBeCloseTo(Math.exp(2 / 3))
+            ).toBeCloseTo(Math.exp(role === Role.Mole ? 1 / 3 : 4 / 3))
             expect(teams.probability(() => true)).toBeCloseTo(1)
         },
     )
+
+    it('uses private viability only for the mole proposal bonus at both thresholds', () => {
+        for (const [threshold, policeAB, moleAB, policeCD, moleCD] of [
+            [1, 1 / 3, 5 / 6, 1, 1],
+            [2, 5 / 3, 13 / 6, 2, 2],
+        ]) {
+            const ctx = proposeCtx({ requiredSabotages: threshold })
+            const police = createEstimator().estimateProposedTeam(ctx)
+            const mole = createEstimator().estimateProposedTeam({
+                ...ctx,
+                role: Role.Mole,
+            })
+            const utility = (rows: typeof police, team: string) =>
+                rows.find(({ action }) => action.join() === team)!.utility
+            expect(utility(police, 'A,B')).toBeCloseTo(policeAB)
+            expect(utility(mole, 'A,B')).toBeCloseTo(moleAB)
+            expect(utility(police, 'C,D')).toBeCloseTo(policeCD)
+            expect(utility(mole, 'C,D')).toBeCloseTo(moleCD)
+            const changedPrivate = createEstimator().estimateProposedTeam({
+                ...ctx,
+                moleIds: ['D', 'E'],
+            })
+            expect(changedPrivate).toEqual(police)
+            expect(
+                createEstimator().estimateTeamVote(
+                    voteCtx({ ...ctx, role: Role.Mole }),
+                ),
+            ).toEqual(createEstimator().estimateTeamVote(voteCtx(ctx)))
+        }
+    })
 
     it('votes using team safety and the required sabotage threshold', () => {
         for (const [threshold, approval] of [
@@ -286,7 +316,7 @@ describe('MoleHypothesesFromHistory', () => {
             proposeCtx({ history: [proposal] }),
         )
         expect(posterior.probability((h) => h.includes('A'))).toBeCloseTo(
-            (4 * 0.8) / (4 * 0.8 + 6 * 0.2),
+            0.7 * 0.4 + (0.3 * (4 * 0.8)) / (4 * 0.8 + 6 * 0.2),
         )
         expect(strategy.strategyForTeamProposal).toHaveBeenCalledTimes(10)
         for (const [ctx] of strategy.strategyForTeamProposal.mock.calls) {
@@ -323,7 +353,7 @@ describe('MoleHypothesesFromHistory', () => {
         const total = likelihood + 6 * 0.8 ** 3 * 0.2 ** 2 + 3 * 0.8 * 0.2 ** 4
         expect(
             posterior.probability((h) => h.includes('B') && h.includes('C')),
-        ).toBeCloseTo(likelihood / total)
+        ).toBeCloseTo(0.07 + (0.3 * likelihood) / total)
         expect(strategy.strategyForTeamVote).toHaveBeenCalledTimes(50)
     })
 
