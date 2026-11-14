@@ -26,24 +26,10 @@ import {
     type Utility,
 } from './logitQuantalResponse'
 import { combinations } from './math'
-import { MoleHypothesisSpace } from './moleHypotheses'
-import { SampleSpace } from './sample'
-
-// Keep public plausibility dominant, with a smaller private viability incentive.
-const PROPOSAL_SAFETY_WEIGHT = 2
-const MOLE_PROPOSAL_VIABILITY_BONUS = 0.5
-const PARTICIPATION_COST = 1.2
-const REJECTION_DELAY_COST = 0.3
-const MAX_REJECTION_DELAY_COST = 0.8
-
-// A behavioral preference, not a belief update; it fades as team safety improves.
-function participationCost(
-    team: readonly PlayerId[],
-    actor: PlayerId,
-    safety: number,
-): number {
-    return team.includes(actor) ? 0 : PARTICIPATION_COST * (1 - safety)
-}
+import {
+    MoleHypothesisEvidence,
+    type MoleHypothesisSpace,
+} from './moleHypotheses'
 
 export class LevelKPlus1Estimator implements ActionUtilityEstimator {
     readonly hypotheses: MoleHypothesesFromHistory
@@ -96,9 +82,9 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
             return {
                 action: team,
                 utility:
-                    PROPOSAL_SAFETY_WEIGHT * safety +
-                    (viable ? MOLE_PROPOSAL_VIABILITY_BONUS : 0) -
-                    participationCost(team, ctx.actorId, safety),
+                    2 * safety +
+                    (viable ? 0.5 : 0) -
+                    (team.includes(ctx.actorId) ? 0 : 1.2 * (1 - safety)),
             }
         })
     }
@@ -121,7 +107,8 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
         const hammer = ctx.consecutiveRejections >= ctx.playerIds.length - 1
         const approvalUtility = hammer
             ? safety + (ctx.role === Role.Mole ? 1.4 : 2.5)
-            : safety - participationCost(ctx.proposedTeam, ctx.actorId, safety)
+            : safety -
+              (ctx.proposedTeam.includes(ctx.actorId) ? 0 : 1.2 * (1 - safety))
         if (hammer) {
             return [
                 { action: 'Approve', utility: approvalUtility },
@@ -147,10 +134,7 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
         )
         const rejectionUtility =
             alternativeSafety -
-            Math.min(
-                MAX_REJECTION_DELAY_COST,
-                REJECTION_DELAY_COST * (ctx.consecutiveRejections + 1),
-            )
+            Math.min(0.8, 0.3 * (ctx.consecutiveRejections + 1))
 
         return [
             { action: 'Approve', utility: approvalUtility },
@@ -180,16 +164,6 @@ interface EventHypothesisContext {
     random: RandomFn
 }
 
-// Most weight stays on raid-only evidence; behavior can move only 30%.
-const RAID_ONLY_WEIGHT = 0.7
-const ALL_EVENTS_WEIGHT = 0.3
-
-interface HypothesisEvidence {
-    moles: PlayerId[]
-    raidLog: number
-    allLog: number
-}
-
 /**
  * MoleHypothesesFromHistory returns hypotheses about moles based on event
  * history and other players' expected strategy. It caches the previous
@@ -201,7 +175,7 @@ interface HypothesisEvidence {
 export class MoleHypothesesFromHistory {
     private previousLevelStrategy: BehavioralStrategy
     private hypotheses: MoleHypothesisSpace | undefined
-    private rows: HypothesisEvidence[] | undefined
+    private evidence: MoleHypothesisEvidence | undefined
     private actorHypotheses = new Map<PlayerId, MoleHypothesisSpace>()
     private index: number
 
@@ -219,16 +193,10 @@ export class MoleHypothesesFromHistory {
     }
 
     get(ctx: BotMatchContext): MoleHypothesisSpace {
-        if (this.rows === undefined) {
-            this.rows = MoleHypothesisSpace.forPlayers(
-                ctx.playerIds,
-                ctx.moleIds.length,
-            ).moleHypotheses.samplePoints.map(({ value, probability }) => ({
-                moles: value,
-                raidLog: Math.log(probability),
-                allLog: Math.log(probability),
-            }))
-        }
+        this.evidence ??= MoleHypothesisEvidence.forPlayers(
+            ctx.playerIds,
+            ctx.moleIds.length,
+        )
         const changed =
             this.hypotheses === undefined || this.index < ctx.history.length
 
@@ -289,7 +257,7 @@ export class MoleHypothesesFromHistory {
         }
 
         if (changed) {
-            this.hypotheses = this.distribution()
+            this.hypotheses = this.evidence.distribution()
             this.actorHypotheses.clear()
         }
         return this.hypotheses!
@@ -299,7 +267,7 @@ export class MoleHypothesesFromHistory {
         this.get(ctx)
         let hypotheses = this.actorHypotheses.get(ctx.actorId)
         if (!hypotheses) {
-            hypotheses = this.distribution(ctx.actorId)
+            hypotheses = this.evidence!.distribution(ctx.actorId)
             this.actorHypotheses.set(ctx.actorId, hypotheses)
         }
         return hypotheses
@@ -309,51 +277,13 @@ export class MoleHypothesesFromHistory {
         event: GameEvent,
         likelihood: (moles: readonly PlayerId[]) => number,
     ): void {
-        // Physical impossibility is shared by both channels and never recovers.
-        this.rows = this.rows!.filter((row) => {
-            if (
-                event.kind === 'raid' &&
-                row.moles.filter((m) => event.team.includes(m)).length <
-                    event.sabotageCount
-            ) {
-                return false
-            }
-            const logLikelihood = Math.log(likelihood(row.moles))
-            row.allLog += logLikelihood
-            if (event.kind === 'raid') row.raidLog += logLikelihood
-            return true
-        })
-    }
-
-    private distribution(actorId?: PlayerId): MoleHypothesisSpace {
-        const rows = this.rows!.filter(
-            (row) => actorId === undefined || !row.moles.includes(actorId),
-        )
-        const normalize = (channel: 'raidLog' | 'allLog'): number[] => {
-            if (!rows.length) return []
-            const max = Math.max(...rows.map((row) => row[channel]))
-            if (!Number.isFinite(max)) {
-                throw new Error(
-                    'History likelihood is zero on all physically possible hypotheses.',
-                )
-            }
-            const masses = rows.map((row) => Math.exp(row[channel] - max))
-            const sum = masses.reduce((a, b) => a + b, 0)
-            return masses.map((mass) => mass / sum)
-        }
-        // Local log normalization deliberately bypasses SampleSpace's EPS
-        // pruning: small component masses must retain their fixed pool weight.
-        // Raw accumulators always keep the original prior, never pooled output.
-        const raid = normalize('raidLog')
-        const all = normalize('allLog')
-        return new MoleHypothesisSpace(
-            new SampleSpace(
-                rows.map((row, i) => ({
-                    value: row.moles,
-                    probability:
-                        RAID_ONLY_WEIGHT * raid[i] + ALL_EVENTS_WEIGHT * all[i],
-                })),
-            ),
+        this.evidence!.observe(
+            likelihood,
+            event.kind === 'raid',
+            (moles) =>
+                event.kind !== 'raid' ||
+                moles.filter((m) => event.team.includes(m)).length >=
+                    event.sabotageCount,
         )
     }
 

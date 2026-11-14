@@ -16,9 +16,6 @@ import {
 } from './logitQuantalResponse'
 import { combinations } from './math'
 
-// Stronger pressure to finish a decisive raid, while both actions stay possible.
-const TERMINAL_SABOTAGE_BONUS = 0.6
-
 export class Level0Estimator implements ActionUtilityEstimator {
     estimateProposedTeam(
         ctx: BotProposeContext,
@@ -119,7 +116,8 @@ export class Level0Estimator implements ActionUtilityEstimator {
             (ctx.scores.police === WINS_NEEDED - 1 ||
                 ctx.scores.moles === WINS_NEEDED - 1)
         ) {
-            sabotageUtility += TERMINAL_SABOTAGE_BONUS
+            // Stronger pressure to finish a decisive raid.
+            sabotageUtility += 0.6
         }
 
         return [

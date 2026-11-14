@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ZERO_EPS } from '../math'
-import { SampleSpace } from '../sample'
+import { LogSampleSpace, SampleSpace } from '../sample'
 
 describe('SampleSpace', () => {
     const space = new SampleSpace([
@@ -45,5 +45,66 @@ describe('SampleSpace', () => {
             expect(normalized.count()).toBe(0)
             expect(normalized.probability(() => true)).toBe(0)
         }
+    })
+})
+
+describe('LogSampleSpace', () => {
+    const prior = new SampleSpace([
+        { value: 'A', probability: 0.25 },
+        { value: 'B', probability: 0.75 },
+    ])
+
+    it('retains evidence below floating-point probability range and can recover its odds', () => {
+        const initial = LogSampleSpace.from(prior)
+        let evidence = initial
+        for (let i = 0; i < 100; i++) {
+            evidence = evidence.bayesianInference((value) =>
+                value === 'A' ? 1e-10 : 1e-20,
+            )
+        }
+        expect(evidence.normalize().probability((value) => value === 'A')).toBe(
+            1,
+        )
+        for (let i = 0; i < 100; i++) {
+            evidence = evidence.bayesianInference((value) =>
+                value === 'A' ? 1e-20 : 1e-10,
+            )
+        }
+        expect(
+            evidence.normalize().probability((value) => value === 'A'),
+        ).toBeCloseTo(0.25, 9)
+        expect(
+            initial.normalize().probability((value) => value === 'A'),
+        ).toBeCloseTo(0.25)
+    })
+
+    it('conditions raw evidence before normalization without pruning tiny alternatives', () => {
+        const evidence = LogSampleSpace.from(prior).bayesianInference(
+            (value) => (value === 'A' ? 1e-30 : 1),
+        )
+        expect(evidence.normalize().count()).toBe(2)
+        expect(
+            evidence
+                .condition((value) => value === 'A')
+                .normalize()
+                .probability((value) => value === 'A'),
+        ).toBe(1)
+        expect(
+            evidence
+                .condition(() => false)
+                .normalize()
+                .count(),
+        ).toBe(0)
+        expect(evidence.normalize().probability((value) => value === 'B')).toBe(
+            1,
+        )
+    })
+
+    it('rejects normalization of a nonempty space with zero likelihood everywhere', () => {
+        expect(() =>
+            LogSampleSpace.from(prior)
+                .bayesianInference(() => 0)
+                .normalize(),
+        ).toThrow('Cannot normalize log weights')
     })
 })
