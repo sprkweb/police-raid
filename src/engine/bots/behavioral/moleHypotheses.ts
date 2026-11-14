@@ -41,7 +41,6 @@ export class MoleHypothesisSpace {
         return this.moleHypotheses.count()
     }
 
-    // TODO: test this
     /**
      * Return hypothesis space where the probability of hypotheses H are updated
      * after an event E using likelihood function P(E | H)
