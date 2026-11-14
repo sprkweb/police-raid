@@ -73,13 +73,13 @@ describe('raid / all-event history mixture', () => {
             estimator
                 .estimateProposedTeam(ctx)
                 .find(({ action }) => action[0] === 'A')!.utility,
-        ).toBeCloseTo(0.82, 12)
+        ).toBeCloseTo(0.112, 12)
         expect(
             estimator.estimateTeamVote(
                 voteCtx({ ...ctx, proposedTeam: ['A'] }),
             ),
         ).toEqual([
-            { action: 'Approve', utility: expect.closeTo(0.41) },
+            { action: 'Approve', utility: expect.closeTo(-0.298) },
             { action: 'Reject', utility: expect.closeTo(0.59) },
         ])
     })

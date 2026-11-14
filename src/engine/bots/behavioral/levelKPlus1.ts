@@ -32,6 +32,16 @@ import { SampleSpace } from './sample'
 // Keep public plausibility dominant, with a smaller private viability incentive.
 const PROPOSAL_SAFETY_WEIGHT = 2
 const MOLE_PROPOSAL_VIABILITY_BONUS = 0.5
+const PARTICIPATION_COST = 1.2
+
+// A behavioral preference, not a belief update; it fades as team safety improves.
+function participationCost(
+    team: readonly PlayerId[],
+    actor: PlayerId,
+    safety: number,
+): number {
+    return team.includes(actor) ? 0 : PARTICIPATION_COST * (1 - safety)
+}
 
 export class LevelKPlus1Estimator implements ActionUtilityEstimator {
     readonly hypotheses: MoleHypothesesFromHistory
@@ -85,7 +95,8 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
                 action: team,
                 utility:
                     PROPOSAL_SAFETY_WEIGHT * safety +
-                    (viable ? MOLE_PROPOSAL_VIABILITY_BONUS : 0),
+                    (viable ? MOLE_PROPOSAL_VIABILITY_BONUS : 0) -
+                    participationCost(team, ctx.actorId, safety),
             }
         })
     }
@@ -98,21 +109,22 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
             return this.level0Estimator.estimateTeamVote(ctx)
         }
 
-        let utility = hypotheses.probability(
+        const safety = hypotheses.probability(
             // probability that there are not enough moles to sabotage
             (h) =>
                 h.filter((m) => ctx.proposedTeam.includes(m)).length <
                 ctx.requiredSabotages,
         )
 
-        // hammer
-        if (ctx.consecutiveRejections >= ctx.playerIds.length - 1) {
-            utility += ctx.role === Role.Mole ? 1.4 : 2.5
-        }
+        const hammer = ctx.consecutiveRejections >= ctx.playerIds.length - 1
+        const approvalUtility = hammer
+            ? safety + (ctx.role === Role.Mole ? 1.4 : 2.5)
+            : safety - participationCost(ctx.proposedTeam, ctx.actorId, safety)
+        const rejectionUtility = hammer ? 1 - approvalUtility : 1 - safety
 
         return [
-            { action: 'Approve', utility: utility },
-            { action: 'Reject', utility: 1 - utility },
+            { action: 'Approve', utility: approvalUtility },
+            { action: 'Reject', utility: rejectionUtility },
         ]
     }
 

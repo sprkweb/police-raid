@@ -35,20 +35,20 @@ describe('LevelKPlus1Estimator', () => {
             expect(
                 utilities.find(({ action }) => action.join() === 'A,B')
                     ?.utility,
-            ).toBeCloseTo(role === Role.Mole ? 5 / 6 : 1 / 3)
+            ).toBeCloseTo(role === Role.Mole ? -1 / 6 : -2 / 3)
             const teams = create().strategyForTeamProposal(ctx)
             expect(
                 teams.probability((t) => t.join() === 'C,D') /
                     teams.probability((t) => t.join() === 'A,B'),
-            ).toBeCloseTo(Math.exp(role === Role.Mole ? 1 / 3 : 4 / 3))
+            ).toBeCloseTo(Math.exp(role === Role.Mole ? 7 / 3 : 10 / 3))
             expect(teams.probability(() => true)).toBeCloseTo(1)
         },
     )
 
     it('uses private viability only for the mole proposal bonus at both thresholds', () => {
         for (const [threshold, policeAB, moleAB, policeCD, moleCD] of [
-            [1, 1 / 3, 5 / 6, 1, 1],
-            [2, 5 / 3, 13 / 6, 2, 2],
+            [1, -2 / 3, -1 / 6, 1, 1],
+            [2, 22 / 15, 59 / 30, 2, 2],
         ]) {
             const ctx = proposeCtx({ requiredSabotages: threshold })
             const police = createEstimator().estimateProposedTeam(ctx)
@@ -85,7 +85,10 @@ describe('LevelKPlus1Estimator', () => {
                     voteCtx({ requiredSabotages: threshold }),
                 ),
             ).toEqual([
-                { action: 'Approve', utility: expect.closeTo(approval) },
+                {
+                    action: 'Approve',
+                    utility: expect.closeTo(approval - 1.2 * (1 - approval)),
+                },
                 { action: 'Reject', utility: expect.closeTo(1 - approval) },
             ])
         }
@@ -93,12 +96,95 @@ describe('LevelKPlus1Estimator', () => {
             create()
                 .strategyForTeamVote(voteCtx())
                 .probability((v) => v === 'Approve'),
-        ).toBeCloseTo(logistic(-4 / 3))
+        ).toBeCloseTo(logistic(-10 / 3))
         expect(
             create()
                 .strategyForTeamVote(voteCtx({ requiredSabotages: 2 }))
                 .probability((v) => v === 'Approve'),
-        ).toBeCloseTo(logistic(4 / 3))
+        ).toBeCloseTo(logistic(14 / 15))
+    })
+
+    it.each([Role.Police, Role.Mole])(
+        'prices exclusion using public safety for %s while retaining both votes',
+        (role) => {
+            const estimator = createEstimator()
+            const ctx = voteCtx({ role })
+            expect(estimator.estimateTeamVote(ctx)).toEqual([
+                {
+                    action: 'Approve',
+                    utility: expect.closeTo(1 / 6 - (1.2 * 5) / 6),
+                },
+                { action: 'Reject', utility: expect.closeTo(5 / 6) },
+            ])
+            const onTeam = estimator.estimateTeamVote({
+                ...ctx,
+                proposedTeam: ['C', 'D'],
+            })
+            expect(onTeam).toEqual([
+                { action: 'Approve', utility: expect.closeTo(1 / 2) },
+                { action: 'Reject', utility: expect.closeTo(1 / 2) },
+            ])
+            const hammer = estimator.estimateTeamVote({
+                ...ctx,
+                consecutiveRejections: 4,
+            })
+            const bonus = role === Role.Mole ? 1.4 : 2.5
+            expect(hammer).toEqual([
+                { action: 'Approve', utility: expect.closeTo(1 / 6 + bonus) },
+                {
+                    action: 'Reject',
+                    utility: expect.closeTo(1 - (1 / 6 + bonus)),
+                },
+            ])
+        },
+    )
+
+    it('prefers a proven safe excluded team to a proven unsafe team with the actor', () => {
+        const ctx = proposeCtx({
+            history: [
+                {
+                    kind: 'raid',
+                    team: ['A', 'B'],
+                    proposerId: 'C',
+                    sabotageCount: 2,
+                    round: 1,
+                },
+            ],
+        })
+        const estimator = createEstimator()
+        const utilities = estimator.estimateProposedTeam(ctx)
+        const utility = (team: string) =>
+            utilities.find(({ action }) => action.join() === team)!.utility
+        expect(utility('D,E')).toBeCloseTo(2)
+        expect(utility('A,C')).toBeCloseTo(0)
+        expect(
+            estimator.estimateTeamVote(
+                voteCtx({ ...ctx, proposedTeam: ['D', 'E'] }),
+            ),
+        ).toEqual([
+            { action: 'Approve', utility: expect.closeTo(1) },
+            { action: 'Reject', utility: expect.closeTo(0) },
+        ])
+    })
+
+    it('gives finite participation preference at beta 2.5 in a five-player opening', () => {
+        const ctx = proposeCtx({
+            currentRound: 1,
+            scores: { police: 0, moles: 0 },
+        })
+        const strategy = new LogitBehavioralStrategy(2.5, createEstimator())
+        const proposals = strategy.strategyForTeamProposal(ctx)
+        expect(
+            proposals.probability((team) => !team.includes(ctx.actorId)),
+        ).toBeCloseTo(0.0227, 4)
+        expect(
+            proposals.samplePoints.every(({ probability }) => probability > 0),
+        ).toBe(true)
+        expect(
+            strategy
+                .strategyForTeamVote(voteCtx(ctx))
+                .probability((vote) => vote === 'Approve'),
+        ).toBeCloseTo(0.0153, 4)
     })
 
     it('falls back to level zero when history proves the actor is a mole', () => {

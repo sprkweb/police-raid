@@ -277,11 +277,11 @@ describe('lobby reinforcement tactics', () => {
         expect(utility(police, ['B', botId])).toBeCloseTo(1.378160605, 9)
         expect(utility(police, [botId, 'D'])).toBeCloseTo(1.3109196975, 9)
         expect(utility(mole, ['B', botId])).toBeCloseTo(1.878160605, 9)
-        expect(utility(mole, ['B', 'D'])).toBeCloseTo(0.6890803025, 9)
+        expect(utility(mole, ['B', 'D'])).toBeCloseTo(-0.097471516, 9)
         expect(
             mole.probability((t) => t.join() === ['B', botId].join()) /
                 mole.probability((t) => t.join() === 'B,D'),
-        ).toBeCloseTo(Math.exp(2.5 * (1.878160605 - 0.6890803025)), 7)
+        ).toBeCloseTo(Math.exp(2.5 * (1.878160605 - -0.097471516)), 7)
         brain.chooseTeamVote({ ...ctx, proposedTeam: ['B', botId] })
         const voteDistribution: ReturnType<
             LogitBehavioralStrategy['strategyForTeamVote']
