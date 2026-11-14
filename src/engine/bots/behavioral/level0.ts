@@ -4,6 +4,7 @@ import {
     type RaidAction,
     type Vote,
 } from '../../../types/game'
+import { WINS_NEEDED } from '../../constants'
 import type {
     BotProposeContext,
     BotRaidContext,
@@ -15,8 +16,10 @@ import {
 } from './logitQuantalResponse'
 import { combinations } from './math'
 
+// Stronger pressure to finish a decisive raid, while both actions stay possible.
+const TERMINAL_SABOTAGE_BONUS = 0.6
+
 export class Level0Estimator implements ActionUtilityEstimator {
-    // TODO: tune utilities using inspect
     estimateProposedTeam(
         ctx: BotProposeContext,
     ): readonly Utility<PlayerId[]>[] {
@@ -47,7 +50,6 @@ export class Level0Estimator implements ActionUtilityEstimator {
         })
     }
 
-    // TODO: tune utilities using inspect
     estimateTeamVote(ctx: BotVoteContext): readonly Utility<Vote>[] {
         let utility = 0
 
@@ -95,8 +97,6 @@ export class Level0Estimator implements ActionUtilityEstimator {
 
         let sabotageUtility = 0
         if (molesCount >= ctx.requiredSabotages) {
-            // TODO: lower sabotage when there are just 2 people?
-
             // lower sabotage utility when there are more moles than needed
             switch (molesCount - ctx.requiredSabotages) {
                 case 0:
@@ -112,6 +112,14 @@ export class Level0Estimator implements ActionUtilityEstimator {
         } else {
             // sabotage is a bad decision when there are not enough moles
             sabotageUtility = -1
+        }
+
+        if (
+            molesCount === ctx.requiredSabotages &&
+            (ctx.scores.police === WINS_NEEDED - 1 ||
+                ctx.scores.moles === WINS_NEEDED - 1)
+        ) {
+            sabotageUtility += TERMINAL_SABOTAGE_BONUS
         }
 
         return [

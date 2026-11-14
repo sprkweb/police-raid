@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { GamePhase } from '../../types/game'
+import { GamePhase, Role } from '../../types/game'
 import { Level0Estimator } from '../bots/behavioral/level0'
 import { MoleHypothesesFromHistory } from '../bots/behavioral/levelKPlus1'
+import { LogitBehavioralStrategy } from '../bots/behavioral/logitQuantalResponse'
 import { createBotFactory } from '../bots/createBotFactory'
 import type { BotConfig, BotFactory, CreateBotFactory } from '../bots/types'
 import { BOT_ID_PREFIX, PHASE_DURATION_MS, WINS_NEEDED } from '../constants'
@@ -214,6 +215,95 @@ describe('bot match lifecycle', () => {
 })
 
 describe('lobby reinforcement tactics', () => {
+    it('routes the level1 lobby tactic through the default logit model and private proposal bonus', () => {
+        const { create, factories } = observeFactory()
+        const { engine } = createTestEngine('host', 'Host', {
+            createBotFactory: create,
+        })
+        engine.setBotBrainId('level1')
+        engine.startGameWithBots()
+        expect(create.mock.calls[0][0].get(botId)).toEqual(profile(1))
+        const brain = factories[0].brainFor(botId)
+        const propose = vi.spyOn(
+            LogitBehavioralStrategy.prototype,
+            'strategyForTeamProposal',
+        )
+        const vote = vi.spyOn(
+            LogitBehavioralStrategy.prototype,
+            'strategyForTeamVote',
+        )
+        const raid = vi.spyOn(
+            LogitBehavioralStrategy.prototype,
+            'strategyForRaidAction',
+        )
+        const ctx = {
+            actorId: botId,
+            role: Role.Police,
+            playerIds: ['A', 'B', botId, 'D', 'E'],
+            moleIds: ['A', botId],
+            currentRound: 2,
+            consecutiveRejections: 0,
+            requiredSabotages: 1,
+            scores: { police: 0, moles: 1 },
+            random: () => 0,
+            history: [
+                {
+                    kind: 'proposal' as const,
+                    proposerId: 'A',
+                    team: ['A', 'B'],
+                },
+                {
+                    kind: 'raid' as const,
+                    proposerId: 'A',
+                    team: ['A'],
+                    sabotageCount: 1,
+                    round: 1,
+                },
+            ],
+            teamSize: 2,
+        }
+        brain.chooseProposedTeam(ctx)
+        const police: ReturnType<
+            LogitBehavioralStrategy['strategyForTeamProposal']
+        > = propose.mock.results.at(-1)!.value
+        brain.chooseProposedTeam({ ...ctx, role: Role.Mole })
+        const mole: typeof police = propose.mock.results.at(-1)!.value
+        const utility = (distribution: typeof police, team: string[]) =>
+            distribution.utilities.find(
+                ({ action }) => action.join() === team.join(),
+            )!.utility
+        // Physical evidence fixes A. QR is uniform on AB/AD/AE. The observed
+        // proposal has Qall odds AB:AD:AE = exp(-.36):1:1 under beta=1.5.
+        expect(utility(police, ['B', botId])).toBeCloseTo(1.378160605, 9)
+        expect(utility(police, [botId, 'D'])).toBeCloseTo(1.3109196975, 9)
+        expect(utility(mole, ['B', botId])).toBeCloseTo(1.878160605, 9)
+        expect(utility(mole, ['B', 'D'])).toBeCloseTo(-0.097471516, 9)
+        expect(
+            mole.probability((t) => t.join() === ['B', botId].join()) /
+                mole.probability((t) => t.join() === 'B,D'),
+        ).toBeCloseTo(Math.exp(2.5 * (1.878160605 - -0.097471516)), 7)
+        brain.chooseTeamVote({ ...ctx, proposedTeam: ['B', botId] })
+        const voteDistribution: ReturnType<
+            LogitBehavioralStrategy['strategyForTeamVote']
+        > = vote.mock.results.at(-1)!.value
+        expect(
+            voteDistribution.probability((v) => v === 'Approve'),
+        ).toBeCloseTo(0.7201894454, 9)
+        brain.chooseRaidAction({
+            ...ctx,
+            role: Role.Mole,
+            proposedTeam: [botId, 'D'],
+            proposerId: 'A',
+            scores: { police: 2, moles: 1 },
+        })
+        const raidDistribution: ReturnType<
+            LogitBehavioralStrategy['strategyForRaidAction']
+        > = raid.mock.results.at(-1)!.value
+        expect(
+            raidDistribution.probability((a) => a === 'Sabotage'),
+        ).toBeCloseTo(0.9914225146, 9)
+    })
+
     it('defaults to level0 and accepts only available tactics in the lobby', () => {
         const { engine } = createTestEngine('host', 'Host')
         expect(engine.getState().botBrainId).toBe('level0')

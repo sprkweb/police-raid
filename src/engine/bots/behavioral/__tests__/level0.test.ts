@@ -131,4 +131,56 @@ describe('Level0Estimator', () => {
             )
         },
     )
+    it.each([
+        {
+            requiredSabotages: 1,
+            moleIds: ['A'],
+            scores: { police: 2, moles: 0 },
+            utility: 1.9,
+        },
+        {
+            requiredSabotages: 2,
+            moleIds: ['A', 'B'],
+            scores: { police: 0, moles: 2 },
+            utility: 1.9,
+        },
+        {
+            requiredSabotages: 1,
+            moleIds: ['A'],
+            scores: { police: 1, moles: 1 },
+            utility: 1.3,
+        },
+        {
+            requiredSabotages: 2,
+            moleIds: ['A'],
+            scores: { police: 2, moles: 0 },
+            utility: -1,
+        },
+        {
+            requiredSabotages: 1,
+            moleIds: ['A', 'B'],
+            scores: { police: 0, moles: 2 },
+            utility: 0.2,
+        },
+    ])(
+        'adds finite terminal pressure only with exactly enough moles: $requiredSabotages / $moleIds / $scores',
+        ({ utility, ...overrides }) => {
+            const ctx = raidCtx({ ...overrides, proposedTeam: ['A', 'B'] })
+            expect(estimator.estimateRaidAction(ctx)).toEqual([
+                { action: 'Support', utility: 0 },
+                { action: 'Sabotage', utility: expect.closeTo(utility) },
+            ])
+            const p = new LogitBehavioralStrategy(2.5, estimator)
+                .strategyForRaidAction(ctx)
+                .probability((a) => a === 'Sabotage')
+            expect(p).toBeCloseTo(
+                utility === 1.9 ? 0.9914225146 : logistic(2.5 * utility),
+            )
+            expect(p).toBeLessThan(1)
+            expect(p).toBeGreaterThan(0)
+            expect(
+                estimator.estimateRaidAction({ ...ctx, role: Role.Police }),
+            ).toEqual([{ action: 'Support', utility: 1 }])
+        },
+    )
 })

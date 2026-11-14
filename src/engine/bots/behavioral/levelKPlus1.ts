@@ -27,6 +27,21 @@ import {
 } from './logitQuantalResponse'
 import { combinations } from './math'
 import { MoleHypothesisSpace } from './moleHypotheses'
+import { SampleSpace } from './sample'
+
+// Keep public plausibility dominant, with a smaller private viability incentive.
+const PROPOSAL_SAFETY_WEIGHT = 2
+const MOLE_PROPOSAL_VIABILITY_BONUS = 0.5
+const PARTICIPATION_COST = 1.2
+
+// A behavioral preference, not a belief update; it fades as team safety improves.
+function participationCost(
+    team: readonly PlayerId[],
+    actor: PlayerId,
+    safety: number,
+): number {
+    return team.includes(actor) ? 0 : PARTICIPATION_COST * (1 - safety)
+}
 
 export class LevelKPlus1Estimator implements ActionUtilityEstimator {
     readonly hypotheses: MoleHypothesesFromHistory
@@ -49,14 +64,9 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
      * level 0 strategy
      */
     private getHypotheses(ctx: BotMatchContext): MoleHypothesisSpace {
-        return (
-            this.hypotheses
-                .get(ctx)
-
-                // likelihood of me being mole == 0
-                // even if I were a mole, I'd act from a position that I am not
-                .bayesianInference((h) => (h.includes(ctx.actorId) ? 0 : 1))
-        )
+        // Condition the two components separately before pooling them.
+        // Moles also use the public pretense that they are innocent.
+        return this.hypotheses.getForActor(ctx)
     }
 
     estimateProposedTeam(
@@ -71,15 +81,24 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
 
         const teams = combinations(ctx.playerIds, ctx.teamSize)
 
-        return teams.map((team) => ({
-            action: team,
-            utility: hypotheses.probability(
-                // probability that there are not enough moles to sabotage
+        return teams.map((team) => {
+            const safety = hypotheses.probability(
                 (h) =>
                     h.filter((m) => team.includes(m)).length <
                     ctx.requiredSabotages,
-            ),
-        }))
+            )
+            const viable =
+                ctx.role === Role.Mole &&
+                ctx.moleIds.filter((m) => team.includes(m)).length >=
+                    ctx.requiredSabotages
+            return {
+                action: team,
+                utility:
+                    PROPOSAL_SAFETY_WEIGHT * safety +
+                    (viable ? MOLE_PROPOSAL_VIABILITY_BONUS : 0) -
+                    participationCost(team, ctx.actorId, safety),
+            }
+        })
     }
 
     estimateTeamVote(ctx: BotVoteContext): readonly Utility<Vote>[] {
@@ -90,21 +109,22 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
             return this.level0Estimator.estimateTeamVote(ctx)
         }
 
-        let utility = hypotheses.probability(
+        const safety = hypotheses.probability(
             // probability that there are not enough moles to sabotage
             (h) =>
                 h.filter((m) => ctx.proposedTeam.includes(m)).length <
                 ctx.requiredSabotages,
         )
 
-        // hammer
-        if (ctx.consecutiveRejections >= ctx.playerIds.length - 1) {
-            utility += ctx.role === Role.Mole ? 1.4 : 2.5
-        }
+        const hammer = ctx.consecutiveRejections >= ctx.playerIds.length - 1
+        const approvalUtility = hammer
+            ? safety + (ctx.role === Role.Mole ? 1.4 : 2.5)
+            : safety - participationCost(ctx.proposedTeam, ctx.actorId, safety)
+        const rejectionUtility = hammer ? 1 - approvalUtility : 1 - safety
 
         return [
-            { action: 'Approve', utility: utility },
-            { action: 'Reject', utility: 1 - utility },
+            { action: 'Approve', utility: approvalUtility },
+            { action: 'Reject', utility: rejectionUtility },
         ]
     }
 
@@ -130,6 +150,16 @@ interface EventHypothesisContext {
     random: RandomFn
 }
 
+// Most weight stays on raid-only evidence; behavior can move only 30%.
+const RAID_ONLY_WEIGHT = 0.7
+const ALL_EVENTS_WEIGHT = 0.3
+
+interface HypothesisEvidence {
+    moles: PlayerId[]
+    raidLog: number
+    allLog: number
+}
+
 /**
  * MoleHypothesesFromHistory returns hypotheses about moles based on event
  * history and other players' expected strategy. It caches the previous
@@ -141,6 +171,8 @@ interface EventHypothesisContext {
 export class MoleHypothesesFromHistory {
     private previousLevelStrategy: BehavioralStrategy
     private hypotheses: MoleHypothesisSpace | undefined
+    private rows: HypothesisEvidence[] | undefined
+    private actorHypotheses = new Map<PlayerId, MoleHypothesisSpace>()
     private index: number
 
     private scores: { police: number; moles: number }
@@ -157,12 +189,18 @@ export class MoleHypothesesFromHistory {
     }
 
     get(ctx: BotMatchContext): MoleHypothesisSpace {
-        if (this.hypotheses === undefined) {
-            this.hypotheses = MoleHypothesisSpace.forPlayers(
+        if (this.rows === undefined) {
+            this.rows = MoleHypothesisSpace.forPlayers(
                 ctx.playerIds,
                 ctx.moleIds.length,
-            )
+            ).moleHypotheses.samplePoints.map(({ value, probability }) => ({
+                moles: value,
+                raidLog: Math.log(probability),
+                allLog: Math.log(probability),
+            }))
         }
+        const changed =
+            this.hypotheses === undefined || this.index < ctx.history.length
 
         for (; this.index < ctx.history.length; this.index++) {
             const eventCtx = {
@@ -182,8 +220,8 @@ export class MoleHypothesesFromHistory {
             const event = ctx.history[this.index]
             switch (event.kind) {
                 case 'raid':
-                    this.hypotheses = this.hypotheses.bayesianInference(
-                        (moles) => this.raidLikelihood(eventCtx, event, moles),
+                    this.updateEvidence(event, (moles) =>
+                        this.raidLikelihood(eventCtx, event, moles),
                     )
 
                     if (
@@ -198,15 +236,14 @@ export class MoleHypothesesFromHistory {
                     break
 
                 case 'proposal':
-                    this.hypotheses = this.hypotheses.bayesianInference(
-                        (moles) =>
-                            this.proposalLikelihood(eventCtx, event, moles),
+                    this.updateEvidence(event, (moles) =>
+                        this.proposalLikelihood(eventCtx, event, moles),
                     )
                     break
 
                 case 'votes':
-                    this.hypotheses = this.hypotheses.bayesianInference(
-                        (moles) => this.votesLikelihood(eventCtx, event, moles),
+                    this.updateEvidence(event, (moles) =>
+                        this.votesLikelihood(eventCtx, event, moles),
                     )
 
                     if (
@@ -221,7 +258,73 @@ export class MoleHypothesesFromHistory {
             }
         }
 
-        return this.hypotheses
+        if (changed) {
+            this.hypotheses = this.distribution()
+            this.actorHypotheses.clear()
+        }
+        return this.hypotheses!
+    }
+
+    getForActor(ctx: BotMatchContext): MoleHypothesisSpace {
+        this.get(ctx)
+        let hypotheses = this.actorHypotheses.get(ctx.actorId)
+        if (!hypotheses) {
+            hypotheses = this.distribution(ctx.actorId)
+            this.actorHypotheses.set(ctx.actorId, hypotheses)
+        }
+        return hypotheses
+    }
+
+    private updateEvidence(
+        event: GameEvent,
+        likelihood: (moles: readonly PlayerId[]) => number,
+    ): void {
+        // Physical impossibility is shared by both channels and never recovers.
+        this.rows = this.rows!.filter((row) => {
+            if (
+                event.kind === 'raid' &&
+                row.moles.filter((m) => event.team.includes(m)).length <
+                    event.sabotageCount
+            ) {
+                return false
+            }
+            const logLikelihood = Math.log(likelihood(row.moles))
+            row.allLog += logLikelihood
+            if (event.kind === 'raid') row.raidLog += logLikelihood
+            return true
+        })
+    }
+
+    private distribution(actorId?: PlayerId): MoleHypothesisSpace {
+        const rows = this.rows!.filter(
+            (row) => actorId === undefined || !row.moles.includes(actorId),
+        )
+        const normalize = (channel: 'raidLog' | 'allLog'): number[] => {
+            if (!rows.length) return []
+            const max = Math.max(...rows.map((row) => row[channel]))
+            if (!Number.isFinite(max)) {
+                throw new Error(
+                    'History likelihood is zero on all physically possible hypotheses.',
+                )
+            }
+            const masses = rows.map((row) => Math.exp(row[channel] - max))
+            const sum = masses.reduce((a, b) => a + b, 0)
+            return masses.map((mass) => mass / sum)
+        }
+        // Local log normalization deliberately bypasses SampleSpace's EPS
+        // pruning: small component masses must retain their fixed pool weight.
+        // Raw accumulators always keep the original prior, never pooled output.
+        const raid = normalize('raidLog')
+        const all = normalize('allLog')
+        return new MoleHypothesisSpace(
+            new SampleSpace(
+                rows.map((row, i) => ({
+                    value: row.moles,
+                    probability:
+                        RAID_ONLY_WEIGHT * raid[i] + ALL_EVENTS_WEIGHT * all[i],
+                })),
+            ),
+        )
     }
 
     // P(raid | H) is a likelihood of the raid happening given the players are moles
