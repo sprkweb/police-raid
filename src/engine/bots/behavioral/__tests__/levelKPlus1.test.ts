@@ -89,19 +89,22 @@ describe('LevelKPlus1Estimator', () => {
                     action: 'Approve',
                     utility: expect.closeTo(approval - 1.2 * (1 - approval)),
                 },
-                { action: 'Reject', utility: expect.closeTo(1 - approval) },
+                {
+                    action: 'Reject',
+                    utility: expect.closeTo(threshold === 1 ? 0.2 : 0.7),
+                },
             ])
         }
         expect(
             create()
                 .strategyForTeamVote(voteCtx())
                 .probability((v) => v === 'Approve'),
-        ).toBeCloseTo(logistic(-10 / 3))
+        ).toBeCloseTo(logistic(-31 / 15))
         expect(
             create()
                 .strategyForTeamVote(voteCtx({ requiredSabotages: 2 }))
                 .probability((v) => v === 'Approve'),
-        ).toBeCloseTo(logistic(14 / 15))
+        ).toBeCloseTo(logistic(-2 / 15))
     })
 
     it.each([Role.Police, Role.Mole])(
@@ -114,7 +117,7 @@ describe('LevelKPlus1Estimator', () => {
                     action: 'Approve',
                     utility: expect.closeTo(1 / 6 - (1.2 * 5) / 6),
                 },
-                { action: 'Reject', utility: expect.closeTo(5 / 6) },
+                { action: 'Reject', utility: expect.closeTo(0.2) },
             ])
             const onTeam = estimator.estimateTeamVote({
                 ...ctx,
@@ -122,7 +125,7 @@ describe('LevelKPlus1Estimator', () => {
             })
             expect(onTeam).toEqual([
                 { action: 'Approve', utility: expect.closeTo(1 / 2) },
-                { action: 'Reject', utility: expect.closeTo(1 / 2) },
+                { action: 'Reject', utility: expect.closeTo(0.2) },
             ])
             const hammer = estimator.estimateTeamVote({
                 ...ctx,
@@ -163,7 +166,7 @@ describe('LevelKPlus1Estimator', () => {
             ),
         ).toEqual([
             { action: 'Approve', utility: expect.closeTo(1) },
-            { action: 'Reject', utility: expect.closeTo(0) },
+            { action: 'Reject', utility: expect.closeTo(0.7) },
         ])
     })
 
@@ -184,7 +187,92 @@ describe('LevelKPlus1Estimator', () => {
             strategy
                 .strategyForTeamVote(voteCtx(ctx))
                 .probability((vote) => vote === 'Approve'),
-        ).toBeCloseTo(0.0153, 4)
+        ).toBeCloseTo(logistic(-31 / 12))
+    })
+
+    it('weighs attainable alternatives and increasingly costly rejections', () => {
+        const estimator = createEstimator()
+        const ctx = voteCtx({ proposedTeam: ['C', 'D'] })
+        const first = estimator.estimateTeamVote(ctx)
+        const later = estimator.estimateTeamVote({
+            ...ctx,
+            consecutiveRejections: 3,
+        })
+        expect(first[0].utility).toBeGreaterThan(first[1].utility)
+        expect(later[1].utility).toBeLessThan(first[1].utility)
+        const excluded = estimator.estimateTeamVote(voteCtx())
+        expect(excluded[0].utility).toBeLessThan(excluded[1].utility)
+    })
+
+    it.each([
+        [5, 2, 2],
+        [6, 2, 2],
+        [7, 3, 2],
+        [8, 3, 3],
+    ])(
+        'favors opening teams with the actor for %i players and keeps both votes possible',
+        (count, moles, size) => {
+            const playerIds = Array.from({ length: count }, (_, i) => String(i))
+            const ctx = voteCtx({
+                playerIds,
+                actorId: '0',
+                moleIds: playerIds.slice(1, 1 + moles),
+                proposedTeam: playerIds.slice(0, size),
+            })
+            const strategy = new LogitBehavioralStrategy(2.5, createEstimator())
+            const included = strategy.strategyForTeamVote(ctx)
+            const excluded = strategy.strategyForTeamVote({
+                ...ctx,
+                proposedTeam: playerIds.slice(1, size + 1),
+            })
+            expect(
+                included.probability((vote) => vote === 'Approve'),
+            ).toBeGreaterThan(0.5)
+            expect(
+                excluded.probability((vote) => vote === 'Approve'),
+            ).toBeLessThan(0.2)
+            for (const rejections of [0, count - 2, count - 1]) {
+                const votes = strategy.strategyForTeamVote({
+                    ...ctx,
+                    consecutiveRejections: rejections,
+                })
+                expect(
+                    votes.samplePoints.every(
+                        ({ probability }) =>
+                            Number.isFinite(probability) && probability > 0,
+                    ),
+                ).toBe(true)
+            }
+        },
+    )
+
+    it('rejects a proven unsafe team when safer alternatives exist', () => {
+        const ctx = voteCtx({
+            proposedTeam: ['A', 'C'],
+            history: [
+                {
+                    kind: 'raid',
+                    team: ['A', 'B'],
+                    proposerId: 'C',
+                    sabotageCount: 2,
+                    round: 1,
+                },
+            ],
+        })
+        const estimator = createEstimator()
+        const unsafe = estimator.estimateTeamVote(ctx)
+        const safe = estimator.estimateTeamVote({
+            ...ctx,
+            proposedTeam: ['C', 'D'],
+        })
+        expect(unsafe[0].utility).toBeLessThan(unsafe[1].utility)
+        expect(safe[0].utility).toBeGreaterThan(safe[1].utility)
+        expect(unsafe[1].utility).toBeCloseTo(safe[1].utility)
+        const late = estimator.estimateTeamVote({
+            ...ctx,
+            consecutiveRejections: 3,
+        })
+        expect(late[0].utility).toBeLessThan(late[1].utility)
     })
 
     it('falls back to level zero when history proves the actor is a mole', () => {

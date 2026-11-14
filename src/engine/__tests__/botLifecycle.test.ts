@@ -288,7 +288,7 @@ describe('lobby reinforcement tactics', () => {
         > = vote.mock.results.at(-1)!.value
         expect(
             voteDistribution.probability((v) => v === 'Approve'),
-        ).toBeCloseTo(0.7201894454, 9)
+        ).toBeCloseTo(0.6791786992, 9)
         brain.chooseRaidAction({
             ...ctx,
             role: Role.Mole,

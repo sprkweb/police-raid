@@ -80,7 +80,7 @@ describe('raid / all-event history mixture', () => {
             ),
         ).toEqual([
             { action: 'Approve', utility: expect.closeTo(-0.298) },
-            { action: 'Reject', utility: expect.closeTo(0.59) },
+            { action: 'Reject', utility: expect.closeTo(0.7) },
         ])
     })
 

@@ -33,6 +33,8 @@ import { SampleSpace } from './sample'
 const PROPOSAL_SAFETY_WEIGHT = 2
 const MOLE_PROPOSAL_VIABILITY_BONUS = 0.5
 const PARTICIPATION_COST = 1.2
+const REJECTION_DELAY_COST = 0.3
+const MAX_REJECTION_DELAY_COST = 0.8
 
 // A behavioral preference, not a belief update; it fades as team safety improves.
 function participationCost(
@@ -120,7 +122,35 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
         const approvalUtility = hammer
             ? safety + (ctx.role === Role.Mole ? 1.4 : 2.5)
             : safety - participationCost(ctx.proposedTeam, ctx.actorId, safety)
-        const rejectionUtility = hammer ? 1 - approvalUtility : 1 - safety
+        if (hammer) {
+            return [
+                { action: 'Approve', utility: approvalUtility },
+                { action: 'Reject', utility: 1 - approvalUtility },
+            ]
+        }
+
+        // Approximate a continuation by the safest same-size team the actor
+        // could propose while participating, rather than the complement of the
+        // current team's safety. Delay becomes more costly near the hammer.
+        const alternatives = combinations(
+            ctx.playerIds.filter((id) => id !== ctx.actorId),
+            ctx.proposedTeam.length - 1,
+        )
+        const alternativeSafety = Math.max(
+            ...alternatives.map((others) =>
+                hypotheses.probability(
+                    (h) =>
+                        h.filter((m) => others.includes(m)).length <
+                        ctx.requiredSabotages,
+                ),
+            ),
+        )
+        const rejectionUtility =
+            alternativeSafety -
+            Math.min(
+                MAX_REJECTION_DELAY_COST,
+                REJECTION_DELAY_COST * (ctx.consecutiveRejections + 1),
+            )
 
         return [
             { action: 'Approve', utility: approvalUtility },
