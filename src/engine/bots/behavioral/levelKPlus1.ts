@@ -71,15 +71,24 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
 
         const teams = combinations(ctx.playerIds, ctx.teamSize)
 
-        return teams.map((team) => ({
-            action: team,
-            utility: hypotheses.probability(
-                // probability that there are not enough moles to sabotage
+        return teams.map((team) => {
+            const safety = hypotheses.probability(
                 (h) =>
                     h.filter((m) => team.includes(m)).length <
                     ctx.requiredSabotages,
-            ),
-        }))
+            )
+            const viable =
+                ctx.role === Role.Mole &&
+                ctx.moleIds.filter((m) => team.includes(m)).length >=
+                    ctx.requiredSabotages
+            return {
+                action: team,
+                utility:
+                    2 * safety +
+                    (viable ? 0.5 : 0) -
+                    (team.includes(ctx.actorId) ? 0 : 1.2 * (1 - safety)),
+            }
+        })
     }
 
     estimateTeamVote(ctx: BotVoteContext): readonly Utility<Vote>[] {
@@ -90,21 +99,48 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
             return this.level0Estimator.estimateTeamVote(ctx)
         }
 
-        let utility = hypotheses.probability(
+        const safety = hypotheses.probability(
             // probability that there are not enough moles to sabotage
             (h) =>
                 h.filter((m) => ctx.proposedTeam.includes(m)).length <
                 ctx.requiredSabotages,
         )
 
-        // hammer
-        if (ctx.consecutiveRejections >= ctx.playerIds.length - 1) {
-            utility += ctx.role === Role.Mole ? 1.4 : 2.5
+        const hammer = ctx.consecutiveRejections >= ctx.playerIds.length - 1
+        const approvalUtility = hammer
+            ? safety + (ctx.role === Role.Mole ? 1.4 : 2.5)
+            : safety -
+              (ctx.proposedTeam.includes(ctx.actorId) ? 0 : 1.2 * (1 - safety))
+        if (hammer) {
+            return [
+                { action: 'Approve', utility: approvalUtility },
+                { action: 'Reject', utility: 1 - approvalUtility },
+            ]
         }
 
+        // Approximate a continuation by the safest same-size team the actor
+        // could propose while participating, rather than the complement of the
+        // current team's safety. Delay becomes more costly near the hammer.
+        const alternatives = combinations(
+            ctx.playerIds.filter((id) => id !== ctx.actorId),
+            ctx.proposedTeam.length - 1,
+        )
+        const alternativeSafety = Math.max(
+            ...alternatives.map((others) =>
+                hypotheses.probability(
+                    (h) =>
+                        h.filter((m) => others.includes(m)).length <
+                        ctx.requiredSabotages,
+                ),
+            ),
+        )
+        const rejectionUtility =
+            alternativeSafety -
+            Math.min(0.8, 0.3 * (ctx.consecutiveRejections + 1))
+
         return [
-            { action: 'Approve', utility: utility },
-            { action: 'Reject', utility: 1 - utility },
+            { action: 'Approve', utility: approvalUtility },
+            { action: 'Reject', utility: rejectionUtility },
         ]
     }
 

@@ -4,6 +4,7 @@ import {
     type RaidAction,
     type Vote,
 } from '../../../types/game'
+import { WINS_NEEDED } from '../../constants'
 import type {
     BotProposeContext,
     BotRaidContext,
@@ -112,6 +113,15 @@ export class Level0Estimator implements ActionUtilityEstimator {
         } else {
             // sabotage is a bad decision when there are not enough moles
             sabotageUtility = -1
+        }
+
+        if (
+            molesCount === ctx.requiredSabotages &&
+            (ctx.scores.police === WINS_NEEDED - 1 ||
+                ctx.scores.moles === WINS_NEEDED - 1)
+        ) {
+            // Stronger pressure to finish a decisive raid.
+            sabotageUtility += 0.6
         }
 
         return [
