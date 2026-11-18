@@ -17,6 +17,7 @@ import {
 import { combinations } from './math'
 
 export class Level0Estimator implements ActionUtilityEstimator {
+    // TODO: tune utilities using inspect
     estimateProposedTeam(
         ctx: BotProposeContext,
     ): readonly Utility<PlayerId[]>[] {
@@ -47,6 +48,7 @@ export class Level0Estimator implements ActionUtilityEstimator {
         })
     }
 
+    // TODO: tune utilities using inspect
     estimateTeamVote(ctx: BotVoteContext): readonly Utility<Vote>[] {
         let utility = 0
 
@@ -94,6 +96,8 @@ export class Level0Estimator implements ActionUtilityEstimator {
 
         let sabotageUtility = 0
         if (molesCount >= ctx.requiredSabotages) {
+            // TODO: lower sabotage when there are just 2 people?
+
             // lower sabotage utility when there are more moles than needed
             switch (molesCount - ctx.requiredSabotages) {
                 case 0:

@@ -26,9 +26,7 @@ export function withBehavioralDebug(
             const model = estimator.hypotheses
             const hypotheses = model.get(ctx)
             if (printedHistory.get(model) !== ctx.history.length) {
-                console.groupCollapsed(
-                    '[behavioral] Common hypotheses (before actor conditioning)',
-                )
+                console.groupCollapsed('[behavioral] Hypotheses')
                 console.table(
                     hypotheses.moleHypotheses.samplePoints.map(
                         ({ value, probability }) => ({

@@ -26,10 +26,7 @@ import {
     type Utility,
 } from './logitQuantalResponse'
 import { combinations } from './math'
-import {
-    MoleHypothesisEvidence,
-    type MoleHypothesisSpace,
-} from './moleHypotheses'
+import { MoleHypothesisSpace } from './moleHypotheses'
 
 export class LevelKPlus1Estimator implements ActionUtilityEstimator {
     readonly hypotheses: MoleHypothesesFromHistory
@@ -52,9 +49,14 @@ export class LevelKPlus1Estimator implements ActionUtilityEstimator {
      * level 0 strategy
      */
     private getHypotheses(ctx: BotMatchContext): MoleHypothesisSpace {
-        // Condition the two components separately before pooling them.
-        // Moles also use the public pretense that they are innocent.
-        return this.hypotheses.getForActor(ctx)
+        return (
+            this.hypotheses
+                .get(ctx)
+
+                // likelihood of me being mole == 0
+                // even if I were a mole, I'd act from a position that I am not
+                .bayesianInference((h) => (h.includes(ctx.actorId) ? 0 : 1))
+        )
     }
 
     estimateProposedTeam(
@@ -175,8 +177,6 @@ interface EventHypothesisContext {
 export class MoleHypothesesFromHistory {
     private previousLevelStrategy: BehavioralStrategy
     private hypotheses: MoleHypothesisSpace | undefined
-    private evidence: MoleHypothesisEvidence | undefined
-    private actorHypotheses = new Map<PlayerId, MoleHypothesisSpace>()
     private index: number
 
     private scores: { police: number; moles: number }
@@ -193,12 +193,12 @@ export class MoleHypothesesFromHistory {
     }
 
     get(ctx: BotMatchContext): MoleHypothesisSpace {
-        this.evidence ??= MoleHypothesisEvidence.forPlayers(
-            ctx.playerIds,
-            ctx.moleIds.length,
-        )
-        const changed =
-            this.hypotheses === undefined || this.index < ctx.history.length
+        if (this.hypotheses === undefined) {
+            this.hypotheses = MoleHypothesisSpace.forPlayers(
+                ctx.playerIds,
+                ctx.moleIds.length,
+            )
+        }
 
         for (; this.index < ctx.history.length; this.index++) {
             const eventCtx = {
@@ -218,8 +218,8 @@ export class MoleHypothesesFromHistory {
             const event = ctx.history[this.index]
             switch (event.kind) {
                 case 'raid':
-                    this.updateEvidence(event, (moles) =>
-                        this.raidLikelihood(eventCtx, event, moles),
+                    this.hypotheses = this.hypotheses.bayesianInference(
+                        (moles) => this.raidLikelihood(eventCtx, event, moles),
                     )
 
                     if (
@@ -234,14 +234,15 @@ export class MoleHypothesesFromHistory {
                     break
 
                 case 'proposal':
-                    this.updateEvidence(event, (moles) =>
-                        this.proposalLikelihood(eventCtx, event, moles),
+                    this.hypotheses = this.hypotheses.bayesianInference(
+                        (moles) =>
+                            this.proposalLikelihood(eventCtx, event, moles),
                     )
                     break
 
                 case 'votes':
-                    this.updateEvidence(event, (moles) =>
-                        this.votesLikelihood(eventCtx, event, moles),
+                    this.hypotheses = this.hypotheses.bayesianInference(
+                        (moles) => this.votesLikelihood(eventCtx, event, moles),
                     )
 
                     if (
@@ -256,35 +257,7 @@ export class MoleHypothesesFromHistory {
             }
         }
 
-        if (changed) {
-            this.hypotheses = this.evidence.distribution()
-            this.actorHypotheses.clear()
-        }
-        return this.hypotheses!
-    }
-
-    getForActor(ctx: BotMatchContext): MoleHypothesisSpace {
-        this.get(ctx)
-        let hypotheses = this.actorHypotheses.get(ctx.actorId)
-        if (!hypotheses) {
-            hypotheses = this.evidence!.distribution(ctx.actorId)
-            this.actorHypotheses.set(ctx.actorId, hypotheses)
-        }
-        return hypotheses
-    }
-
-    private updateEvidence(
-        event: GameEvent,
-        likelihood: (moles: readonly PlayerId[]) => number,
-    ): void {
-        this.evidence!.observe(
-            likelihood,
-            event.kind === 'raid',
-            (moles) =>
-                event.kind !== 'raid' ||
-                moles.filter((m) => event.team.includes(m)).length >=
-                    event.sabotageCount,
-        )
+        return this.hypotheses
     }
 
     // P(raid | H) is a likelihood of the raid happening given the players are moles

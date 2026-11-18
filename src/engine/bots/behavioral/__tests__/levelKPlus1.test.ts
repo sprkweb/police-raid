@@ -490,7 +490,7 @@ describe('MoleHypothesesFromHistory', () => {
             proposeCtx({ history: [proposal] }),
         )
         expect(posterior.probability((h) => h.includes('A'))).toBeCloseTo(
-            0.7 * 0.4 + (0.3 * (4 * 0.8)) / (4 * 0.8 + 6 * 0.2),
+            (4 * 0.8) / (4 * 0.8 + 6 * 0.2),
         )
         expect(strategy.strategyForTeamProposal).toHaveBeenCalledTimes(10)
         for (const [ctx] of strategy.strategyForTeamProposal.mock.calls) {
@@ -527,7 +527,7 @@ describe('MoleHypothesesFromHistory', () => {
         const total = likelihood + 6 * 0.8 ** 3 * 0.2 ** 2 + 3 * 0.8 * 0.2 ** 4
         expect(
             posterior.probability((h) => h.includes('B') && h.includes('C')),
-        ).toBeCloseTo(0.07 + (0.3 * likelihood) / total)
+        ).toBeCloseTo(likelihood / total)
         expect(strategy.strategyForTeamVote).toHaveBeenCalledTimes(50)
     })
 
